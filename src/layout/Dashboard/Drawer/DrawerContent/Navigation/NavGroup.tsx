@@ -16,7 +16,7 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
 // third-party
-import { FormattedMessage } from 'react-intl';
+// import { FormattedMessage } from 'react-intl'; // Commented out to disable multi-language support
 
 // project-imports
 import NavItem from './NavItem';
@@ -33,6 +33,9 @@ import { More2 } from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
+
+// Define a simple function to replace FormattedMessage
+const renderText = (id: string) => id || '';
 
 interface Props {
   item: NavItemType;
@@ -278,11 +281,11 @@ export default function NavGroup({
                         ...theme.applyStyles('dark', { color: 'text.secondary' })
                       })}
                     >
-                      <FormattedMessage id={item.title} />
+                      {renderText(item.title)}
                     </Typography>
                     {item.caption && (
                       <Typography variant="caption" color="secondary">
-                        <FormattedMessage id={item.caption} />
+                        {renderText(item.caption)}
                       </Typography>
                     )}
                   </Box>
@@ -325,7 +328,7 @@ export default function NavGroup({
                     ...((isSelected || anchorEl) && { color: 'primary.main' })
                   })}
                 >
-                  <FormattedMessage id={currentItem.id === lastItemId ? 'more-items' : currentItem.title} />
+                  {renderText(currentItem.id === lastItemId ? 'more-items' : currentItem.title || '')}
                 </Typography>
               }
             />

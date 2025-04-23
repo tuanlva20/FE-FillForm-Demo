@@ -3,14 +3,14 @@ import { handlerCustomerDialog } from 'api/customer';
 import { NavActionType } from 'config';
 
 // assets
-import { Add, Link1, KyberNetwork, Messages2, Calendar1, Kanban, Profile2User, Bill, UserSquare, ShoppingBag } from 'iconsax-react';
+import { Add, Bill, Calendar1, CpuCharge, Kanban, KyberNetwork, Link1, Messages2, Profile2User, ShoppingBag, UserSquare } from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
 
 // icons
 const icons = {
-  applications: KyberNetwork,
+  tools: KyberNetwork,
   chat: Messages2,
   calendar: Calendar1,
   kanban: Kanban,
@@ -19,17 +19,26 @@ const icons = {
   profile: UserSquare,
   ecommerce: ShoppingBag,
   add: Add,
-  link: Link1
+  link: Link1,
+  plugins: CpuCharge,
 };
 
-// ==============================|| MENU ITEMS - APPLICATIONS ||============================== //
+// ==============================|| MENU ITEMS - TOOLS ||============================== //
 
-const applications: NavItemType = {
-  id: 'group-applications',
-  title: 'applications',
-  icon: icons.applications,
+const tools: NavItemType = {
+  id: 'group-tools',
+  title: 'tools',
+  icon: icons.tools,
   type: 'group',
   children: [
+    {
+      id: 'dienform',
+      title: 'Điền form tự động',
+      type: 'item',
+      url: '/apps/dienform/create',
+      icon: icons.plugins,
+      breadcrumbs: false,
+    },
     {
       id: 'chat',
       title: 'chat',
@@ -200,4 +209,4 @@ const applications: NavItemType = {
   ]
 };
 
-export default applications;
+export default tools;

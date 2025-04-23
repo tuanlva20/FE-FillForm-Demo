@@ -92,7 +92,7 @@
   "gitbook": "gitbook",
   "helpdesk": "Serviciu de asistență",
   "helpdesk customer": "Clientul serviciului de asistență",
-  "home": "Acasa",
+  "home": "Acasă",
   "inputs": "Intrări",
   "invoice": "Factura fiscala",
   "invoice-list": "Lista de facturi",
@@ -195,5 +195,11 @@
   "utils": "Utils",
   "view": "Vedere",
   "widgets": "Widgeturi",
-  "more-items": "Mai multe articole"
+  "more-items": "Mai multe articole",
+  "create form": "Creare formular",
+  "fill expected ratio": "Completați raportul așteptat",
+  "fill in data": "Completați cu date",
+  "history": "Istoric",
+  "Điền form tự động": "Completare automată a formularului",
+  "dienform": "Completare formular"
 }

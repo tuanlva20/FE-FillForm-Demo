@@ -4,11 +4,10 @@ import { RouterProvider } from 'react-router-dom';
 import router from 'routes';
 import ThemeCustomization from 'themes';
 
-import Locales from 'components/Locales';
+import Customization from 'components/Customization';
+import Locales from 'components/Locales'; // Re-enabled with simplified implementation
 import RTLLayout from 'components/RTLLayout';
 import ScrollTop from 'components/ScrollTop';
-import Customization from 'components/Customization';
-import Snackbar from 'components/@extended/Snackbar';
 import Notistack from 'components/third-party/Notistack';
 import Metrics from 'metrics';
 
@@ -32,7 +31,7 @@ export default function App() {
                   <Notistack>
                     <RouterProvider router={router} />
                     <Customization />
-                    <Snackbar />
+                    {/* <Snackbar /> */}
                   </Notistack>
                 </>
               </AuthProvider>

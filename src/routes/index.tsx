@@ -14,7 +14,7 @@ import SimpleLayout from 'layout/Simple';
 const PagesLanding = Loadable(lazy(() => import('pages/landing')));
 
 // ==============================|| ROUTES RENDER ||============================== //
-
+console.log('VITE_APP_BASE_NAME:', import.meta.env.VITE_APP_BASE_NAME);
 const router = createBrowserRouter(
   [
     {

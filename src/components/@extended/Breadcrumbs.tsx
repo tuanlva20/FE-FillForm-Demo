@@ -14,7 +14,7 @@ import { ThemeDirection } from 'config';
 import navigation from 'menu-items';
 
 // third-party
-import { FormattedMessage } from 'react-intl';
+// import { FormattedMessage } from 'react-intl'; // Commented out to disable multi-language support
 
 // assets
 import { ArrowRight2, Buildings2, Home3 } from 'iconsax-react';
@@ -22,6 +22,9 @@ import { ArrowRight2, Buildings2, Home3 } from 'iconsax-react';
 // types
 import { NavItemType } from 'types/menu';
 import { OverrideIcon } from 'types/root';
+
+// Define a simple function to replace FormattedMessage
+const renderText = (id: string) => id || '';
 
 interface BreadcrumbLinkProps {
   title: string;
@@ -145,7 +148,7 @@ export default function Breadcrumbs({
         color={window.location.pathname === main.url ? 'text.primary' : 'text.secondary'}
       >
         {icons && <CollapseIcon style={iconSX} />}
-        <FormattedMessage id={main.title} />
+        {renderText(main.title || '')}
       </Typography>
     );
 
@@ -176,7 +179,7 @@ export default function Breadcrumbs({
                 >
                   {icons && <Home3 style={iconSX} />}
                   {icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
-                  {(!icon || icons) && <FormattedMessage id="home" />}
+                  {(!icon || icons) && renderText("home")}
                 </Typography>
                 {mainContent}
               </MuiBreadcrumbs>
@@ -184,7 +187,7 @@ export default function Breadcrumbs({
             {title && titleBottom && (
               <Grid sx={{ mt: card === false ? 0 : 1 }}>
                 <Typography variant="h2" sx={{ fontWeight: 700 }}>
-                  <FormattedMessage id={main.title} />
+                  {renderText(main.title || '')}
                 </Typography>
               </Grid>
             )}
@@ -203,7 +206,7 @@ export default function Breadcrumbs({
     itemContent = (
       <Typography variant="body1" color="text.primary" sx={{ display: 'flex', fontWeight: 500, alignItems: 'center' }}>
         {icons && <ItemIcon style={iconSX} />}
-        <FormattedMessage id={itemTitle} />
+        {renderText(itemTitle || '')}
       </Typography>
     );
 
@@ -218,7 +221,7 @@ export default function Breadcrumbs({
         >
           {icons && <Home3 style={iconSX} />}
           {icon && !icons && <Home3 variant="Bold" style={{ ...iconSX, marginRight: 0 }} />}
-          {(!icon || icons) && <FormattedMessage id="home" />}
+          {(!icon || icons) && renderText("home")}
         </Typography>
         {mainContent}
         {itemContent}
@@ -240,7 +243,7 @@ export default function Breadcrumbs({
                 color={link.to ? 'text.secondary' : 'text.primary'}
               >
                 {link.icon && <CollapseIcon style={iconSX} />}
-                <FormattedMessage id={link.title} />
+                {renderText(link.title)}
               </Typography>
             );
           })}
@@ -268,7 +271,7 @@ export default function Breadcrumbs({
             {title && !titleBottom && (
               <Grid>
                 <Typography variant="h2" sx={{ fontWeight: 700 }}>
-                  <FormattedMessage id={custom ? heading : item?.title} />
+                  {renderText(custom ? heading || '' : item?.title || '')}
                 </Typography>
               </Grid>
             )}
@@ -276,7 +279,7 @@ export default function Breadcrumbs({
             {title && titleBottom && (
               <Grid sx={{ mt: card === false ? 0 : 1 }}>
                 <Typography variant="h2" sx={{ fontWeight: 700 }}>
-                  <FormattedMessage id={custom ? heading : item?.title} />
+                  {renderText(custom ? heading || '' : item?.title || '')}
                 </Typography>
               </Grid>
             )}

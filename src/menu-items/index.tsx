@@ -1,6 +1,6 @@
 // project-imports
 import adminPanel from './admin-panel';
-import applications from './applications';
+import applications from './tools';
 import chartsMap from './charts-map';
 import formsTables from './forms-tables';
 import pages from './pages';

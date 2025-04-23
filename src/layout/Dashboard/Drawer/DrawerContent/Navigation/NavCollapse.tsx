@@ -29,7 +29,7 @@ import useConfig from 'hooks/useConfig';
 import useMenuCollapse from 'hooks/useMenuCollapse';
 
 // third-party
-import { FormattedMessage } from 'react-intl';
+// import { FormattedMessage } from 'react-intl'; // Commented out to disable multi-language support
 
 // assets
 import { ArrowDown2, ArrowUp2, ArrowRight2, Copy } from 'iconsax-react';
@@ -62,6 +62,9 @@ const PopperStyled = styled(Popper)(({ theme }) => ({
     borderBottom: `1px solid ${theme.palette.divider}`
   }
 }));
+
+// Define a simple function to replace FormattedMessage
+const renderText = (id: string) => id || '';
 
 // ==============================|| NAVIGATION - COLLAPSE ||============================== //
 
@@ -289,13 +292,13 @@ export default function NavCollapse({ menu, level, parentId, setSelectedItems, s
                       ...theme.applyStyles('dark', { color: darkTextColor })
                     })}
                   >
-                    <FormattedMessage id={menu.title} />
+                    {renderText(menu.title || '')}
                   </Typography>
                 }
                 secondary={
                   menu.caption && (
                     <Typography variant="caption" color="secondary">
-                      <FormattedMessage id={menu.caption} />
+                      {renderText(menu.caption || '')}
                     </Typography>
                   )
                 }
@@ -422,7 +425,7 @@ export default function NavCollapse({ menu, level, parentId, setSelectedItems, s
                     ...theme.applyStyles('dark', { color: darkTextColor })
                   })}
                 >
-                  <FormattedMessage id={menu.title} />
+                  {renderText(menu.title || '')}
                 </Typography>
               }
             />

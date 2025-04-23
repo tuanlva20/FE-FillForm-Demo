@@ -193,5 +193,12 @@
   "utils": "Utilitaires",
   "view": "Voir",
   "widgets": "Widget",
-  "more-items": "Plus d'articles"
+  "more-items": "Plus d'articles",
+  "home": "Accueil",
+  "create form": "Créer un formulaire",
+  "fill expected ratio": "Remplir le ratio attendu",
+  "fill in data": "Remplir avec des données",
+  "history": "Historique",
+  "Điền form tự động": "Remplissage automatique de formulaire",
+  "dienform": "Remplissage de formulaire"
 }

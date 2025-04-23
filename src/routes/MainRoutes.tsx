@@ -1,13 +1,13 @@
 import { lazy } from 'react';
 
 // project-imports
-import ErrorBoundary from './ErrorBoundary';
-import { loader as productsLoader, productLoader } from 'api/products';
+import { productLoader, loader as productsLoader } from 'api/products';
 import Loadable from 'components/Loadable';
 import { SimpleLayoutType } from 'config';
 import DashboardLayout from 'layout/Dashboard';
 import PagesLayout from 'layout/Pages';
 import SimpleLayout from 'layout/Simple';
+import ErrorBoundary from './ErrorBoundary';
 
 // render - dashboard
 const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')));
@@ -159,6 +159,13 @@ const Landing = Loadable(lazy(() => import('pages/landing')));
 const ContactUS = Loadable(lazy(() => import('pages/contact-us')));
 const PricingPage = Loadable(lazy(() => import('pages/extra-pages/price/price1')));
 const PricingPage2 = Loadable(lazy(() => import('pages/extra-pages/price/price2')));
+
+// Dien Form
+const DienForm = Loadable(lazy(() => import('pages/apps/dienform')));
+const DienFormCreate = Loadable(lazy(() => import('sections/apps/dienform/TabCreate')));
+const DienFormFillExpectedRatio = Loadable(lazy(() => import('sections/apps/dienform/TabFillExpectedRatio')));
+const DienFormFillInData = Loadable(lazy(() => import('sections/apps/dienform/TabFillInData')));
+const DienFormLichSu = Loadable(lazy(() => import('sections/apps/dienform/TabHistory')));
 
 // ==============================|| MAIN ROUTES ||============================== //
 
@@ -318,6 +325,28 @@ const MainRoutes = {
         {
           path: 'apps',
           children: [
+            {
+              path: 'dienform',
+              element: <DienForm />,
+              children: [
+                {
+                  path: 'create',
+                  element: <DienFormCreate />
+                },
+                {
+                  path: 'fill-expected-ratio',
+                  element: <DienFormFillExpectedRatio />
+                },
+                {
+                  path: 'fill-in-data',
+                  element: <DienFormFillInData />
+                },
+                {
+                  path: 'history',
+                  element: <DienFormLichSu />
+                },
+              ]
+            },
             {
               path: 'chat',
               element: <AppChat />
