@@ -148,7 +148,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
 
   const resetPassword = async (email: string) => {
     console.log('Password reset bypassed for:', email);
-    return true;
+    // Don't return anything to match the Promise<void> type
   };
 
   const updateProfile = () => {};

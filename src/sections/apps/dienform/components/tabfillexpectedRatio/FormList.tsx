@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -28,9 +28,9 @@ import { MAINCARD_STYLE } from 'themes/component/style';
 import { FillRequestDTO } from 'api/form';
 
 interface ExpectedRatioFormListProps {
-  onSchedule: (formId: number) => void;
-  onViewDetails: (formId: number) => void;
-  onEdit: (formId: number) => void;
+  onSchedule: (formId: string) => void; // Changed from number to string
+  onViewDetails: (formId: string) => void; // Changed from number to string
+  onEdit: (formId: string) => void; // Changed from number to string
   fillRequests?: FillRequestDTO[]; 
   formName?: string;
   formLink?: string;
@@ -45,6 +45,15 @@ export default function ExpectedRatioFormList({
   formLink = ''
 }: ExpectedRatioFormListProps) {
   const [searchText, setSearchText] = useState('');
+  
+  // Debug requests data when it changes
+  useEffect(() => {
+    console.log('Fill Requests updated:', fillRequests);
+    if (fillRequests && fillRequests.length > 0) {
+      console.log('First request ID:', fillRequests[0].id);
+      console.log('First request ID type:', typeof fillRequests[0].id);
+    }
+  }, [fillRequests]);
   
   // Filter fillRequests based on search text
   const filteredForms = searchText.trim() === '' 
@@ -137,6 +146,22 @@ export default function ExpectedRatioFormList({
     });
   };
 
+  // Handle view details with proper ID handling
+  const handleViewDetails = (id: string | undefined) => {
+    if (id && onViewDetails) {
+      console.log('View details for ID:', id);
+      onViewDetails(id); // Pass the ID as is, without conversion
+    }
+  };
+
+  // Handle edit with proper ID handling
+  const handleEdit = (id: string | undefined) => {
+    if (id && onEdit) {
+      console.log('Edit for ID:', id);
+      onEdit(id); // Pass the ID as is, without conversion
+    }
+  };
+
   return (
     <MainCard title="Danh sách yêu cầu điền của form" sx={MAINCARD_STYLE}>
       <Box sx={{ mb: 2 }}>
@@ -172,11 +197,14 @@ export default function ExpectedRatioFormList({
           <TableBody>
             {filteredForms.length > 0 ? (
               filteredForms.map((request, index) => (
-                <TableRow hover key={request.id}>
+                <TableRow hover key={request.id || index}>
                   <TableCell align="center">{index + 1}</TableCell>
                   <TableCell>{formName}</TableCell>
                   <TableCell align="center">
-                    <IconButton color="primary" onClick={() => onSchedule(Number(request.id))}>
+                    <IconButton 
+                      color="primary" 
+                      onClick={() => request.id && onSchedule(request.id)} // Pass ID directly
+                    >
                       {getScheduleIcon(request.scheduledTime !== undefined && request.scheduledTime !== null)}
                     </IconButton>
                   </TableCell>
@@ -189,7 +217,7 @@ export default function ExpectedRatioFormList({
                         <IconButton 
                           color="primary" 
                           size="small" 
-                          onClick={() => onEdit(Number(request.id))}
+                          onClick={() => handleEdit(request.id)}
                         >
                           <Edit2 size={18} />
                         </IconButton>
@@ -198,7 +226,7 @@ export default function ExpectedRatioFormList({
                         <IconButton 
                           color="info" 
                           size="small"
-                          onClick={() => onViewDetails(Number(request.id))}
+                          onClick={() => handleViewDetails(request.id)}
                         >
                           <Eye size={18} />
                         </IconButton>

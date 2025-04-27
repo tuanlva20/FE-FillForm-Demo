@@ -1,13 +1,10 @@
-import { useEffect, useState } from 'react';
-
 // material-ui
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import CircularProgress from '@mui/material/CircularProgress';
-import Stack from '@mui/material/Stack';
+import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -15,8 +12,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid2';
 
 // API
 import { FillRequestDTO } from 'api/form';
@@ -80,41 +75,41 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
       <DialogTitle>Chi tiết yêu cầu điền form</DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={2}>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Tên form:</Typography>
             <Typography variant="body1" gutterBottom>{formName}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Trạng thái:</Typography>
             <Typography variant="body1" gutterBottom>
               {getStatusLabel(fillRequest.status)}
             </Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Số lượng cần điền:</Typography>
             <Typography variant="body1" gutterBottom>{fillRequest.surveyCount}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Số lượng đã điền:</Typography>
             <Typography variant="body1" gutterBottom>{fillRequest.completedSurvey || 0}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Giá mỗi lượt điền:</Typography>
             <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.pricePerSurvey)}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Tổng giá:</Typography>
             <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.totalPrice)}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Ngày tạo:</Typography>
             <Typography variant="body1" gutterBottom>{formatDate(fillRequest.createdAt)}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Hẹn giờ:</Typography>
             <Typography variant="body1" gutterBottom>{fillRequest.scheduledTime ? formatDate(fillRequest.scheduledTime) : 'Không'}</Typography>
           </Grid>
-          <Grid size={12} md={6}>
+          <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Điền tự nhiên như người dùng:</Typography>
             <Typography variant="body1" gutterBottom>{fillRequest.humanLike ? 'Có' : 'Không'}</Typography>
           </Grid>

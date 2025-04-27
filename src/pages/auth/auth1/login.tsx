@@ -28,7 +28,7 @@ export default function Login() {
     <AuthWrapper>
       <Grid container spacing={3}>
         <Grid sx={{ textAlign: 'center' }} size={12}>
-          <Logo />
+          {/* <Logo /> */}
         </Grid>
         <Grid size={12}>
           <Grid container spacing={1}>

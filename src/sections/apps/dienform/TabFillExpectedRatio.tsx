@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid'; // Changed from Grid2 to standard Grid
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import Link from '@mui/material/Link';
@@ -239,17 +239,22 @@ export default function TabFillExpectedRatio() {
   };
   
   // Open the schedule form modal
-  const handleOpenScheduleModal = (formId: number) => {
-    setSelectedDetailFormId(formId);
+  const handleOpenScheduleModal = (formId: string) => {
+    setSelectedDetailFormId(parseInt(formId) || null);
     setIsScheduleModalOpen(true);
   };
   
   // Open the form detail modal
-  const handleOpenDetailModal = (formId: number) => {
+  const handleOpenDetailModal = (formId: string) => {
+    console.log('handleOpenDetailModal called with ID:', formId);
+    
     if (!selectedForm) return;
     
-    // Find the fill request with the given ID
-    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId.toString());
+    // Find the fill request with the given ID - use direct string comparison
+    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId);
+    
+    console.log('Found fillRequest:', fillRequest);
+    
     if (fillRequest) {
       setSelectedFillRequest(fillRequest);
       setIsDetailModalOpen(true);
@@ -257,11 +262,16 @@ export default function TabFillExpectedRatio() {
   };
   
   // Handle edit fill request - loads answer distributions back into the form
-  const handleEditFillRequest = (formId: number) => {
+  const handleEditFillRequest = (formId: string) => {
+    console.log('handleEditFillRequest called with ID:', formId);
+    
     if (!selectedForm) return;
     
-    // Find the fill request with the given ID
-    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId.toString());
+    // Find the fill request with the given ID - use direct string comparison
+    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId);
+    
+    console.log('Found fillRequest:', fillRequest);
+    
     if (!fillRequest || !fillRequest.answerDistributions) return;
     
     // Set to editing mode
@@ -440,7 +450,7 @@ export default function TabFillExpectedRatio() {
   
   return (
     <Grid container spacing={GRID_COMMON_SPACING}>
-      <Grid size={12}>
+      <Grid item xs={12}>
         <MainCard 
           title="Chọn Form muốn điền" 
           sx={MAINCARD_STYLE}
@@ -451,7 +461,7 @@ export default function TabFillExpectedRatio() {
             </Stack>
           ) : (
             <Grid container spacing={2}>
-              <Grid size={{ xs: 12, sm: 6 }}>
+              <Grid item xs={12} sm={6}>
                 <Stack direction="column" sx={{ gap: 1 }}>
                   <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
                   <Select 
@@ -471,7 +481,7 @@ export default function TabFillExpectedRatio() {
                   </Select>
                 </Stack>
               </Grid>
-              <Grid size={12}>
+              <Grid item xs={12}>
                 <Stack direction="row" sx={{ gap: 1 }}>
                   <InputLabel htmlFor="form-link">Link Form</InputLabel>
                   {formLink ? (
@@ -495,7 +505,7 @@ export default function TabFillExpectedRatio() {
         </MainCard>
       </Grid>
 
-      <Grid size={12}>
+      <Grid item xs={12}>
         <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
           {formDetailLoading ? (
             <Stack direction="row" justifyContent="center" sx={{ py: 4 }}>
@@ -541,7 +551,7 @@ export default function TabFillExpectedRatio() {
                         {question.options.map((option) => {
                           const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
                           return (
-                            <Grid key={option.id} size={{ xs: 12, sm: 6, md: 3, lg: 2 }}>
+                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
                               <Tooltip 
                                 title={option.text} 
                                 arrow 
@@ -635,7 +645,7 @@ export default function TabFillExpectedRatio() {
         </MainCard>
       </Grid>
 
-      <Grid size={12}>
+      <Grid item xs={12}>
         <ExpectedRatioFormList 
           onSchedule={handleOpenScheduleModal}
           onViewDetails={handleOpenDetailModal}
