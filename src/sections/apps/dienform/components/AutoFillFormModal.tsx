@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from 'react';
+import { ChangeEvent, useState } from 'react';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -7,60 +7,99 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid2';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Divider from '@mui/material/Divider';
-import InputAdornment from '@mui/material/InputAdornment';
 
 // assets
-import { Add, Minus } from 'iconsax-react';
 
 // Interface
 interface AutoFillFormModalProps {
   open: boolean;
   onClose: () => void;
   formName: string;
+  onSubmit?: (formValues: {
+    submissionCount: number;
+    pricePerSurvey: number;
+    isHumanLike: boolean;
+  }) => void;
 }
 
-export default function AutoFillFormModal({ open, onClose, formName }: AutoFillFormModalProps) {
+export default function AutoFillFormModal({ open, onClose, formName, onSubmit }: AutoFillFormModalProps) {
   const [formValues, setFormValues] = useState({
-    name: formName,
-    currentBalance: "300.000",
-    costPerSubmission: "350đ/khảo sát",
-    submissionCount: 500,
-    fillLikeHuman: true,
-    timeInterval: "Combo box để chọn khoản thời gian",
-    varySubmissionsByTime: true,
-    totalCost: "175.000"
+    submissionCount: 1,
+    pricePerSurvey: 350,
+    isHumanLike: true,
+    timeInterval: "1-5 phút",
+    varySubmissionsByTime: false,
   });
 
-  // Handle submission count increase/decrease
-  const handleCountChange = (increase: boolean) => {
-    setFormValues(prev => ({
-      ...prev,
-      submissionCount: increase ? prev.submissionCount + 1 : Math.max(1, prev.submissionCount - 1)
-    }));
+  const [errors, setErrors] = useState<{
+    submissionCount?: string;
+  }>({});
+
+  // Handle submission count change directly through input field
+  const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value) || 0;
+    
+    if (value <= 0) {
+      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+    } else {
+      setErrors({...errors, submissionCount: undefined});
+    }
+    
+    setFormValues({
+      ...formValues,
+      submissionCount: value
+    });
   };
 
-  const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
+  // Handle switch change
+  const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
     setFormValues({
       ...formValues,
       [event.target.name]: event.target.checked
     });
   };
 
+  // Handle time interval change
+  const handleTimeIntervalChange = (event: ChangeEvent<{ value: unknown }>) => {
+    setFormValues({
+      ...formValues,
+      timeInterval: event.target.value as string
+    });
+  };
+
   // Close with confirmation message
   const handleSubmit = () => {
-    // Here you would typically submit the form data
+    // Validate form before submitting
+    if (formValues.submissionCount <= 0) {
+      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+      return;
+    }
+
+    // If onSubmit callback is provided, call it with form values
+    if (onSubmit) {
+      onSubmit({
+        submissionCount: formValues.submissionCount,
+        pricePerSurvey: formValues.pricePerSurvey,
+        isHumanLike: formValues.isHumanLike
+      });
+    }
+    
+    // Close the modal
     onClose();
+  };
+
+  // Calculate total cost
+  const calculateTotalCost = () => {
+    return (formValues.submissionCount * formValues.pricePerSurvey).toLocaleString('vi-VN');
   };
 
   return (
@@ -96,7 +135,7 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
               </Grid>
               <Grid size={6}>
                 <Typography variant="body1" align="right" fontWeight="bold">
-                  {formValues.currentBalance}
+                  300.000đ
                 </Typography>
               </Grid>
             </Grid>
@@ -107,7 +146,7 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
               </Grid>
               <Grid size={6}>
                 <Typography variant="body1" align="right" fontWeight="bold">
-                  {formValues.costPerSubmission}
+                  {formValues.pricePerSurvey}đ/khảo sát
                 </Typography>
               </Grid>
             </Grid>
@@ -117,44 +156,25 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
                 <Typography variant="body1">Số lượng khảo sát cần tăng:</Typography>
               </Grid>
               <Grid size={6}>
-                <Box display="flex" justifyContent="flex-end">
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '100px',
-                      padding: '4px 8px',
-                      width: 'fit-content'
-                    }}
-                  >
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleCountChange(false)}
-                      sx={{ p: 0.5 }}
-                    >
-                      <Minus size={18} />
-                    </IconButton>
-                    <Typography sx={{ mx: 2 }}>{formValues.submissionCount}</Typography>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleCountChange(true)}
-                      sx={{ p: 0.5 }}
-                    >
-                      <Add size={18} />
-                    </IconButton>
-                  </Box>
-                </Box>
+                <TextField
+                  fullWidth
+                  type="number"
+                  value={formValues.submissionCount}
+                  onChange={handleSubmissionCountChange}
+                  inputProps={{ min: 1 }}
+                  error={!!errors.submissionCount}
+                  helperText={errors.submissionCount}
+                />
               </Grid>
             </Grid>
 
             <Grid size={12}>
               <FormControlLabel
                 control={
-                  <Checkbox 
-                    checked={formValues.fillLikeHuman} 
-                    onChange={handleCheckboxChange} 
-                    name="fillLikeHuman" 
+                  <Switch 
+                    checked={formValues.isHumanLike} 
+                    onChange={handleSwitchChange} 
+                    name="isHumanLike" 
                   />
                 }
                 label="Điền rất giống người thật"
@@ -167,43 +187,39 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
             </Grid>
 
             <Grid size={12}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body1">Thời gian giãn cách:</Typography>
-                <Typography variant="body1" color="error">{formValues.timeInterval}</Typography>
-              </Stack>
+              <InputLabel htmlFor="time-interval-select">Thời gian giãn cách</InputLabel>
+              <Select
+                fullWidth
+                id="time-interval-select"
+                value={formValues.timeInterval}
+                onChange={handleTimeIntervalChange as any}
+              >
+                <MenuItem value="1-5 phút">1-5 phút</MenuItem>
+                <MenuItem value="5-10 phút">5-10 phút</MenuItem>
+                <MenuItem value="10-30 phút">10-30 phút</MenuItem>
+                <MenuItem value="30-60 phút">30-60 phút</MenuItem>
+                <MenuItem value="1-3 giờ">1-3 giờ</MenuItem>
+              </Select>
             </Grid>
 
             <Grid size={12}>
-              <Stack direction="row" alignItems="flex-start" spacing={1}>
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={formValues.varySubmissionsByTime} 
-                      onChange={handleCheckboxChange} 
-                      name="varySubmissionsByTime"
-                    />
-                  }
-                  label="Thay đổi số lượng khảo sát tùy vào thời gian hiện tại trong ngày (Múi giờ UTC +7):"
-                  sx={{ 
-                    '& .MuiFormControlLabel-label': { 
-                      fontWeight: 500,
-                      fontSize: '0.875rem',
-                      lineHeight: 1.5
-                    } 
-                  }}
-                />
-                <Box 
-                  sx={{ 
-                    width: 24, 
-                    height: 24, 
-                    border: '1px solid #d9d9d9', 
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                />
-              </Stack>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={formValues.varySubmissionsByTime} 
+                    onChange={handleSwitchChange} 
+                    name="varySubmissionsByTime"
+                  />
+                }
+                label="Thay đổi số lượng khảo sát tùy vào thời gian hiện tại trong ngày (Múi giờ UTC +7)"
+                sx={{ 
+                  '& .MuiFormControlLabel-label': { 
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5
+                  } 
+                }}
+              />
             </Grid>
 
             <Grid size={12}>
@@ -216,7 +232,7 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
               </Grid>
               <Grid size={6}>
                 <Typography variant="h4" align="right" fontWeight="bold">
-                  {formValues.totalCost}
+                  {calculateTotalCost()}đ
                 </Typography>
               </Grid>
             </Grid>
@@ -229,6 +245,7 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
           color="primary" 
           onClick={handleSubmit}
           sx={{ borderRadius: '100px' }}
+          disabled={formValues.submissionCount <= 0}
         >
           Bắt đầu điền Form
         </Button>

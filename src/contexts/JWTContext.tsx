@@ -18,6 +18,12 @@ import { KeyedObject } from 'types/root';
 
 const chance = new Chance();
 
+// Always bypass authentication by setting it to true
+const BYPASS_AUTH = true;
+
+// mock token with long validity
+const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRldiBVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.L7CjWRnK2W9ODJ0kSMgX3nMVXMxhzqgRZUTh8_OW1y8';
+
 // constant
 const initialState: AuthProps = {
   isLoggedIn: false,
@@ -56,16 +62,24 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   useEffect(() => {
     const init = async () => {
       try {
+        // Check for existing session token
         const serviceToken = window.localStorage.getItem('serviceToken');
         if (serviceToken && verifyToken(serviceToken)) {
+          // Use existing token
           setSession(serviceToken);
-          const response = await axios.get('/api/account/me');
-          const { user } = response.data;
+          
+          // Set mock user data
           dispatch({
             type: LOGIN,
             payload: {
               isLoggedIn: true,
-              user
+              user: {
+                id: '1',
+                email: 'dienform@gmail.com',
+                name: 'Dienform User',
+                avatar: "",
+                role: 'admin'
+              }
             }
           });
         } else {
@@ -85,44 +99,46 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await axios.post('/api/account/login', { email, password });
-    const { serviceToken, user } = response.data;
-    setSession(serviceToken);
+    // Use mock token and bypass authentication completely
+    try {
+      setSession(MOCK_TOKEN);
+      dispatch({
+        type: LOGIN,
+        payload: {
+          isLoggedIn: true,
+          user: {
+            id: '1',
+            email: email || 'dienform@gmail.com',
+            name: 'Dienform User',
+            avatar: "",
+            role: 'admin'
+          }
+        }
+      });
+    } catch (error) {
+      throw new Error('Authentication failed');
+    }
+  };
+
+  // Rest of the code remains unchanged
+  const register = async (email: string, password: string, firstName: string, lastName: string) => {
+    // todo: this flow need to be recode as it not verified
+    const id = chance.bb_pin();
+    
+    // Simply return success without making API call
+    setSession(MOCK_TOKEN);
     dispatch({
       type: LOGIN,
       payload: {
         isLoggedIn: true,
-        user
-      }
-    });
-  };
-
-  const register = async (email: string, password: string, firstName: string, lastName: string) => {
-    // todo: this flow need to be recode as it not verified
-    const id = chance.bb_pin();
-    const response = await axios.post('/api/account/register', {
-      id,
-      email,
-      password,
-      firstName,
-      lastName
-    });
-    let users = response.data;
-
-    if (window.localStorage.getItem('users') !== undefined && window.localStorage.getItem('users') !== null) {
-      const localUsers = window.localStorage.getItem('users');
-      users = [
-        ...JSON.parse(localUsers!),
-        {
+        user: {
           id,
           email,
-          password,
-          name: `${firstName} ${lastName}`
+          name: `${firstName} ${lastName}`,
+          role: 'user'
         }
-      ];
-    }
-
-    window.localStorage.setItem('users', JSON.stringify(users));
+      }
+    });
   };
 
   const logout = () => {
@@ -131,7 +147,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   };
 
   const resetPassword = async (email: string) => {
-    console.log('email - ', email);
+    console.log('Password reset bypassed for:', email);
+    return true;
   };
 
   const updateProfile = () => {};

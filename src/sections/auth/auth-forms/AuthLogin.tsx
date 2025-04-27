@@ -1,6 +1,5 @@
-import { useState, SyntheticEvent } from 'react';
+import { SyntheticEvent, useState } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
-import { preload } from 'swr';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -16,15 +15,14 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // third-party
-import * as Yup from 'yup';
 import { Formik } from 'formik';
+import * as Yup from 'yup';
 
 // project-imports
 import AnimateButton from 'components/@extended/AnimateButton';
 import IconButton from 'components/@extended/IconButton';
 import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
-import { fetcher } from 'utils/axios';
 
 // assets
 import { Eye, EyeSlash } from 'iconsax-react';
@@ -46,12 +44,17 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
     event.preventDefault();
   };
 
+  // Use hardcoded credentials when not in development mode
+  // const BYPASS_AUTH = import.meta.env.VITE_APP_IS_DEVELOPER === 'true';
+  const initialEmail = 'dienform@gmail.com';
+  const initialPassword = '123456';
+
   return (
     <>
       <Formik
         initialValues={{
-          email: 'info@phoenixcoded.co',
-          password: '123456',
+          email: initialEmail,
+          password: initialPassword,
           submit: null
         }}
         validationSchema={Yup.object().shape({
@@ -68,7 +71,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
             if (scriptedRef.current) {
               setStatus({ success: true });
               setSubmitting(false);
-              preload('api/menu/dashboard', fetcher); // load menu on login success
+              // preload('api/menu/dashboard', fetcher); // load menu on login success
             }
           } catch (err: any) {
             console.error(err);

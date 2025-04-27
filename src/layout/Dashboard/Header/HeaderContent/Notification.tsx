@@ -95,9 +95,9 @@ export default function NotificationPage() {
                 <MainCard border={false} content={false}>
                   <CardContent>
                     <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-                      <Typography variant="h5">Notifications</Typography>
+                      <Typography variant="h5">Thông báo</Typography>
                       <Link href="#" variant="h6" color="primary">
-                        Mark all read
+                        Đánh dấu đã đọc
                       </Link>
                     </Stack>
                     <SimpleBar style={{ maxHeight: 'calc(100vh - 180px)' }}>
@@ -223,7 +223,7 @@ export default function NotificationPage() {
                     </SimpleBar>
                     <Stack direction="row" sx={{ justifyContent: 'center', mt: 1.5 }}>
                       <Link href="#" variant="h6" color="primary">
-                        View all
+                        Xem tất cả
                       </Link>
                     </Stack>
                   </CardContent>

@@ -1,113 +1,153 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 // material-ui
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid2';
+import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid2';
 
-// types
+// API
+import { FillRequestDTO } from 'api/form';
+
 interface FormDetailModalProps {
   open: boolean;
   onClose: () => void;
-  formId: number | null;
+  fillRequest: FillRequestDTO | null;
+  formName: string;
 }
 
-// Mock data for the modal
-const formDetails = {
-  name: 'Trả lời sự kiện',
-  totalRequests: 200,
-  totalCompleted: 200,
-  totalSuccessful: 200,
-  totalFailed: 0,
-  failedQuestions: 200
-};
+export default function FormDetailModal({ open, onClose, fillRequest, formName }: FormDetailModalProps) {
+  // Format date string from ISO format
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { 
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
-export default function FormDetailModal({ open, onClose, formId }: FormDetailModalProps) {
-  // In a real application, you would fetch the form details based on formId
-  
+  // Format number as currency
+  const formatCurrency = (value?: number) => {
+    if (value === undefined) return '-';
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND',
+      minimumFractionDigits: 0
+    }).format(value);
+  };
+
+  // Get status label
+  const getStatusLabel = (status?: string) => {
+    switch (status) {
+      case 'COMPLETED':
+        return 'Hoàn thành';
+      case 'IN_PROGRESS':
+        return 'Đang thực thi';
+      case 'PENDING':
+        return 'Chưa bắt đầu';
+      default:
+        return 'Chưa xác định';
+    }
+  };
+
+  if (!fillRequest) {
+    return null;
+  }
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="md"
       fullWidth
     >
-      <DialogTitle>
-        <Typography variant="h4">Chi tiết Form</Typography>
-      </DialogTitle>
-      <Divider />
-      <DialogContent>
-        <Box sx={{ p: 2 }}>
-          <Grid container spacing={2}>
-            <Grid size={12}>
-              <Stack direction="row" spacing={2} alignItems="center">
-                <Typography variant="h6">
-                  {formDetails.name}
-                </Typography>
-              </Stack>
-            </Grid>
-            
-            <Grid size={12}>
-              <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                Chi tiết form
-              </Typography>
-            </Grid>
-            
-            <Grid size={12}>
-              <Table>
+      <DialogTitle>Chi tiết yêu cầu điền form</DialogTitle>
+      <DialogContent dividers>
+        <Grid container spacing={2}>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Tên form:</Typography>
+            <Typography variant="body1" gutterBottom>{formName}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Trạng thái:</Typography>
+            <Typography variant="body1" gutterBottom>
+              {getStatusLabel(fillRequest.status)}
+            </Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Số lượng cần điền:</Typography>
+            <Typography variant="body1" gutterBottom>{fillRequest.surveyCount}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Số lượng đã điền:</Typography>
+            <Typography variant="body1" gutterBottom>{fillRequest.completedSurvey || 0}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Giá mỗi lượt điền:</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.pricePerSurvey)}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Tổng giá:</Typography>
+            <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.totalPrice)}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Ngày tạo:</Typography>
+            <Typography variant="body1" gutterBottom>{formatDate(fillRequest.createdAt)}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Hẹn giờ:</Typography>
+            <Typography variant="body1" gutterBottom>{fillRequest.scheduledTime ? formatDate(fillRequest.scheduledTime) : 'Không'}</Typography>
+          </Grid>
+          <Grid size={12} md={6}>
+            <Typography variant="subtitle2">Điền tự nhiên như người dùng:</Typography>
+            <Typography variant="body1" gutterBottom>{fillRequest.humanLike ? 'Có' : 'Không'}</Typography>
+          </Grid>
+        </Grid>
+        
+        {fillRequest.answerDistributions && fillRequest.answerDistributions.length > 0 && (
+          <>
+            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>Phân bố câu trả lời</Typography>
+            <TableContainer>
+              <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Thông số</TableCell>
-                    <TableCell align="right">Số liệu</TableCell>
+                    <TableCell>Lựa chọn</TableCell>
+                    <TableCell align="right">Tỉ lệ (%)</TableCell>
+                    <TableCell align="right">Số lượng</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  <TableRow>
-                    <TableCell>Tổng khảo sát yêu cầu</TableCell>
-                    <TableCell align="right">{formDetails.totalRequests}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Tổng khảo sát đã chạy</TableCell>
-                    <TableCell align="right">{formDetails.totalCompleted}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Số khảo sát thành công</TableCell>
-                    <TableCell align="right">{formDetails.totalSuccessful}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Số khảo sát bị lỗi</TableCell>
-                    <TableCell align="right">{formDetails.totalFailed}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell>Các câu hỏi bị lỗi</TableCell>
-                    <TableCell align="right">{formDetails.failedQuestions}</TableCell>
-                  </TableRow>
+                  {fillRequest.answerDistributions.map((dist, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{dist.option?.text || '-'}</TableCell>
+                      <TableCell align="right">{dist.percentage}%</TableCell>
+                      <TableCell align="right">{dist.count}</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
-            </Grid>
-          </Grid>
-        </Box>
+            </TableContainer>
+          </>
+        )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 3 }}>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={onClose}
-        >
-          Đóng
-        </Button>
+      <DialogActions>
+        <Button onClick={onClose}>Đóng</Button>
       </DialogActions>
     </Dialog>
   );
