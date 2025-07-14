@@ -62,14 +62,12 @@ export interface FormDetailResponse {
 }
 
 export interface AnswerDistribution {
-  questionId: string | null;
+  questionId: string;
   optionId: string | null;
   percentage: number;
   count: number;
-  option: {
-    id: string;
-    text: string;
-  } | null;
+  option: Option | null;
+  valueString?: string;
 }
 
 export interface FillRequestDTO {
@@ -84,14 +82,55 @@ export interface FillRequestDTO {
   scheduledTime?: string;
   isHumanLike?: boolean;
   humanLike?: boolean;
+  startDate?: string;
+  endDate?: string;
+}
+
+// New types for data filling functionality
+export interface DataMappingRequest {
+  formId: string;
+  sheetLink: string;
+}
+
+export interface DataMappingResponse {
+  questions: Question[];
+  sheetColumns: string[];
+  errors?: string[];
+  unmappedQuestions?: string[];
+  autoMappings?: AutoMapping[];
+}
+
+export interface AutoMapping {
+  questionId: string;
+  columnName: string;
+  confidence: number;
+}
+
+export interface ColumnMapping {
+  questionId: string;
+  columnName: string | null;
+}
+
+export interface DataFillRequestDTO {
+  formName: string;
+  formLink: string;
+  sheetLink: string;
+  mappings: ColumnMapping[];
+  submissionCount: number;
+  pricePerSurvey: number;
+  isHumanLike: boolean;
+  startDate?: string;
+  endDate?: string;
 }
 
 // API endpoints
 export const API_ENDPOINTS = {
-  FORM: '/api/form'
+  FORM: '/api/form',
+  DATA_MAPPING: '/api/form/data-mapping',
+  DATA_FILL_REQUEST: '/api/form/data-fill-request'
 };
 
-// API Functions
+// Existing API Functions
 export const createForm = async (data: FormCreateData) => {
   const response = await axiosServices.post(API_ENDPOINTS.FORM, data);
   return response.data;
@@ -115,5 +154,16 @@ export const createFillRequest = async (formId: string, data: FillRequestDTO) =>
 
 export const deleteForm = async (id: string) => {
   const response = await axiosServices.delete(`${API_ENDPOINTS.FORM}/${id}`);
+  return response.data;
+};
+
+// New API Functions for data filling
+export const checkDataMapping = async (data: DataMappingRequest): Promise<DataMappingResponse> => {
+  const response = await axiosServices.post(API_ENDPOINTS.DATA_MAPPING, data);
+  return response.data as DataMappingResponse;
+};
+
+export const createDataFillRequest = async (data: DataFillRequestDTO) => {
+  const response = await axiosServices.post(API_ENDPOINTS.DATA_FILL_REQUEST, data);
   return response.data;
 };

@@ -170,13 +170,16 @@ export default function TabFillExpectedRatio() {
       let totalPercentage = 0;
       
       optionMap.forEach(percentage => {
-        totalPercentage += percentage;
+        totalPercentage += percentage || 0; // Add 0 if percentage is undefined or null
       });
       
-      if (totalPercentage > 100) {
-        newErrors.set(questionId, `Tổng tỉ lệ vượt quá 100%. Hiện tại: ${totalPercentage}%`);
-      } else if (totalPercentage < 100) {
-        newErrors.set(questionId, `Tổng tỉ lệ phải đạt 100%. Hiện tại: ${totalPercentage}%`);
+      // Round to handle floating point precision issues
+      const roundedTotal = Math.round(totalPercentage * 10) / 10;
+      
+      if (roundedTotal > 100) {
+        newErrors.set(questionId, `Tổng tỉ lệ vượt quá 100%. Hiện tại: ${roundedTotal}%`);
+      } else if (roundedTotal < 100) {
+        newErrors.set(questionId, `Tổng tỉ lệ phải đạt 100%. Hiện tại: ${roundedTotal}%`);
       }
     });
     
@@ -299,13 +302,28 @@ export default function TabFillExpectedRatio() {
     
     // Then set the percentages from the fill request
     fillRequest.answerDistributions.forEach(dist => {
+      // Check if dist has questionId and optionId directly
       if (dist.questionId && dist.optionId) {
-        // Only for multiple choice questions
+        // Use existing questionId and optionId
         const questionMap = newQuestionOptions.get(dist.questionId);
         if (questionMap) {
           questionMap.set(dist.optionId, dist.percentage);
           newQuestionOptions.set(dist.questionId, questionMap);
         }
+      } 
+      // If no direct questionId/optionId, but has option with id
+      else if (dist.option && dist.option.id) {
+        // Find the question that contains this option
+        selectedForm.questions.forEach(question => {
+          const foundOption = question.options.find(opt => opt.id === dist.option?.id);
+          if (foundOption) {
+            const questionMap = newQuestionOptions.get(question.id);
+            if (questionMap) {
+              questionMap.set(foundOption.id, dist.percentage);
+              newQuestionOptions.set(question.id, questionMap);
+            }
+          }
+        });
       }
     });
     
@@ -356,6 +374,7 @@ export default function TabFillExpectedRatio() {
           setQuestionOptions(newQuestionOptions);
           setCustomData(newCustomData);
           setIsEditing(false);
+          setIsEditingFillRequest(false);
           validatePercentages(newQuestionOptions);
         } catch (err) {
           console.error('Error resetting form details:', err);
@@ -371,19 +390,27 @@ export default function TabFillExpectedRatio() {
     submissionCount: number;
     pricePerSurvey: number;
     isHumanLike: boolean;
+    startDate?: Date;
+    endDate?: Date;
   }) => {
     if (!selectedFormId || !selectedForm) return;
+    
+    // Email validation regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     
     try {
       // Prepare answer distributions
       const answerDistributions: AnswerDistribution[] = [];
       
+      // Track validation errors
+      let validationErrors: string[] = [];
+      
       // Add multiple-choice questions
       questionOptions.forEach((optionMap, questionId) => {
-        const questionType = selectedForm.questions.find(q => q.id === questionId)?.type;
+        const question = selectedForm.questions.find(q => q.id === questionId);
         
         // For multiple-choice questions
-        if (questionType !== 'text') {
+        if (question && question.type !== 'text') {
           optionMap.forEach((percentage, optionId) => {
             if (percentage > 0) {
               answerDistributions.push({
@@ -398,25 +425,64 @@ export default function TabFillExpectedRatio() {
         }
       });
       
-      // Add text questions with percentage=0 and optionId=null
+      // Add text questions with their custom data
       selectedForm.questions.forEach(question => {
         if (question.type === 'text') {
-          answerDistributions.push({
-            questionId: question.id,
-            optionId: null,
-            percentage: 0,
-            count: 0,
-            option: null
-          });
+          const customDataEntry = customData.get(question.id);
+          
+          if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
+            const lines = customDataEntry.data
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0);
+            
+            // For email fields, validate each line is a valid email
+            if (question.title.toLowerCase().includes('email')) {
+              const invalidEmails = lines.filter(line => !emailRegex.test(line));
+              
+              if (invalidEmails.length > 0) {
+                validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
+              }
+            }
+            
+            // Create a separate entry for each line
+            lines.forEach(line => {
+              answerDistributions.push({
+                questionId: question.id,
+                optionId: null,
+                percentage: 100 / lines.length, // Distribute percentage evenly
+                count: 0,
+                option: null,
+                valueString: line
+              });
+            });
+          } else {
+            // Default entry with no valueString
+            answerDistributions.push({
+              questionId: question.id,
+              optionId: null,
+              percentage: 0,
+              count: 0,
+              option: null
+            });
+          }
         }
       });
+      
+      // If there are validation errors, show them and don't submit
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join('\n'));
+        return;
+      }
       
       // Create request DTO
       const fillRequest: FillRequestDTO = {
         surveyCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
         isHumanLike: formValues.isHumanLike,
-        answerDistributions
+        answerDistributions,
+        startDate: formValues.startDate?.toISOString(),
+        endDate: formValues.endDate?.toISOString()
       };
       
       // Call API to save fill request
@@ -425,6 +491,7 @@ export default function TabFillExpectedRatio() {
       
       // Reset editing state
       setIsEditing(false);
+      setIsEditingFillRequest(false);
       
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
@@ -515,11 +582,18 @@ export default function TabFillExpectedRatio() {
             <Typography color="error" sx={{ py: 2 }}>{error}</Typography>
           ) : selectedForm ? (
             <>
+              {isEditingFillRequest && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
+                </Alert>
+              )}
+              
               {selectedForm.questions.map((question) => (
                 <Box key={question.id} sx={{ mb: 4 }}>
                   <Typography variant="h5" sx={{ mb: 2 }}>
                     {question.title}
                   </Typography>
+
                   
                   {question.type === 'text' ? (
                     <>
@@ -550,6 +624,7 @@ export default function TabFillExpectedRatio() {
                       <Grid container spacing={2}>
                         {question.options.map((option) => {
                           const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
+
                           return (
                             <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
                               <Tooltip 

@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 
 // API
 import { FillRequestDTO } from 'api/form';
+import { formatDateTime } from 'utils/DateUtil';
 
 interface FormDetailModalProps {
   open: boolean;
@@ -27,14 +28,7 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
   // Format date string from ISO format
   const formatDate = (dateString?: string) => {
     if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', { 
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return formatDateTime(dateString, '-');
   };
 
   // Format number as currency
@@ -113,6 +107,18 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
             <Typography variant="subtitle2">Điền tự nhiên như người dùng:</Typography>
             <Typography variant="body1" gutterBottom>{fillRequest.humanLike ? 'Có' : 'Không'}</Typography>
           </Grid>
+          {fillRequest.startDate && (
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2">Ngày bắt đầu:</Typography>
+              <Typography variant="body1" gutterBottom>{formatDate(fillRequest.startDate)}</Typography>
+            </Grid>
+          )}
+          {fillRequest.endDate && (
+            <Grid item xs={12} md={6}>
+              <Typography variant="subtitle2">Ngày kết thúc:</Typography>
+              <Typography variant="body1" gutterBottom>{formatDate(fillRequest.endDate)}</Typography>
+            </Grid>
+          )}
         </Grid>
         
         {fillRequest.answerDistributions && fillRequest.answerDistributions.length > 0 && (

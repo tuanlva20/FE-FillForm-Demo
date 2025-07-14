@@ -1,3 +1,4 @@
+import { isValid } from 'date-fns';
 import { ChangeEvent, useState } from 'react';
 
 // material-ui
@@ -11,11 +12,15 @@ import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
+import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+
+// date picker
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 // assets
 
@@ -28,6 +33,8 @@ interface AutoFillFormModalProps {
     submissionCount: number;
     pricePerSurvey: number;
     isHumanLike: boolean;
+    startDate?: Date;
+    endDate?: Date;
   }) => void;
 }
 
@@ -36,19 +43,21 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     submissionCount: 1,
     pricePerSurvey: 350,
     isHumanLike: true,
-    timeInterval: "1-5 phút",
-    varySubmissionsByTime: false,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   });
 
   const [errors, setErrors] = useState<{
     submissionCount?: string;
+    endDate?: string;
+    startDate?: string;
   }>({});
 
   // Handle submission count change directly through input field
   const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value) || 0;
     
-    if (value <= 0) {
+    if (value < 1) {
       setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
     } else {
       setErrors({...errors, submissionCount: undefined});
@@ -62,18 +71,80 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
 
   // Handle switch change
   const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setFormValues({
-      ...formValues,
-      [event.target.name]: event.target.checked
-    });
+    if (event.target.name === 'isHumanLike') {
+      const isChecked = event.target.checked;
+      setFormValues({
+        ...formValues,
+        isHumanLike: isChecked,
+        pricePerSurvey: isChecked ? formValues.pricePerSurvey + 100 : formValues.pricePerSurvey
+      });
+    } else {
+      setFormValues({
+        ...formValues,
+        [event.target.name]: event.target.checked
+      });
+    }
   };
 
-  // Handle time interval change
-  const handleTimeIntervalChange = (event: ChangeEvent<{ value: unknown }>) => {
+  // Handle start date change
+  const handleStartDateChange = (newValue: Date | null) => {
+    // Validate date format
+    if (newValue && !isValid(newValue)) {
+      setErrors({
+        ...errors,
+        startDate: 'Định dạng ngày không hợp lệ. Hãy sử dụng định dạng DD-MM-YYYY'
+      });
+      return;
+    }
+    
     setFormValues({
       ...formValues,
-      timeInterval: event.target.value as string
+      startDate: newValue
     });
+    
+    // Check if end date is before start date
+    if (newValue && formValues.endDate && newValue > formValues.endDate) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+    } else {
+      setErrors({
+        ...errors,
+        startDate: undefined,
+        endDate: undefined
+      });
+    }
+  };
+
+  // Handle end date change
+  const handleEndDateChange = (newValue: Date | null) => {
+    // Validate date format
+    if (newValue && !isValid(newValue)) {
+      setErrors({
+        ...errors,
+        endDate: 'Định dạng ngày không hợp lệ. Hãy sử dụng định dạng DD-MM-YYYY'
+      });
+      return;
+    }
+    
+    setFormValues({
+      ...formValues,
+      endDate: newValue
+    });
+    
+    // Check if end date is before start date
+    if (formValues.startDate && newValue && formValues.startDate > newValue) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+    } else {
+      setErrors({
+        ...errors,
+        endDate: undefined
+      });
+    }
   };
 
   // Close with confirmation message
@@ -84,12 +155,37 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       return;
     }
 
+    // Validate end date is after start date
+    if (formValues.startDate && formValues.endDate && formValues.startDate > formValues.endDate) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+      return;
+    }
+
     // If onSubmit callback is provided, call it with form values
     if (onSubmit) {
+      // Set time to beginning of day for start date (00:00:00)
+      let startDate = formValues.startDate;
+      if (startDate) {
+        startDate = new Date(startDate);
+        startDate.setHours(0, 0, 0, 0);
+      }
+      
+      // Set time to end of day for end date (23:59:59)
+      let endDate = formValues.endDate;
+      if (endDate) {
+        endDate = new Date(endDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+      
       onSubmit({
         submissionCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
-        isHumanLike: formValues.isHumanLike
+        isHumanLike: formValues.isHumanLike,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
       });
     }
     
@@ -114,21 +210,27 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
           TẠO YÊU CẦU ĐIỀN FORM TỰ ĐỘNG
         </Typography>
       </DialogTitle>
-      <Divider />
+      {/* <Divider /> */}
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
+            {/* Form name display */}
             <Grid size={12}>
-              <InputLabel htmlFor="form-name-select">Tên Form</InputLabel>
-              <Select
-                fullWidth
-                id="form-name-select"
-                value={formName}
-                disabled
-              >
-                <MenuItem value={formName}>{formName}</MenuItem>
-              </Select>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle1" fontWeight="500" minWidth={100}>
+                  Tên Form:
+                </Typography>
+                <Typography variant="body1">
+                  {formName}
+                </Typography>
+              </Stack>
             </Grid>
+            
+            <Grid size={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid>
+
+            {/* Account balance row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Số dư hiện có:</Typography>
@@ -140,6 +242,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               </Grid>
             </Grid>
 
+            {/* Price per survey row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Đơn giá mỗi khảo sát:</Typography>
@@ -151,6 +254,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               </Grid>
             </Grid>
 
+            {/* Survey count row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Số lượng khảo sát cần tăng:</Typography>
@@ -161,13 +265,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   type="number"
                   value={formValues.submissionCount}
                   onChange={handleSubmissionCountChange}
-                  inputProps={{ min: 1 }}
                   error={!!errors.submissionCount}
                   helperText={errors.submissionCount}
                 />
               </Grid>
             </Grid>
 
+            {/* Human-like toggle */}
             <Grid size={12}>
               <FormControlLabel
                 control={
@@ -177,7 +281,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     name="isHumanLike" 
                   />
                 }
-                label="Điền rất giống người thật"
+                label="Điền rất giống người thật (+100đ/khảo sát)"
                 sx={{ '& .MuiFormControlLabel-label': { fontWeight: 500 } }}
               />
             </Grid>
@@ -186,7 +290,8 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               <Divider sx={{ my: 1 }} />
             </Grid>
 
-            <Grid size={12}>
+            {/* Time interval selection */}
+            {/* <Grid size={12}>
               <InputLabel htmlFor="time-interval-select">Thời gian giãn cách</InputLabel>
               <Select
                 fullWidth
@@ -200,9 +305,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 <MenuItem value="30-60 phút">30-60 phút</MenuItem>
                 <MenuItem value="1-3 giờ">1-3 giờ</MenuItem>
               </Select>
-            </Grid>
+            </Grid> */}
 
-            <Grid size={12}>
+            {/* Time-based submissions toggle */}
+            {/* <Grid size={12}>
               <FormControlLabel
                 control={
                   <Switch 
@@ -220,21 +326,75 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   } 
                 }}
               />
+            </Grid> */}
+
+            {/* <Grid size={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid> */}
+
+            {/* Date selection row */}
+            <Grid size={12} container spacing={2}>
+              <Grid size={6}>
+                <InputLabel htmlFor="start-date" sx={{ mb: 1 }}>Ngày bắt đầu</InputLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={formValues.startDate}
+                    onChange={handleStartDateChange}
+                    format="dd-MM-yyyy"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        id: "start-date",
+                        placeholder: "DD-MM-YYYY",
+                        error: !!errors.startDate,
+                        helperText: errors.startDate
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid size={6}>
+                <InputLabel htmlFor="end-date" sx={{ mb: 1 }}>Ngày kết thúc</InputLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={formValues.endDate}
+                    onChange={handleEndDateChange}
+                    format="dd-MM-yyyy"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        id: "end-date",
+                        error: !!errors.endDate,
+                        helperText: errors.endDate,
+                        placeholder: "DD-MM-YYYY"
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              </Grid>
             </Grid>
 
             <Grid size={12}>
               <Divider sx={{ my: 1 }} />
             </Grid>
 
+            {/* Total cost row */}
             <Grid size={12} container alignItems="center">
-              <Grid size={6}>
-                <Typography variant="h5">Tổng cộng</Typography>
+              {/* <Grid size={6}>
+                <Typography variant="h3">Tổng cộng</Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="h4" align="right" fontWeight="bold">
                   {calculateTotalCost()}đ
                 </Typography>
-              </Grid>
+              </Grid> */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: 2 }}>
+                <Typography variant="h4">Tổng cộng:</Typography>
+                <Typography variant="h4" align="right" fontWeight="bold" sx={{ color: 'red' }}>
+                  {calculateTotalCost()}đ
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </Box>
@@ -242,20 +402,24 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3, pt: 0 }}>
         <Button 
           variant="contained" 
-          color="primary" 
-          onClick={handleSubmit}
-          sx={{ borderRadius: '100px' }}
-          disabled={formValues.submissionCount <= 0}
-        >
-          Bắt đầu điền Form
-        </Button>
-        <Button 
-          variant="contained" 
           color="error" 
           onClick={onClose}
           sx={{ borderRadius: '100px' }}
         >
           Đóng
+        </Button>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleSubmit}
+          sx={{ borderRadius: '100px' }}
+          disabled={
+            formValues.submissionCount <= 0 || 
+            !!errors.endDate || 
+            !!errors.startDate
+          }
+        >
+          Bắt Đầu Điền Form
         </Button>
       </DialogActions>
     </Dialog>

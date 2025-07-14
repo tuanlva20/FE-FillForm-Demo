@@ -1,3 +1,4 @@
+import DateConstant from 'constants/DateConstant';
 import { format, isValid, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -11,7 +12,7 @@ import { vi } from 'date-fns/locale';
  */
 export const formatDate = (
   dateString: string | null | undefined,
-  pattern: string = 'dd/MM/yyyy',
+  pattern: string = DateConstant.DATE_ONLY,
   defaultValue: string = 'N/A'
 ): string => {
   if (!dateString) return defaultValue;
@@ -42,7 +43,7 @@ export const formatTime = (
   dateString: string | null | undefined,
   defaultValue: string = 'N/A'
 ): string => {
-  return formatDate(dateString, 'HH:mm', defaultValue);
+  return formatDate(dateString, DateConstant.TIME_ONLY, defaultValue);
 };
 
 /**
@@ -56,5 +57,19 @@ export const formatDateTime = (
   dateString: string | null | undefined,
   defaultValue: string = 'N/A'
 ): string => {
-  return formatDate(dateString, 'dd/MM/yyyy HH:mm', defaultValue);
+  return formatDate(dateString, DateConstant.DATETIME, defaultValue);
+};
+
+/**
+ * Format a date string to display full date and time with seconds
+ * 
+ * @param dateString - The date string to format
+ * @param defaultValue - The value to return if date is invalid (defaults to 'N/A')
+ * @returns Formatted full date and time string with seconds
+ */
+export const formatFullDateTime = (
+  dateString: string | null | undefined,
+  defaultValue: string = 'N/A'
+): string => {
+  return formatDate(dateString, DateConstant.FULL_DATETIME, defaultValue);
 };

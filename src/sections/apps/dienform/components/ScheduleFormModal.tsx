@@ -9,16 +9,13 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import FormGroup from '@mui/material/FormGroup';
-import Switch from '@mui/material/Switch';
 import Grid from '@mui/material/Grid2';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import Divider from '@mui/material/Divider';
+import Select from '@mui/material/Select';
+import Switch from '@mui/material/Switch';
+import Typography from '@mui/material/Typography';
 
 // third-party
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
@@ -220,6 +217,7 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
                 <MenuItem value="1-2h, 21-22h">1-2h, 21-22h</MenuItem>
                 <MenuItem value="2-3h, 22-23h">2-3h, 22-23h</MenuItem>
                 <MenuItem value="3-4h, 23-24h">3-4h, 23-24h</MenuItem>
+                <MenuItem value="4-5h, 24-25h">4-5h, 24-25h</MenuItem>
               </Select>
             </Box>
 
