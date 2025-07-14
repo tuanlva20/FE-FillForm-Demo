@@ -1,255 +1,421 @@
-import { useState, SyntheticEvent } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
 // material-ui
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import FormHelperText from '@mui/material/FormHelperText';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid2';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemIcon from '@mui/material/ListItemIcon';
-import ListItemText from '@mui/material/ListItemText';
+import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
-import Stack from '@mui/material/Stack';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TablePagination from '@mui/material/TablePagination';
+import TableRow from '@mui/material/TableRow';
+import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 
 // project-imports
-import { openSnackbar } from 'api/snackbar';
-import IconButton from 'components/@extended/IconButton';
 import MainCard from 'components/MainCard';
-import { isNumber, isLowercaseChar, isUppercaseChar, isSpecialChar, minLength } from 'utils/password-validation';
-
-// third-party
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-
-// types
-import { SnackbarProps } from 'types/snackbar';
+import { GRID_COMMON_SPACING } from 'config';
+import { MAINCARD_STYLE } from 'themes/component/style';
 
 // assets
-import { Eye, EyeSlash, Minus, TickCircle } from 'iconsax-react';
+import { DocumentDownload, Eye, SearchNormal1 } from 'iconsax-react';
+
+// types
+interface FormHistoryItem {
+  id: number;
+  name: string;
+  type: string;
+  createdAt: string;
+  status: string;
+  completedSurveys: number;
+  totalSurveys: number;
+  cost: number;
+}
+
+// Mock data for form history
+const mockFormHistory: FormHistoryItem[] = [
+  {
+    id: 1,
+    name: 'Khảo sát người dùng',
+    type: 'Manual',
+    createdAt: '2023-01-15',
+    status: 'Completed',
+    completedSurveys: 200,
+    totalSurveys: 200,
+    cost: 600000
+  },
+  {
+    id: 2,
+    name: 'Đánh giá sản phẩm',
+    type: 'Auto',
+    createdAt: '2023-01-20',
+    status: 'Processing',
+    completedSurveys: 85,
+    totalSurveys: 150,
+    cost: 450000
+  },
+  {
+    id: 3,
+    name: 'Phản hồi dịch vụ',
+    type: 'Manual',
+    createdAt: '2023-01-25',
+    status: 'Completed',
+    completedSurveys: 100,
+    totalSurveys: 100,
+    cost: 300000
+  },
+  {
+    id: 4,
+    name: 'Khảo sát thị hiếu',
+    type: 'Auto',
+    createdAt: '2023-02-01',
+    status: 'Cancelled',
+    completedSurveys: 20,
+    totalSurveys: 100,
+    cost: 60000
+  }
+];
+
+// Define column keys for sorting
+type ColumnKey = 'name' | 'type' | 'createdAt' | 'status' | 'completedSurveys' | 'cost';
+
+// Define sort order
+type Order = 'asc' | 'desc';
 
 // ==============================|| DIENFORM - HISTORY ||============================== //
 
 export default function TabHistory() {
-  const [showOldPassword, setShowOldPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  // States
+  const [formHistory, setFormHistory] = useState<FormHistoryItem[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<FormHistoryItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [search, setSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
+  // Pagination states
+  const [page, setPage] = useState<number>(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  
+  // Sorting states
+  const [orderBy, setOrderBy] = useState<ColumnKey>('createdAt');
+  const [order, setOrder] = useState<Order>('desc');
 
-  const handleClickShowOldPassword = () => {
-    setShowOldPassword(!showOldPassword);
-  };
-  const handleClickShowNewPassword = () => {
-    setShowNewPassword(!showNewPassword);
-  };
-  const handleClickShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword);
+  // Handle search input change
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const searchValue = event.target.value;
+    setSearch(searchValue);
+    applyFilters(searchValue, statusFilter);
   };
 
-  const handleMouseDownPassword = (event: SyntheticEvent) => {
-    event.preventDefault();
+  // Handle status filter change
+  const handleStatusFilterChange = (event: SelectChangeEvent<string>) => {
+    const status = event.target.value;
+    setStatusFilter(status);
+    applyFilters(search, status);
   };
+
+  // Apply filters based on search term and status
+  const applyFilters = (searchTerm: string, status: string) => {
+    let filtered = formHistory;
+    
+    // Apply search filter
+    if (searchTerm) {
+      const lowerSearchTerm = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (item) => 
+          item.name.toLowerCase().includes(lowerSearchTerm) ||
+          item.type.toLowerCase().includes(lowerSearchTerm) ||
+          item.status.toLowerCase().includes(lowerSearchTerm)
+      );
+    }
+    
+    // Apply status filter
+    if (status && status !== 'all') {
+      filtered = filtered.filter(item => item.status === status);
+    }
+    
+    setFilteredHistory(filtered);
+  };
+
+  // Handle page change
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  // Handle rows per page change
+  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  // Handle sort request
+  const handleRequestSort = (property: ColumnKey) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  // Sort function for table data
+  const sortData = (data: FormHistoryItem[]) => {
+    return data.slice().sort((a, b) => {
+      const isAsc = order === 'asc';
+      
+      switch (orderBy) {
+        case 'name':
+        case 'type':
+        case 'status':
+          return isAsc 
+            ? a[orderBy].localeCompare(b[orderBy]) 
+            : b[orderBy].localeCompare(a[orderBy]);
+        
+        case 'createdAt':
+          return isAsc
+            ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        
+        case 'completedSurveys':
+        case 'cost':
+          return isAsc
+            ? a[orderBy] - b[orderBy]
+            : b[orderBy] - a[orderBy];
+        
+        default:
+          return 0;
+      }
+    });
+  };
+
+  // Export to Excel function
+  const handleExportToExcel = () => {
+    console.log('Exporting data to Excel:', filteredHistory);
+    alert('Exporting data to Excel (This is a placeholder)');
+  };
+
+  // View form details function
+  const handleViewDetails = (id: number) => {
+    console.log('Viewing details for form ID:', id);
+  };
+
+  // Get chip color based on status
+  const getStatusChipColor = (status: string) => {
+    switch (status) {
+      case 'Completed':
+        return 'success';
+      case 'Processing':
+        return 'warning';
+      case 'Cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  // Load form history on component mount
+  useEffect(() => {
+    const fetchFormHistory = async () => {
+      setLoading(true);
+      
+      try {
+        // Simulate API call with setTimeout
+        setTimeout(() => {
+          setFormHistory(mockFormHistory);
+          setFilteredHistory(mockFormHistory);
+          setLoading(false);
+        }, 1000);
+      } catch (error) {
+        console.error('Error fetching form history:', error);
+        setLoading(false);
+      }
+    };
+    
+    fetchFormHistory();
+  }, []);
 
   return (
-    <MainCard title="Change Password">
-      <Formik
-        initialValues={{
-          old: '',
-          password: '',
-          confirm: '',
-          submit: null
-        }}
-        validationSchema={Yup.object().shape({
-          old: Yup.string().required('Old Password is required'),
-          password: Yup.string()
-            .required('New Password is required')
-            .matches(
-              /^.*(?=.{8,})((?=.*[!@#$%^&*()\-_=+{};:,<.>]){1})(?=.*\d)((?=.*[a-z]){1})((?=.*[A-Z]){1}).*$/,
-              'Password must contain at least 8 characters, one uppercase, one number and one special case character'
-            ),
-          confirm: Yup.string()
-            .required('Confirm Password is required')
-            .test('confirm', `Passwords don't match.`, (confirm: string, yup: any) => yup.parent.password === confirm)
-        })}
-        onSubmit={async (values, { resetForm, setErrors, setStatus, setSubmitting }) => {
-          try {
-            openSnackbar({
-              open: true,
-              message: 'Password changed successfully.',
-              variant: 'alert',
-              alert: { color: 'success' }
-            } as SnackbarProps);
-
-            resetForm();
-            setStatus({ success: false });
-            setSubmitting(false);
-          } catch (err: any) {
-            setStatus({ success: false });
-            setErrors({ submit: err.message });
-            setSubmitting(false);
+    <Grid container spacing={GRID_COMMON_SPACING}>
+      <Grid size={12}>
+        <MainCard 
+          title="Lịch sử điền form" 
+          secondary={
+            <Button
+              variant="contained"
+              startIcon={<DocumentDownload />}
+              onClick={handleExportToExcel}
+            >
+              Xuất Excel
+            </Button>
           }
-        }}
-      >
-        {({ errors, handleBlur, handleChange, handleSubmit, isSubmitting, touched, values }) => (
-          <form noValidate onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
-              <Grid container spacing={3} size={{ xs: 12, sm: 6 }}>
-                <Grid size={12}>
-                  <Stack sx={{ gap: 1 }}>
-                    <InputLabel htmlFor="password-old">Old Password</InputLabel>
-                    <OutlinedInput
-                      id="password-old"
-                      placeholder="Enter Old Password"
-                      type={showOldPassword ? 'text' : 'password'}
-                      value={values.old}
-                      name="old"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowOldPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            size="large"
-                            color="secondary"
-                          >
-                            {showOldPassword ? <Eye /> : <EyeSlash />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      autoComplete="password-old"
-                    />
-                  </Stack>
-                  {touched.old && errors.old && (
-                    <FormHelperText error id="password-old-helper">
-                      {errors.old}
-                    </FormHelperText>
-                  )}
-                </Grid>
-                <Grid size={12}>
-                  <Stack sx={{ gap: 1 }}>
-                    <InputLabel htmlFor="password-password">New Password</InputLabel>
-                    <OutlinedInput
-                      id="password-password"
-                      placeholder="Enter New Password"
-                      type={showNewPassword ? 'text' : 'password'}
-                      value={values.password}
-                      name="password"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowNewPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            size="large"
-                            color="secondary"
-                          >
-                            {showNewPassword ? <Eye /> : <EyeSlash />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      autoComplete="password-password"
-                    />
-                  </Stack>
-                  {touched.password && errors.password && (
-                    <FormHelperText error id="password-password-helper">
-                      {errors.password}
-                    </FormHelperText>
-                  )}
-                </Grid>
-                <Grid size={12}>
-                  <Stack sx={{ gap: 1 }}>
-                    <InputLabel htmlFor="password-confirm">Confirm Password</InputLabel>
-                    <OutlinedInput
-                      id="password-confirm"
-                      placeholder="Enter Confirm Password"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      value={values.confirm}
-                      name="confirm"
-                      onBlur={handleBlur}
-                      onChange={handleChange}
-                      endAdornment={
-                        <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowConfirmPassword}
-                            onMouseDown={handleMouseDownPassword}
-                            edge="end"
-                            size="large"
-                            color="secondary"
-                          >
-                            {showConfirmPassword ? <Eye /> : <EyeSlash />}
-                          </IconButton>
-                        </InputAdornment>
-                      }
-                      autoComplete="password-confirm"
-                    />
-                  </Stack>
-                  {touched.confirm && errors.confirm && (
-                    <FormHelperText error id="password-confirm-helper">
-                      {errors.confirm}
-                    </FormHelperText>
-                  )}
-                </Grid>
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <Box sx={{ p: { xs: 0, sm: 2, md: 4, lg: 5 } }}>
-                  <Typography variant="h5">New Password must contain:</Typography>
-                  <List sx={{ p: 0, mt: 1 }}>
-                    <ListItem divider>
-                      <ListItemIcon sx={{ color: minLength(values.password) ? 'success.main' : 'inherit' }}>
-                        {minLength(values.password) ? <TickCircle /> : <Minus />}
-                      </ListItemIcon>
-                      <ListItemText primary="At least 8 characters" />
-                    </ListItem>
-                    <ListItem divider>
-                      <ListItemIcon sx={{ color: isLowercaseChar(values.password) ? 'success.main' : 'inherit' }}>
-                        {isLowercaseChar(values.password) ? <TickCircle /> : <Minus />}
-                      </ListItemIcon>
-                      <ListItemText primary="At least 1 lower letter (a-z)" />
-                    </ListItem>
-                    <ListItem divider>
-                      <ListItemIcon sx={{ color: isUppercaseChar(values.password) ? 'success.main' : 'inherit' }}>
-                        {isUppercaseChar(values.password) ? <TickCircle /> : <Minus />}
-                      </ListItemIcon>
-                      <ListItemText primary="At least 1 uppercase letter (A-Z)" />
-                    </ListItem>
-                    <ListItem divider>
-                      <ListItemIcon sx={{ color: isNumber(values.password) ? 'success.main' : 'inherit' }}>
-                        {isNumber(values.password) ? <TickCircle /> : <Minus />}
-                      </ListItemIcon>
-                      <ListItemText primary="At least 1 number (0-9)" />
-                    </ListItem>
-                    <ListItem>
-                      <ListItemIcon sx={{ color: isSpecialChar(values.password) ? 'success.main' : 'inherit' }}>
-                        {isSpecialChar(values.password) ? <TickCircle /> : <Minus />}
-                      </ListItemIcon>
-                      <ListItemText primary="At least 1 special characters" />
-                    </ListItem>
-                  </List>
-                </Box>
-              </Grid>
-              <Grid size={12}>
-                <Stack direction="row" sx={{ gap: 2, justifyContent: 'flex-end', alignItems: 'center' }}>
-                  <Button variant="outlined" color="secondary">
-                    Cancel
-                  </Button>
-                  <Button disabled={isSubmitting || Object.keys(errors).length !== 0} type="submit" variant="contained">
-                    Update Profile
-                  </Button>
-                </Stack>
-              </Grid>
+          sx={MAINCARD_STYLE}
+        >
+          <Grid container spacing={2} sx={{ mb: 2 }}>
+            <Grid size={{ xs: 12, sm: 8, md: 6 }}>
+              <FormControl fullWidth>
+                <OutlinedInput
+                  id="search-form-history"
+                  placeholder="Tìm kiếm theo tên, loại, trạng thái..."
+                  value={search}
+                  onChange={handleSearchChange}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <SearchNormal1 />
+                    </InputAdornment>
+                  }
+                />
+              </FormControl>
             </Grid>
-          </form>
-        )}
-      </Formik>
-    </MainCard>
+            <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+              <FormControl fullWidth>
+                <InputLabel id="status-filter-label">Trạng thái</InputLabel>
+                <Select
+                  labelId="status-filter-label"
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={handleStatusFilterChange}
+                  label="Trạng thái"
+                >
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="Completed">Hoàn thành</MenuItem>
+                  <MenuItem value="Processing">Đang xử lý</MenuItem>
+                  <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          </Grid>
+          
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : filteredHistory.length === 0 ? (
+            <Box sx={{ textAlign: 'center', py: 4 }}>
+              <Typography variant="h6" color="textSecondary">Không tìm thấy dữ liệu</Typography>
+            </Box>
+          ) : (
+            <>
+              <TableContainer>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>STT</TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'name'}
+                          direction={orderBy === 'name' ? order : 'asc'}
+                          onClick={() => handleRequestSort('name')}
+                        >
+                          Tên Form
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'type'}
+                          direction={orderBy === 'type' ? order : 'asc'}
+                          onClick={() => handleRequestSort('type')}
+                        >
+                          Loại
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'createdAt'}
+                          direction={orderBy === 'createdAt' ? order : 'asc'}
+                          onClick={() => handleRequestSort('createdAt')}
+                        >
+                          Ngày tạo
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'status'}
+                          direction={orderBy === 'status' ? order : 'asc'}
+                          onClick={() => handleRequestSort('status')}
+                        >
+                          Trạng thái
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'completedSurveys'}
+                          direction={orderBy === 'completedSurveys' ? order : 'asc'}
+                          onClick={() => handleRequestSort('completedSurveys')}
+                        >
+                          Lượt điền
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'cost'}
+                          direction={orderBy === 'cost' ? order : 'asc'}
+                          onClick={() => handleRequestSort('cost')}
+                        >
+                          Chi phí (VND)
+                        </TableSortLabel>
+                      </TableCell>
+                      <TableCell align="center">Thao tác</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {sortData(filteredHistory)
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((item, index) => (
+                        <TableRow key={item.id} hover>
+                          <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                          <TableCell>{item.name}</TableCell>
+                          <TableCell>{item.type}</TableCell>
+                          <TableCell>{item.createdAt}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={item.status} 
+                              color={getStatusChipColor(item.status)} 
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            {item.completedSurveys}/{item.totalSurveys}
+                          </TableCell>
+                          <TableCell>
+                            {new Intl.NumberFormat('vi-VN').format(item.cost)}
+                          </TableCell>
+                          <TableCell align="center">
+                            <IconButton 
+                              color="primary" 
+                              size="small"
+                              onClick={() => handleViewDetails(item.id)}
+                            >
+                              <Eye />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={filteredHistory.length}
+                rowsPerPage={rowsPerPage}
+                page={page}
+                onPageChange={handleChangePage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                labelRowsPerPage="Hiển thị:"
+              />
+            </>
+          )}
+        </MainCard>
+      </Grid>
+    </Grid>
   );
 }

@@ -1,45 +1,67 @@
 // assets
-import { Story, Fatrows, PresentionChart } from 'iconsax-react';
+import { Home2, MessageQuestion, Money } from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
 
 // icons
 const icons = {
-  widgets: Story,
-  statistics: Story,
-  data: Fatrows,
-  chart: PresentionChart
+  widgets: Home2,
+  statistics: Home2,
+  data: MessageQuestion,
+  chart: Money,
+  money: Money
 };
 
 // ==============================|| MENU ITEMS - WIDGETS ||============================== //
 
 const widget: NavItemType = {
   id: 'group-widget',
-  title: 'widgets',
+  title: 'Truy cập nhanh',
   icon: icons.widgets,
   type: 'group',
   children: [
+    // {
+    //   id: 'statistics',
+    //   title: 'statistics',
+    //   type: 'item',
+    //   url: '/widget/statistics',
+    //   icon: icons.statistics
+    // },
+    // {
+    //   id: 'data',
+    //   title: 'data',
+    //   type: 'item',
+    //   url: '/widget/data',
+    //   icon: icons.data
+    // },
+    // {
+    //   id: 'chart',
+    //   title: 'chart',
+    //   type: 'item',
+    //   url: '/widget/chart',
+    //   icon: icons.chart
+    // }
     {
       id: 'statistics',
-      title: 'statistics',
+      title: 'Trang chủ',
       type: 'item',
-      url: '/widget/statistics',
+      url: '/home',
       icon: icons.statistics
     },
     {
       id: 'data',
-      title: 'data',
+      title: 'Liên hệ',
       type: 'item',
-      url: '/widget/data',
+      url: '/contact',
       icon: icons.data
     },
     {
       id: 'chart',
-      title: 'chart',
+      title: 'Nạp tiền',
       type: 'item',
-      url: '/widget/chart',
-      icon: icons.chart
+      url: '/money',
+      icon: icons.money
     }
   ]
 };

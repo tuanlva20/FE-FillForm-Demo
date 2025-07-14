@@ -60,7 +60,7 @@ export default function TablePagination({ getPageCount, setPageIndex, setPageSiz
         <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
           <Stack direction="row" sx={{ gap: 1, alignItems: 'center' }}>
             <Typography variant="caption" color="secondary">
-              Row per page
+              Số hàng
             </Typography>
             <FormControl sx={{ m: 1 }}>
               <Select
@@ -81,10 +81,10 @@ export default function TablePagination({ getPageCount, setPageIndex, setPageSiz
               </Select>
             </FormControl>
           </Stack>
-          <Typography variant="caption" color="secondary">
+          {/* <Typography variant="caption" color="secondary">
             Go to
-          </Typography>
-          <TextField
+          </Typography> */}
+          {/* <TextField
             size="small"
             type="number"
             value={getState().pagination.pageIndex + 1}
@@ -93,7 +93,7 @@ export default function TablePagination({ getPageCount, setPageIndex, setPageSiz
               setPageIndex(page);
             }}
             sx={{ '& .MuiOutlinedInput-input': { py: 0.75, px: 1.25, width: 36 } }}
-          />
+          /> */}
         </Stack>
       </Grid>
       <Grid sx={{ mt: { xs: 2, sm: 0 } }}>

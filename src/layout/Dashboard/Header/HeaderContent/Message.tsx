@@ -74,19 +74,19 @@ export default function Customization() {
             >
               <Box sx={{ p: 2.5 }}>
                 <Stack direction="row" sx={{ gap: 1.5, alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Typography variant="h5">What’s new announcement?</Typography>
+                  <Typography variant="h5">Hướng dẫn?</Typography>
                   <IconButton color="error" sx={{ p: 0 }} onClick={handleToggle}>
                     <Add size={28} style={{ transform: 'rotate(45deg)' }} />
                   </IconButton>
                 </Stack>
                 <Grid container spacing={1.5} sx={{ mt: 2 }}>
                   <Grid size={12}>
-                    <Typography variant="h6">Today</Typography>
+                    {/* <Typography variant="h6">Today</Typography> */}
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
                       status={{ label: 'New Feature', color: 'success' }}
-                      time="just now"
+                      time=""
                       title="Select Business Unit"
                       message="You can use the Analytics Dashboard to explore how many new users download reports daily and monthly"
                       src={message1}
@@ -104,20 +104,20 @@ export default function Customization() {
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{ label: 'Meeting', color: 'warning' }}
-                      time="2 min ago"
+                      status={{ }}
+                      time=""
                       title="General Meeting for update"
                       message="You can use the Dashboard to explore how many new users download reports daily and monthly"
                       src={message2}
                     />
                   </Grid>
                   <Grid sx={{ my: 1.25 }} size={12}>
-                    <Typography variant="h6">Yesterday</Typography>
+                    {/* <Typography variant="h6">Yesterday</Typography> */}
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{ label: 'Improvement', color: 'primary' }}
-                      time="2 hours ago"
+                      status={{  }}
+                      time=""
                       title="Widgets update"
                       message="We've made some updates to the emendable widget which we think you are going to love."
                       src={message3}
@@ -125,8 +125,8 @@ export default function Customization() {
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{ label: 'Improvement', color: 'primary' }}
-                      time="1 day ago"
+                      status={{ }}
+                      time=""
                       title="Coming soon dark mode"
                       message="We've made some updates to the emendable widget which we think you are going to love."
                       src={message4}

@@ -1,9 +1,9 @@
-import { useState, MouseEvent } from 'react';
+import { MouseEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router-dom';
 
 // material-ui
-import { styled } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 import IconButton, { IconButtonProps } from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -11,7 +11,7 @@ import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Box from '@mui/material/Box';
+import { styled } from '@mui/material/styles';
 
 // project-imports
 import { useGetMenuMaster } from 'api/menu';
@@ -19,8 +19,9 @@ import Avatar from 'components/@extended/Avatar';
 import useAuth from 'hooks/useAuth';
 
 // assets
-import { ArrowRight2 } from 'iconsax-react';
+import { Tooltip } from '@mui/material';
 import avatar1 from 'assets/images/users/avatar-6.png';
+import { Logout } from 'iconsax-react';
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -87,7 +88,7 @@ export default function UserList() {
               onClick={handleClick}
               aria-label="show more"
             >
-              <ArrowRight2 style={{ fontSize: '0.625rem' }} />
+              {/* <ArrowRight2 style={{ fontSize: '0.625rem' }} /> */}
             </ExpandMore>
           }
           sx={{
@@ -98,7 +99,14 @@ export default function UserList() {
           <ListItemAvatar>
             <Avatar alt="Avatar" src={avatar1} sx={{ ...(drawerOpen && { width: 46, height: 46 }) }} />
           </ListItemAvatar>
-          <ListItemText primary={user?.name} sx={{ ...(!drawerOpen && { display: 'none' }) }} secondary="UI/UX Designer" />
+          <ListItemText primary={user?.name} sx={{ ...(!drawerOpen && { display: 'none' }) }} secondary="Admin" />
+          {/* <Grid> */}
+                                  <Tooltip title="Đăng xuất">
+                                    <IconButton size="large" color="error" sx={{ p: 1 }} onClick={handleLogout}>
+                                      <Logout variant="Bulk" />
+                                    </IconButton>
+                                  </Tooltip>
+                                {/* </Grid> */}
         </ListItem>
       </List>
       <Menu

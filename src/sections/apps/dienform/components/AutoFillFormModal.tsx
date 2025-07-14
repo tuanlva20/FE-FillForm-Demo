@@ -1,4 +1,5 @@
-import { useState, ChangeEvent } from 'react';
+import { isValid } from 'date-fns';
+import { ChangeEvent, useState } from 'react';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -7,60 +8,194 @@ import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Grid2';
+import InputLabel from '@mui/material/InputLabel';
+import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
-import Divider from '@mui/material/Divider';
-import InputAdornment from '@mui/material/InputAdornment';
+
+// date picker
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 // assets
-import { Add, Minus } from 'iconsax-react';
 
 // Interface
 interface AutoFillFormModalProps {
   open: boolean;
   onClose: () => void;
   formName: string;
+  onSubmit?: (formValues: {
+    submissionCount: number;
+    pricePerSurvey: number;
+    isHumanLike: boolean;
+    startDate?: Date;
+    endDate?: Date;
+  }) => void;
 }
 
-export default function AutoFillFormModal({ open, onClose, formName }: AutoFillFormModalProps) {
+export default function AutoFillFormModal({ open, onClose, formName, onSubmit }: AutoFillFormModalProps) {
   const [formValues, setFormValues] = useState({
-    name: formName,
-    currentBalance: "300.000",
-    costPerSubmission: "350đ/khảo sát",
-    submissionCount: 500,
-    fillLikeHuman: true,
-    timeInterval: "Combo box để chọn khoản thời gian",
-    varySubmissionsByTime: true,
-    totalCost: "175.000"
+    submissionCount: 1,
+    pricePerSurvey: 350,
+    isHumanLike: true,
+    startDate: null as Date | null,
+    endDate: null as Date | null,
   });
 
-  // Handle submission count increase/decrease
-  const handleCountChange = (increase: boolean) => {
-    setFormValues(prev => ({
-      ...prev,
-      submissionCount: increase ? prev.submissionCount + 1 : Math.max(1, prev.submissionCount - 1)
-    }));
-  };
+  const [errors, setErrors] = useState<{
+    submissionCount?: string;
+    endDate?: string;
+    startDate?: string;
+  }>({});
 
-  const handleCheckboxChange = (event: ChangeEvent<HTMLInputElement>) => {
+  // Handle submission count change directly through input field
+  const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const value = parseInt(event.target.value) || 0;
+    
+    if (value < 1) {
+      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+    } else {
+      setErrors({...errors, submissionCount: undefined});
+    }
+    
     setFormValues({
       ...formValues,
-      [event.target.name]: event.target.checked
+      submissionCount: value
     });
+  };
+
+  // Handle switch change
+  const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (event.target.name === 'isHumanLike') {
+      const isChecked = event.target.checked;
+      setFormValues({
+        ...formValues,
+        isHumanLike: isChecked,
+        pricePerSurvey: isChecked ? formValues.pricePerSurvey + 100 : formValues.pricePerSurvey
+      });
+    } else {
+      setFormValues({
+        ...formValues,
+        [event.target.name]: event.target.checked
+      });
+    }
+  };
+
+  // Handle start date change
+  const handleStartDateChange = (newValue: Date | null) => {
+    // Validate date format
+    if (newValue && !isValid(newValue)) {
+      setErrors({
+        ...errors,
+        startDate: 'Định dạng ngày không hợp lệ. Hãy sử dụng định dạng DD-MM-YYYY'
+      });
+      return;
+    }
+    
+    setFormValues({
+      ...formValues,
+      startDate: newValue
+    });
+    
+    // Check if end date is before start date
+    if (newValue && formValues.endDate && newValue > formValues.endDate) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+    } else {
+      setErrors({
+        ...errors,
+        startDate: undefined,
+        endDate: undefined
+      });
+    }
+  };
+
+  // Handle end date change
+  const handleEndDateChange = (newValue: Date | null) => {
+    // Validate date format
+    if (newValue && !isValid(newValue)) {
+      setErrors({
+        ...errors,
+        endDate: 'Định dạng ngày không hợp lệ. Hãy sử dụng định dạng DD-MM-YYYY'
+      });
+      return;
+    }
+    
+    setFormValues({
+      ...formValues,
+      endDate: newValue
+    });
+    
+    // Check if end date is before start date
+    if (formValues.startDate && newValue && formValues.startDate > newValue) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+    } else {
+      setErrors({
+        ...errors,
+        endDate: undefined
+      });
+    }
   };
 
   // Close with confirmation message
   const handleSubmit = () => {
-    // Here you would typically submit the form data
+    // Validate form before submitting
+    if (formValues.submissionCount <= 0) {
+      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+      return;
+    }
+
+    // Validate end date is after start date
+    if (formValues.startDate && formValues.endDate && formValues.startDate > formValues.endDate) {
+      setErrors({
+        ...errors,
+        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
+      });
+      return;
+    }
+
+    // If onSubmit callback is provided, call it with form values
+    if (onSubmit) {
+      // Set time to beginning of day for start date (00:00:00)
+      let startDate = formValues.startDate;
+      if (startDate) {
+        startDate = new Date(startDate);
+        startDate.setHours(0, 0, 0, 0);
+      }
+      
+      // Set time to end of day for end date (23:59:59)
+      let endDate = formValues.endDate;
+      if (endDate) {
+        endDate = new Date(endDate);
+        endDate.setHours(23, 59, 59, 999);
+      }
+      
+      onSubmit({
+        submissionCount: formValues.submissionCount,
+        pricePerSurvey: formValues.pricePerSurvey,
+        isHumanLike: formValues.isHumanLike,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined
+      });
+    }
+    
+    // Close the modal
     onClose();
+  };
+
+  // Calculate total cost
+  const calculateTotalCost = () => {
+    return (formValues.submissionCount * formValues.pricePerSurvey).toLocaleString('vi-VN');
   };
 
   return (
@@ -75,89 +210,78 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
           TẠO YÊU CẦU ĐIỀN FORM TỰ ĐỘNG
         </Typography>
       </DialogTitle>
-      <Divider />
+      {/* <Divider /> */}
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
+            {/* Form name display */}
             <Grid size={12}>
-              <InputLabel htmlFor="form-name-select">Tên Form</InputLabel>
-              <Select
-                fullWidth
-                id="form-name-select"
-                value={formName}
-                disabled
-              >
-                <MenuItem value={formName}>{formName}</MenuItem>
-              </Select>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Typography variant="subtitle1" fontWeight="500" minWidth={100}>
+                  Tên Form:
+                </Typography>
+                <Typography variant="body1">
+                  {formName}
+                </Typography>
+              </Stack>
             </Grid>
+            
+            <Grid size={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid>
+
+            {/* Account balance row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Số dư hiện có:</Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="body1" align="right" fontWeight="bold">
-                  {formValues.currentBalance}
+                  300.000đ
                 </Typography>
               </Grid>
             </Grid>
 
+            {/* Price per survey row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Đơn giá mỗi khảo sát:</Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="body1" align="right" fontWeight="bold">
-                  {formValues.costPerSubmission}
+                  {formValues.pricePerSurvey}đ/khảo sát
                 </Typography>
               </Grid>
             </Grid>
 
+            {/* Survey count row */}
             <Grid size={12} container alignItems="center">
               <Grid size={6}>
                 <Typography variant="body1">Số lượng khảo sát cần tăng:</Typography>
               </Grid>
               <Grid size={6}>
-                <Box display="flex" justifyContent="flex-end">
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: '1px solid #d9d9d9',
-                      borderRadius: '100px',
-                      padding: '4px 8px',
-                      width: 'fit-content'
-                    }}
-                  >
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleCountChange(false)}
-                      sx={{ p: 0.5 }}
-                    >
-                      <Minus size={18} />
-                    </IconButton>
-                    <Typography sx={{ mx: 2 }}>{formValues.submissionCount}</Typography>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleCountChange(true)}
-                      sx={{ p: 0.5 }}
-                    >
-                      <Add size={18} />
-                    </IconButton>
-                  </Box>
-                </Box>
+                <TextField
+                  fullWidth
+                  type="number"
+                  value={formValues.submissionCount}
+                  onChange={handleSubmissionCountChange}
+                  error={!!errors.submissionCount}
+                  helperText={errors.submissionCount}
+                />
               </Grid>
             </Grid>
 
+            {/* Human-like toggle */}
             <Grid size={12}>
               <FormControlLabel
                 control={
-                  <Checkbox 
-                    checked={formValues.fillLikeHuman} 
-                    onChange={handleCheckboxChange} 
-                    name="fillLikeHuman" 
+                  <Switch 
+                    checked={formValues.isHumanLike} 
+                    onChange={handleSwitchChange} 
+                    name="isHumanLike" 
                   />
                 }
-                label="Điền rất giống người thật"
+                label="Điền rất giống người thật (+100đ/khảo sát)"
                 sx={{ '& .MuiFormControlLabel-label': { fontWeight: 500 } }}
               />
             </Grid>
@@ -166,59 +290,111 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
               <Divider sx={{ my: 1 }} />
             </Grid>
 
-            <Grid size={12}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
-                <Typography variant="body1">Thời gian giãn cách:</Typography>
-                <Typography variant="body1" color="error">{formValues.timeInterval}</Typography>
-              </Stack>
-            </Grid>
+            {/* Time interval selection */}
+            {/* <Grid size={12}>
+              <InputLabel htmlFor="time-interval-select">Thời gian giãn cách</InputLabel>
+              <Select
+                fullWidth
+                id="time-interval-select"
+                value={formValues.timeInterval}
+                onChange={handleTimeIntervalChange as any}
+              >
+                <MenuItem value="1-5 phút">1-5 phút</MenuItem>
+                <MenuItem value="5-10 phút">5-10 phút</MenuItem>
+                <MenuItem value="10-30 phút">10-30 phút</MenuItem>
+                <MenuItem value="30-60 phút">30-60 phút</MenuItem>
+                <MenuItem value="1-3 giờ">1-3 giờ</MenuItem>
+              </Select>
+            </Grid> */}
 
-            <Grid size={12}>
-              <Stack direction="row" alignItems="flex-start" spacing={1}>
-                <FormControlLabel
-                  control={
-                    <Checkbox 
-                      checked={formValues.varySubmissionsByTime} 
-                      onChange={handleCheckboxChange} 
-                      name="varySubmissionsByTime"
-                    />
-                  }
-                  label="Thay đổi số lượng khảo sát tùy vào thời gian hiện tại trong ngày (Múi giờ UTC +7):"
-                  sx={{ 
-                    '& .MuiFormControlLabel-label': { 
-                      fontWeight: 500,
-                      fontSize: '0.875rem',
-                      lineHeight: 1.5
-                    } 
-                  }}
-                />
-                <Box 
-                  sx={{ 
-                    width: 24, 
-                    height: 24, 
-                    border: '1px solid #d9d9d9', 
-                    borderRadius: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                />
-              </Stack>
+            {/* Time-based submissions toggle */}
+            {/* <Grid size={12}>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={formValues.varySubmissionsByTime} 
+                    onChange={handleSwitchChange} 
+                    name="varySubmissionsByTime"
+                  />
+                }
+                label="Thay đổi số lượng khảo sát tùy vào thời gian hiện tại trong ngày (Múi giờ UTC +7)"
+                sx={{ 
+                  '& .MuiFormControlLabel-label': { 
+                    fontWeight: 500,
+                    fontSize: '0.875rem',
+                    lineHeight: 1.5
+                  } 
+                }}
+              />
+            </Grid> */}
+
+            {/* <Grid size={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid> */}
+
+            {/* Date selection row */}
+            <Grid size={12} container spacing={2}>
+              <Grid size={6}>
+                <InputLabel htmlFor="start-date" sx={{ mb: 1 }}>Ngày bắt đầu</InputLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={formValues.startDate}
+                    onChange={handleStartDateChange}
+                    format="dd-MM-yyyy"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        id: "start-date",
+                        placeholder: "DD-MM-YYYY",
+                        error: !!errors.startDate,
+                        helperText: errors.startDate
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              </Grid>
+
+              <Grid size={6}>
+                <InputLabel htmlFor="end-date" sx={{ mb: 1 }}>Ngày kết thúc</InputLabel>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    value={formValues.endDate}
+                    onChange={handleEndDateChange}
+                    format="dd-MM-yyyy"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        id: "end-date",
+                        error: !!errors.endDate,
+                        helperText: errors.endDate,
+                        placeholder: "DD-MM-YYYY"
+                      }
+                    }}
+                  />
+                </LocalizationProvider>
+              </Grid>
             </Grid>
 
             <Grid size={12}>
               <Divider sx={{ my: 1 }} />
             </Grid>
 
+            {/* Total cost row */}
             <Grid size={12} container alignItems="center">
-              <Grid size={6}>
-                <Typography variant="h5">Tổng cộng</Typography>
+              {/* <Grid size={6}>
+                <Typography variant="h3">Tổng cộng</Typography>
               </Grid>
               <Grid size={6}>
                 <Typography variant="h4" align="right" fontWeight="bold">
-                  {formValues.totalCost}
+                  {calculateTotalCost()}đ
                 </Typography>
-              </Grid>
+              </Grid> */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: 2 }}>
+                <Typography variant="h4">Tổng cộng:</Typography>
+                <Typography variant="h4" align="right" fontWeight="bold" sx={{ color: 'red' }}>
+                  {calculateTotalCost()}đ
+                </Typography>
+              </Box>
             </Grid>
           </Grid>
         </Box>
@@ -226,19 +402,24 @@ export default function AutoFillFormModal({ open, onClose, formName }: AutoFillF
       <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3, pt: 0 }}>
         <Button 
           variant="contained" 
-          color="primary" 
-          onClick={handleSubmit}
-          sx={{ borderRadius: '100px' }}
-        >
-          Bắt đầu điền Form
-        </Button>
-        <Button 
-          variant="contained" 
           color="error" 
           onClick={onClose}
           sx={{ borderRadius: '100px' }}
         >
           Đóng
+        </Button>
+        <Button 
+          variant="contained" 
+          color="primary" 
+          onClick={handleSubmit}
+          sx={{ borderRadius: '100px' }}
+          disabled={
+            formValues.submissionCount <= 0 || 
+            !!errors.endDate || 
+            !!errors.startDate
+          }
+        >
+          Bắt Đầu Điền Form
         </Button>
       </DialogActions>
     </Dialog>

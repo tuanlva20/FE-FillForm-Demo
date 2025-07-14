@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 
 // project utils and constants
 import { formatFullDateTime } from 'utils/DateUtil';
@@ -8,6 +7,9 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import MenuItem from '@mui/material/MenuItem';
+import Pagination from '@mui/material/Pagination';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -28,53 +30,57 @@ import { Clock, CloseCircle, Edit2, Eye, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
-import { FillRequestDTO } from 'api/form';
+import { FormData } from 'api/form';
 
-interface ExpectedRatioFormListProps {
-  onSchedule: (formId: string) => void; // Changed from number to string
-  onViewDetails: (formId: string) => void; // Changed from number to string
-  onEdit: (formId: string) => void; // Changed from number to string
-  fillRequests?: FillRequestDTO[]; 
-  formName?: string;
-  formLink?: string;
+interface DataFillFormListProps {
+  forms: FormData[];
+  loading: boolean;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
+  page: number;
+  rowsPerPage: number;
+  onPageChange: (event: React.ChangeEvent<unknown>, value: number) => void;
+  onRowsPerPageChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSchedule?: (formId: string) => void;
+  onViewDetails?: (formId: string) => void;
+  onEdit?: (formId: string) => void;
 }
 
-export default function ExpectedRatioFormList({ 
-  onSchedule, 
-  onViewDetails, 
-  onEdit,
-  fillRequests = [],
-  formName = '',
-  formLink = ''
-}: ExpectedRatioFormListProps) {
-  const [searchText, setSearchText] = useState('');
+export default function DataFillFormList({ 
+  forms,
+  loading,
+  searchQuery,
+  onSearchChange,
+  page,
+  rowsPerPage,
+  onPageChange,
+  onRowsPerPageChange,
+  onSchedule,
+  onViewDetails,
+  onEdit
+}: DataFillFormListProps) {
   
-  // Debug requests data when it changes
-  useEffect(() => {
-    console.log('Fill Requests updated:', fillRequests);
-    if (fillRequests && fillRequests.length > 0) {
-      console.log('First request ID:', fillRequests[0].id);
-      console.log('First request ID type:', typeof fillRequests[0].id);
-    }
-  }, [fillRequests]);
-  
-  // Filter fillRequests based on search text
-  const filteredForms = searchText.trim() === '' 
-    ? fillRequests 
-    : fillRequests.filter(request => {
+  // Filter forms based on search text
+  const filteredForms = searchQuery.trim() === '' 
+    ? forms 
+    : forms.filter(form => {
         // Convert date to string for searching if available
-        const dateStr = request.createdAt 
-          ? new Date(request.createdAt).toLocaleDateString('vi-VN')
+        const dateStr = form.createdAt 
+          ? new Date(form.createdAt).toLocaleDateString('vi-VN')
           : '';
         
-        // Convert total price to string for searching
-        const priceStr = request.totalPrice?.toString() || '';
-        
-        // Search by date, status, or price
-        return dateStr.toLowerCase().includes(searchText.toLowerCase()) || 
-               (request.status && request.status.toLowerCase().includes(searchText.toLowerCase())) ||
-               priceStr.includes(searchText);
+        // Search by name, date, or status
+        return form.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+               dateStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+               (form.status && form.status.toLowerCase().includes(searchQuery.toLowerCase()));
       });
+  
+  // Get paginated forms
+  const getPaginatedForms = () => {
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredForms.slice(startIndex, endIndex);
+  };
   
   const getStatusChip = (status: string) => {
     switch (status) {
@@ -129,45 +135,49 @@ export default function ExpectedRatioFormList({
     return <Clock size={18} color="#d9d9d9" />;
   };
 
-  // Calculate progress based on completed and total surveys
-  const getProgressText = (request: FillRequestDTO) => {
-    // If there's a formStatistic available, use those values
-    if (request.completedSurvey !== undefined && request.surveyCount !== undefined) {
-      return `${request.completedSurvey || 0}/${request.surveyCount}`;
+  // Calculate progress based on statistics
+  const getProgressText = (form: FormData) => {
+    if (form.statistics && form.statistics.completedSurvey !== undefined && form.statistics.totalSurvey !== undefined) {
+      return `${form.statistics.completedSurvey || 0}/${form.statistics.totalSurvey}`;
     }
-    return `0/${request.surveyCount || 0}`;
+    return `0/0`;
   };
 
   // Format date string from ISO format
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return '';
     return formatFullDateTime(dateString, '');
   };
 
-  // Handle view details with proper ID handling
-  const handleViewDetails = (id: string | undefined) => {
-    if (id && onEdit) {  // Call onEdit instead of onViewDetails
-      console.log('View details for ID:', id);
-      onEdit(id);  // This will load the answer distributions into the form
+  // Handle view details
+  const handleViewDetails = (id: string) => {
+    if (onViewDetails) {
+      onViewDetails(id);
     }
   };
 
-  // Handle edit with proper ID handling
-  const handleEdit = (id: string | undefined) => {
-    if (id && onEdit) {
-      console.log('Edit for ID:', id);
-      onEdit(id); // Pass the ID as is, without conversion
+  // Handle edit
+  const handleEdit = (id: string) => {
+    if (onEdit) {
+      onEdit(id);
+    }
+  };
+
+  // Handle schedule
+  const handleSchedule = (id: string) => {
+    if (onSchedule) {
+      onSchedule(id);
     }
   };
 
   return (
-    <MainCard title="Danh sách yêu cầu điền của form" sx={MAINCARD_STYLE}>
+    <MainCard title="Danh sách yêu cầu điền form" sx={MAINCARD_STYLE}>
       <Box sx={{ mb: 2 }}>
         <TextField
           fullWidth
           placeholder="Tìm kiếm"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -193,29 +203,37 @@ export default function ExpectedRatioFormList({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredForms.length > 0 ? (
-              filteredForms.map((request, index) => (
-                <TableRow hover key={request.id || index}>
-                  <TableCell align="center">{index + 1}</TableCell>
-                  <TableCell>{formName}</TableCell>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body1" color="textSecondary">
+                    Đang tải...
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : getPaginatedForms().length > 0 ? (
+              getPaginatedForms().map((form, index) => (
+                <TableRow hover key={form.id}>
+                  <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
+                  <TableCell>{form.name}</TableCell>
                   <TableCell align="center">
                     <IconButton 
                       color="primary" 
-                      onClick={() => request.id && onSchedule(request.id)} // Pass ID directly
+                      onClick={() => handleSchedule(form.id)}
                     >
-                      {getScheduleIcon(request.scheduledTime !== undefined && request.scheduledTime !== null)}
+                      {getScheduleIcon(false)} {/* TODO: Add scheduled time check */}
                     </IconButton>
                   </TableCell>
-                  <TableCell align="center">{formatDate(request.createdAt || '')}</TableCell>
-                  <TableCell align="center">{getProgressText(request)}</TableCell>
-                  <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
+                  <TableCell align="center">{formatDate(form.createdAt)}</TableCell>
+                  <TableCell align="center">{getProgressText(form)}</TableCell>
+                  <TableCell align="center">{getStatusChip(form.status || '')}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
                       <Tooltip title="Chỉnh sửa">
                         <IconButton 
                           color="primary" 
                           size="small" 
-                          onClick={() => handleEdit(request.id)}
+                          onClick={() => handleEdit(form.id)}
                         >
                           <Edit2 size={18} />
                         </IconButton>
@@ -224,7 +242,7 @@ export default function ExpectedRatioFormList({
                         <IconButton 
                           color="info" 
                           size="small"
-                          onClick={() => handleViewDetails(request.id)}
+                          onClick={() => handleViewDetails(form.id)}
                         >
                           <Eye size={18} />
                         </IconButton>
@@ -234,7 +252,7 @@ export default function ExpectedRatioFormList({
                           color="primary" 
                           size="small" 
                           component="a" 
-                          href={formLink} 
+                          href={form.editLink} 
                           target="_blank" 
                           rel="noopener noreferrer"
                         >
@@ -252,7 +270,7 @@ export default function ExpectedRatioFormList({
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body1" color="textSecondary">
-                    {searchText ? 'Không tìm thấy yêu cầu điền nào phù hợp' : 'Chưa có yêu cầu điền nào cho form này'}
+                    {searchQuery ? 'Không tìm thấy form nào phù hợp' : 'Chưa có form nào được tạo'}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -260,6 +278,32 @@ export default function ExpectedRatioFormList({
           </TableBody>
         </Table>
       </TableContainer>
+      
+      {/* Pagination */}
+      {filteredForms.length > 0 && (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography variant="body2">Hiển thị</Typography>
+            <Select
+              size="small"
+              value={rowsPerPage.toString()}
+              onChange={(event) => onRowsPerPageChange({ target: { value: event.target.value } } as React.ChangeEvent<HTMLInputElement>)}
+            >
+              <MenuItem value={5}>5</MenuItem>
+              <MenuItem value={10}>10</MenuItem>
+              <MenuItem value={25}>25</MenuItem>
+            </Select>
+            <Typography variant="body2">mỗi trang</Typography>
+          </Stack>
+          
+          <Pagination 
+            count={Math.ceil(filteredForms.length / rowsPerPage)} 
+            page={page}
+            onChange={onPageChange}
+            shape="rounded"
+          />
+        </Box>
+      )}
     </MainCard>
   );
-}
+} 
