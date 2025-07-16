@@ -30,7 +30,7 @@ export default function App() {
                 <>
                   <Notistack>
                     <RouterProvider router={router} />
-                    <Customization />
+                    {/* <Customization /> */}
                     {/* <Snackbar /> */}
                   </Notistack>
                 </>

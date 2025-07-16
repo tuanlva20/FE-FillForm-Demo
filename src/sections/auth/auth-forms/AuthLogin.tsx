@@ -58,11 +58,11 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
           submit: null
         }}
         validationSchema={Yup.object().shape({
-          email: Yup.string().email('Must be a valid email').max(255).required('Email is required'),
+          email: Yup.string().email('Phải là một email hợp lệ').max(255).required('Email là bắt buộc'),
           password: Yup.string()
-            .required('Password is required')
-            .test('no-leading-trailing-whitespace', 'Password can not start or end with spaces', (value) => value === value.trim())
-            .max(10, 'Password must be less than 10 characters')
+            .required('Mật khẩu là bắt buộc')
+            .test('no-leading-trailing-whitespace', 'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng', (value) => value === value.trim())
+            .max(10, 'Mật khẩu phải ít hơn 10 ký tự')
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
@@ -88,7 +88,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="email-login">Email Address</InputLabel>
+                  <InputLabel htmlFor="email-login">Địa chỉ Email</InputLabel>
                   <OutlinedInput
                     id="email-login"
                     type="email"
@@ -96,7 +96,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
                     name="email"
                     onBlur={handleBlur}
                     onChange={handleChange}
-                    placeholder="Enter email address"
+                    placeholder="Nhập địa chỉ email"
                     fullWidth
                     error={Boolean(touched.email && errors.email)}
                   />
@@ -109,7 +109,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               </Grid>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="password-login">Password</InputLabel>
+                  <InputLabel htmlFor="password-login">Mật khẩu</InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.password && errors.password)}
@@ -132,7 +132,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
                         </IconButton>
                       </InputAdornment>
                     }
-                    placeholder="Enter password"
+                    placeholder="Nhập mật khẩu"
                   />
                 </Stack>
                 {touched.password && errors.password && (
@@ -154,11 +154,11 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
                         size="small"
                       />
                     }
-                    label={<Typography variant="h6">Keep me sign in</Typography>}
+                    label={<Typography variant="h6">Duy trì đăng nhập</Typography>}
                   />
 
                   <Link variant="h6" component={RouterLink} to={isLoggedIn && forgot ? forgot : '/forgot-password'} color="text.primary">
-                    Forgot Password?
+                    Quên mật khẩu?
                   </Link>
                 </Stack>
               </Grid>
@@ -170,7 +170,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               <Grid size={12}>
                 <AnimateButton>
                   <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-                    Login
+                    Đăng nhập
                   </Button>
                 </AnimateButton>
               </Grid>

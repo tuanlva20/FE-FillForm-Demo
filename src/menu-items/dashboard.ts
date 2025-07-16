@@ -2,7 +2,7 @@
 import { useGetMenu } from 'api/menu';
 
 // assets
-import { Refresh, Home3, HomeTrendUp, Box1 } from 'iconsax-react';
+import { Box1, Home3, HomeTrendUp, Refresh } from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
@@ -22,25 +22,11 @@ const loadingMenu: NavItemType = {
   children: [
     {
       id: 'dashboard1',
-      title: 'dashboard',
-      type: 'collapse',
-      icon: icons.loading,
-      children: [
-        {
-          id: 'default1',
-          title: 'loading',
-          type: 'item',
-          url: '/dashboard/default',
-          breadcrumbs: false
-        },
-        {
-          id: 'analytics1',
-          title: 'loading',
-          type: 'item',
-          url: '/dashboard/analytics',
-          breadcrumbs: false
-        }
-      ]
+      title: 'Dashboard',
+      type: 'item',
+      icon: icons.dashboard,
+      url: '/dashboard/default',
+      breadcrumbs: false
     }
   ]
 };

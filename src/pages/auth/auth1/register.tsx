@@ -9,15 +9,15 @@ import Typography from '@mui/material/Typography';
 // project-imports
 import Logo from 'components/logo';
 import useAuth from 'hooks/useAuth';
-import AuthSocButton from 'sections/auth/AuthSocButton';
 import AuthDivider from 'sections/auth/AuthDivider';
+import AuthSocButton from 'sections/auth/AuthSocButton';
 import AuthWrapper from 'sections/auth/AuthWrapper';
 import FirebaseRegister from 'sections/auth/auth-forms/AuthRegister';
 
 // assets
 import imgFacebook from 'assets/images/auth/facebook.svg';
-import imgTwitter from 'assets/images/auth/twitter.svg';
 import imgGoogle from 'assets/images/auth/google.svg';
+import imgTwitter from 'assets/images/auth/twitter.svg';
 
 // ================================|| REGISTER ||================================ //
 
@@ -34,29 +34,29 @@ export default function Register() {
           <Grid container spacing={1}>
             <Grid size={12}>
               <AuthSocButton>
-                <CardMedia component="img" src={imgFacebook} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Sign In with Facebook
+                <CardMedia component="img" src={imgFacebook} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng ký với Facebook
               </AuthSocButton>
             </Grid>
-            <Grid size={12}>
+            {/* <Grid size={12}>
               <AuthSocButton>
-                <CardMedia component="img" src={imgTwitter} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Sign In with Twitter
+                <CardMedia component="img" src={imgTwitter} alt="Twitter" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng ký với Twitter
               </AuthSocButton>
-            </Grid>
+            </Grid> */}
             <Grid size={12}>
               <AuthSocButton>
-                <CardMedia component="img" src={imgGoogle} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Sign In with Google
+                <CardMedia component="img" src={imgGoogle} alt="Google" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng ký với Google
               </AuthSocButton>
             </Grid>
           </Grid>
         </Grid>
         <Grid size={12}>
           <AuthDivider>
-            <Typography variant="body1">OR</Typography>
+            <Typography variant="body1">HOẶC</Typography>
           </AuthDivider>
         </Grid>
         <Grid size={12}>
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: { xs: -0.5, sm: 0.5 } }}>
-            <Typography variant="h3">Sign up</Typography>
+            <Typography variant="h3">Đăng ký</Typography>
             <Typography
               component={Link}
               to={isLoggedIn ? '/auth/login' : '/login'}
@@ -64,7 +64,7 @@ export default function Register() {
               sx={{ textDecoration: 'none' }}
               color="primary"
             >
-              Already have an account?
+              Đã có tài khoản?
             </Typography>
           </Stack>
         </Grid>

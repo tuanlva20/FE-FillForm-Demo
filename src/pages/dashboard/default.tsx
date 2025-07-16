@@ -1,24 +1,17 @@
 // material-ui
-import { useTheme } from '@mui/material/styles';
 import Grid from '@mui/material/Grid2';
-import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 
 // project-imports
-import EcommerceDataCard from 'components/cards/statistics/EcommerceDataCard';
+import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
-
-import WelcomeBanner from 'sections/dashboard/default/WelcomeBanner';
-import ProjectRelease from 'sections/dashboard/default/ProjectRelease';
-import EcommerceDataChart from 'sections/widget/chart/EcommerceDataChart';
-import TotalIncome from 'sections/widget/chart/TotalIncome';
-import RepeatCustomerRate from 'sections/widget/chart/RepeatCustomerRate';
-import ProjectOverview from 'sections/widget/chart/ProjectOverview';
-import Transactions from 'sections/widget/data/Transactions';
-import AssignUsers from 'sections/widget/statistics/AssignUsers';
+import SurveyBanner from 'sections/dashboard/default/SurveyBanner';
+import SurveyStatsCard from 'sections/dashboard/default/SurveyStatsCard';
+import FormSubmissionChart from 'sections/widget/chart/FormSubmissionChart';
 
 // assets
-import { ArrowDown, ArrowUp, Book, Calendar, CloudChange, Wallet3 } from 'iconsax-react';
+import { Clock, CloseCircle, DocumentText, TickCircle } from 'iconsax-react';
 
 // ==============================|| DASHBOARD - DEFAULT ||============================== //
 
@@ -27,92 +20,90 @@ export default function DashboardDefault() {
 
   return (
     <Grid container spacing={GRID_COMMON_SPACING}>
+      {/* Survey Banner */}
       <Grid size={12}>
-        <WelcomeBanner />
+        <SurveyBanner />
       </Grid>
-      {/* row 1 */}
-      <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-        <EcommerceDataCard
-          title="All Earnings"
-          count="$3000"
-          iconPrimary={<Wallet3 />}
-          percentage={
-            <Typography color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ArrowUp size={16} style={{ transform: 'rotate(45deg)' }} /> 30.6%
-            </Typography>
-          }
-        >
-          <EcommerceDataChart color={theme.palette.primary.main} />
-        </EcommerceDataCard>
+
+      {/* Survey Statistics Row */}
+      <Grid size={12}>
+        <Typography variant="h3" sx={{ mb: 2 }}>
+          Thống kê khảo sát
+        </Typography>
       </Grid>
+      
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-        <EcommerceDataCard
-          title="Page Views"
-          count="290+"
+        <SurveyStatsCard
+          title="Khảo sát chờ xử lý"
+          description="Các khảo sát đang trong hàng đợi"
+          count="12"
+          percentage={15}
+          extra="3 khảo sát mới hôm nay"
           color="warning"
-          iconPrimary={<Book />}
-          percentage={
-            <Typography sx={{ color: 'warning.dark', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ArrowDown size={16} style={{ transform: 'rotate(-45deg)' }} /> 30.6%
-            </Typography>
-          }
-        >
-          <EcommerceDataChart color={theme.palette.warning.dark} />
-        </EcommerceDataCard>
+          icon={<Clock />}
+        />
       </Grid>
+      
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-        <EcommerceDataCard
-          title="Total Task"
-          count="1,568"
+        <SurveyStatsCard
+          title="Khảo sát thành công"
+          description="Đã hoàn thành điền form"
+          count="48"
+          percentage={25}
+          extra="10 khảo sát hoàn thành tuần này"
           color="success"
-          iconPrimary={<Calendar />}
-          percentage={
-            <Typography sx={{ color: 'success.darker', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ArrowUp size={16} style={{ transform: 'rotate(45deg)' }} /> 30.6%
-            </Typography>
-          }
-        >
-          <EcommerceDataChart color={theme.palette.success.darker} />
-        </EcommerceDataCard>
+          icon={<TickCircle />}
+        />
       </Grid>
+      
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
-        <EcommerceDataCard
-          title="Download"
-          count="$200"
+        <SurveyStatsCard
+          title="Khảo sát thất bại"
+          description="Gặp lỗi hoặc không thành công"
+          count="5"
+          percentage={8}
+          isLoss
+          extra="2 khảo sát lỗi cần xem lại"
           color="error"
-          iconPrimary={<CloudChange />}
-          percentage={
-            <Typography sx={{ color: 'error.dark', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <ArrowDown size={16} style={{ transform: 'rotate(45deg)' }} /> 30.6%
-            </Typography>
-          }
-        >
-          <EcommerceDataChart color={theme.palette.error.dark} />
-        </EcommerceDataCard>
+          icon={<CloseCircle />}
+        />
       </Grid>
-      {/* row 2 */}
-      <Grid size={{ xs: 12, md: 8, lg: 9 }}>
-        <Grid container spacing={GRID_COMMON_SPACING}>
-          <Grid size={12}>
-            <RepeatCustomerRate />
+      
+      <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
+        <SurveyStatsCard
+          title="Tổng số khảo sát"
+          description="Tất cả khảo sát đã tạo"
+          count="65"
+          percentage={20}
+          extra="55 khảo sát đã chạy thành công"
+          color="primary"
+          icon={<DocumentText />}
+        />
+      </Grid>
+
+      {/* Monthly Chart */}
+      <Grid size={12}>
+        <Typography variant="h3" sx={{ mt: 4, mb: 2 }}>
+          Biểu đồ hoạt động theo tháng
+        </Typography>
+      </Grid>
+      
+      <Grid size={12}>
+        <MainCard>
+          <Grid container spacing={2}>
+            <Grid size={12}>
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Số lượng điền form theo tháng
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                Thống kê số lượng form được điền tự động trong 12 tháng gần nhất
+              </Typography>
+            </Grid>
+            <Grid size={12}>
+              <FormSubmissionChart />
+            </Grid>
           </Grid>
-          <Grid size={12}>
-            <ProjectOverview />
-          </Grid>
-        </Grid>
-      </Grid>
-      <Grid size={{ xs: 12, md: 4, lg: 3 }}>
-        <Stack sx={{ gap: GRID_COMMON_SPACING }}>
-          <ProjectRelease />
-          <AssignUsers />
-        </Stack>
-      </Grid>
-      {/* row 3 */}
-      <Grid size={{ xs: 12, md: 6 }}>
-        <Transactions />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TotalIncome />
+        </MainCard>
       </Grid>
     </Grid>
   );

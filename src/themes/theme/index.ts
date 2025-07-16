@@ -1,5 +1,7 @@
 // project-imports
+import { ThemeMode } from 'config';
 import Default from './default';
+import KhaosatBrand from './khaosat-brand';
 import Theme1 from './theme1';
 import Theme2 from './theme2';
 import Theme3 from './theme3';
@@ -8,7 +10,6 @@ import Theme5 from './theme5';
 import Theme6 from './theme6';
 import Theme7 from './theme7';
 import Theme8 from './theme8';
-import { ThemeMode } from 'config';
 
 // types
 import { PresetColor } from 'types/config';
@@ -18,6 +19,8 @@ import { PaletteThemeProps } from 'types/theme';
 
 const Theme = (presetColor: PresetColor, mode: ThemeMode): PaletteThemeProps => {
   switch (presetColor) {
+    case 'khaosat':
+      return KhaosatBrand(mode);
     case 'theme1':
       return Theme1(mode);
     case 'theme2':

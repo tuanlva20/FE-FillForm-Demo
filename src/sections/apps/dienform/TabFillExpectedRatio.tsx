@@ -100,7 +100,7 @@ export default function TabFillExpectedRatio() {
         }
       } catch (err) {
         console.error('Error fetching forms:', err);
-        setError('Failed to load forms. Please try again later.');
+        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
       } finally {
         setLoading(false);
       }
@@ -148,7 +148,7 @@ export default function TabFillExpectedRatio() {
         validatePercentages(newQuestionOptions);
       } catch (err) {
         console.error('Error fetching form details:', err);
-        setError('Failed to load form details. Please try again later.');
+        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
       } finally {
         setFormDetailLoading(false);
       }

@@ -24,8 +24,8 @@ export default function Palette(mode: ThemeMode, presetColor: PresetColor, theme
       },
       ...paletteColor,
       text: {
-        primary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.87) : paletteColor.secondary[800],
-        secondary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.45) : paletteColor.secondary.main,
+        primary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.87) : '#3a3a3a',
+        secondary: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.45) : '#3a3a3a',
         disabled: mode === ThemeMode.DARK ? alpha(paletteColor.secondary.darker!, 0.1) : paletteColor.secondary[400]
       },
       action: {

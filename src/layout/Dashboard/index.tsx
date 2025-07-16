@@ -2,47 +2,41 @@ import { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 
 // material-ui
-import useMediaQuery from '@mui/material/useMediaQuery';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import Link from '@mui/material/Link';
-import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
+import Container from '@mui/material/Container';
+import Toolbar from '@mui/material/Toolbar';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project-imports
-import Drawer from './Drawer';
-import Header from './Header';
-import Footer from './Footer';
-import HorizontalBar from './Drawer/HorizontalBar';
+import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
 import Loader from 'components/Loader';
-import AddCustomer from 'sections/apps/customer/AddCustomer';
-
-import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
-import { DRAWER_WIDTH, MenuOrientation } from 'config';
+import { DRAWER_WIDTH, MenuOrientation, MINI_DRAWER_WIDTH } from 'config';
 import useConfig from 'hooks/useConfig';
 import AuthGuard from 'utils/route-guard/AuthGuard';
-
-// assets
-import { ShoppingCart } from 'iconsax-react';
+import Drawer from './Drawer';
+import HorizontalBar from './Drawer/HorizontalBar';
+import Footer from './Footer';
+import Header from './Header';
 
 // ==============================|| MAIN LAYOUT ||============================== //
 
-let value: string = window.location.search;
-const params = new URLSearchParams(value);
-const ispValue = params.get('isp');
-const ispValueAvailable = ispValue !== null && parseInt(ispValue) === 1;
-
-const url = ispValueAvailable ? 'https://1.envato.market/OrJ5nn' : 'https://1.envato.market/zNkqj6';
-
 export default function MainLayout() {
-  const { menuMasterLoading } = useGetMenuMaster();
+  const { menuMasterLoading, menuMaster } = useGetMenuMaster();
   const downXL = useMediaQuery((theme) => theme.breakpoints.down('xl'));
   const downLG = useMediaQuery((theme) => theme.breakpoints.down('lg'));
 
   const { container, miniDrawer, menuOrientation } = useConfig();
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
+  const drawerOpen = menuMaster?.isDashboardDrawerOpened || false;
+
+  // Calculate main content width based on drawer state
+  const getMainWidth = () => {
+    if (isHorizontal) return '100%';
+    if (downLG) return '100%'; // On mobile, drawer is overlay so main takes full width
+    return drawerOpen ? `calc(100% - ${DRAWER_WIDTH}px)` : `calc(100% - ${MINI_DRAWER_WIDTH}px)`;
+  };
 
   // set media wise responsive drawer
   useEffect(() => {
@@ -60,7 +54,15 @@ export default function MainLayout() {
         <Header />
         {!isHorizontal ? <Drawer /> : <HorizontalBar />}
 
-        <Box component="main" sx={{ width: `calc(100% - ${DRAWER_WIDTH}px)`, flexGrow: 1, p: { xs: 1, sm: 3 } }}>
+        <Box 
+          component="main" 
+          sx={{ 
+            width: getMainWidth(),
+            flexGrow: 1, 
+            p: { xs: 1, sm: 3 },
+            transition: 'width 0.2s ease-in-out'
+          }}
+        >
           <Toolbar sx={{ mt: isHorizontal ? 8 : 'inherit', mb: isHorizontal ? 2 : 'inherit' }} />
           <Container
             maxWidth={container && !downXL ? 'xl' : false}
@@ -76,18 +78,7 @@ export default function MainLayout() {
             <Outlet />
             <Footer />
           </Container>
-          {/* <Link style={{ textDecoration: 'none' }} href={url} target="_blank">
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<ShoppingCart />}
-              sx={{ zIndex: 1199, position: 'fixed', bottom: 50, right: 30 }}
-            >
-              Buy Now
-            </Button>
-          </Link> */}
         </Box>
-        <AddCustomer />
       </Box>
     </AuthGuard>
   );

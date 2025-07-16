@@ -9,7 +9,7 @@ import { PaletteThemeProps } from 'types/theme';
 export default function Theme2(mode: ThemeMode): PaletteThemeProps {
   const contrastText = '#fff';
 
-  let primaryColors = ['#EEEDFC', '#D5D1F8', '#B9B2F3', '#9C93EE', '#877CEA', '#7265E6', '#6A5DE3', '#5F53DF', '#5549DB', '#4237D5'];
+  let primaryColors = ['#EEEDFC', '#D5D1F8', '#B9B2F3', '#9C93EE', '#877CEA', '#673AB7', '#6A5DE3', '#5F53DF', '#5549DB', '#4237D5'];
   let secondaryColors = ['#F8F9FA', '#F8F9FA', '#F3F5F7', '#DBE0E5', '#BEC8D0', '#8996A4', '#5B6B79', '#3E4853', '#1D2630', '#131920'];
   let errorColors = ['#FDE8E7', '#F25E52', '#F04134', '#EE3B2F', '#E92A21'];
   let warningColors = ['#FFF7E0', '#FFC926', '#FFBF00', '#FFB900', '#FFA900'];

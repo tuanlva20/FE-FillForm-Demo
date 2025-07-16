@@ -43,7 +43,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     submissionCount: 1,
     pricePerSurvey: 350,
     isHumanLike: true,
-    startDate: null as Date | null,
+    startDate: new Date() as Date | null,
     endDate: null as Date | null,
   });
 

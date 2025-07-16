@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 
 // assets
-import Logo from 'assets/images/logo.png';
+import Logo from 'assets/images/logo-khaosat.png';
 
 // types
 import { InvoiceList } from 'types/invoice';
