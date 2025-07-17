@@ -27,19 +27,19 @@ import FillRequestList from './components/tabfillindata/FillRequestList';
 
 // API
 import {
-  checkDataMapping,
-  createDataFillRequest,
-  DataFillRequestDTO,
-  DataMappingRequest,
-  DataMappingResponse,
-  FormData,
-  FormDetailResponse,
-  getFormDetail,
-  getFormList
+    checkDataMapping,
+    createDataFillRequest,
+    DataFillRequestDTO,
+    DataMappingRequest,
+    DataMappingResponse,
+    FormData,
+    FormDetailResponse,
+    getFormDetail,
+    getFormList
 } from 'api/form';
 
 // assets
-import { ArrowRight2, Clock, Data } from 'iconsax-react';
+import { ArrowRight2, Clock, Data, Ethereum, InfoCircle, Warning2 } from 'iconsax-react';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
@@ -286,20 +286,7 @@ export default function TabFillInData() {
       {/* Form and Sheet Link Inputs */}
       <Grid size={12}>
         <MainCard title="Điền theo data có trước" sx={MAINCARD_STYLE}>
-          {error && <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 2, 
-              alignItems: 'center',
-              '& .MuiAlert-icon': {
-                marginRight: 1,
-                pt: 1,
-                mt: 1
-              }
-            }}
-          >
-            {error}
-          </Alert>}
+          {error && <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ mb: 2 }}>{error}</Alert>}
           
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -377,7 +364,7 @@ export default function TabFillInData() {
               
               {/* Show data validation errors if any */}
               {mappingData.errors && mappingData.errors.length > 0 && (
-                <Alert severity="warning" sx={{ mb: 3 }}>
+                <Alert color="warning" icon={<Warning2 variant="Bold" />} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Phát hiện các vấn đề:</Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.errors.map((error, index) => (
@@ -389,7 +376,7 @@ export default function TabFillInData() {
               
               {/* Show unmapped questions if any */}
               {mappingData.unmappedQuestions && mappingData.unmappedQuestions.length > 0 && (
-                <Alert severity="info" sx={{ mb: 3 }}>
+                <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Câu hỏi không tìm thấy trong sheet:</Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.unmappedQuestions.map((question, index) => (

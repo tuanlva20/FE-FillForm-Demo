@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 // material-ui
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid2';
@@ -23,6 +24,9 @@ const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = { PaperProps: { style: { maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP } } };
 
+// iconsax-react
+import { Ethereum } from 'iconsax-react';
+
 // ==============================|| DIENFORM - CREATE ||============================== //
 
 export default function TabCreate() {
@@ -33,8 +37,8 @@ export default function TabCreate() {
   const [error, setError] = useState<string | null>(null);
 
   const handleCreateForm = async () => {
-    if (!formName || !formLink) {
-      setError('Vui lòng điền đầy đủ thông tin form');
+    if (!formLink) {
+      setError('Vui lòng điền link trả lời của form');
       return;
     }
 
@@ -87,11 +91,11 @@ export default function TabCreate() {
                 <TextField 
                   fullWidth 
                   id="ten-form" 
-                  placeholder="Điền tên form..." 
+                  placeholder="Điền tên form (Không bắt buộc)" 
                   autoFocus 
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  error={!!error && !formName}
+                  error={false}
                 />
               </Stack>
             </Grid>
@@ -110,9 +114,9 @@ export default function TabCreate() {
             </Grid>
             {error && (
               <Grid size={{ xs: 24, sm: 24 }}>
-                <Typography color="error" variant="caption">
+                <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ mb: 1 }}>
                   {error}
-                </Typography>
+                </Alert>
               </Grid>
             )}
             <Grid size={{ xs: 24, sm: 12 }}>

@@ -13,7 +13,6 @@ export default function LogoMain() {
     <img 
       src={logo} 
       alt="KHAOSAT.TECH Logo" 
-      width="150" 
       height="auto"
       style={{ maxHeight: '40px' }}
     />
