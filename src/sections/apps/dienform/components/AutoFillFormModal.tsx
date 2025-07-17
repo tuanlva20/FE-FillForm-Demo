@@ -1,3 +1,4 @@
+import { openSnackbar } from 'api/snackbar';
 import { isValid } from 'date-fns';
 import { ChangeEvent, useState } from 'react';
 
@@ -41,7 +42,7 @@ interface AutoFillFormModalProps {
 export default function AutoFillFormModal({ open, onClose, formName, onSubmit }: AutoFillFormModalProps) {
   const [formValues, setFormValues] = useState({
     submissionCount: 1,
-    pricePerSurvey: 350,
+    pricePerSurvey: 450,
     isHumanLike: true,
     startDate: new Date() as Date | null,
     endDate: null as Date | null,
@@ -73,11 +74,11 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.name === 'isHumanLike') {
       const isChecked = event.target.checked;
-      setFormValues({
-        ...formValues,
+      setFormValues((prev) => ({
+        ...prev,
         isHumanLike: isChecked,
-        pricePerSurvey: isChecked ? formValues.pricePerSurvey + 100 : formValues.pricePerSurvey
-      });
+        pricePerSurvey: isChecked ? 350 + 100 : 350
+      }));
     } else {
       setFormValues({
         ...formValues,
@@ -186,6 +187,22 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         isHumanLike: formValues.isHumanLike,
         startDate: startDate || undefined,
         endDate: endDate || undefined
+      });
+      // Hiện snackbar thành công góc trên phải
+      openSnackbar({
+        open: true,
+        message: 'Tạo yêu cầu điền form thành công!',
+        variant: 'alert',
+        alert: { color: 'success' },
+        anchorOrigin: { vertical: 'top', horizontal: 'right' },
+        duration: 3000,
+        action: false,
+        transition: 'Fade',
+        close: true,
+        actionButton: false,
+        dense: false,
+        maxStack: 3,
+        iconVariant: 'usedefault'
       });
     }
     
@@ -341,6 +358,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     value={formValues.startDate}
                     onChange={handleStartDateChange}
                     format="dd-MM-yyyy"
+                    minDate={new Date()}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -361,6 +379,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     value={formValues.endDate}
                     onChange={handleEndDateChange}
                     format="dd-MM-yyyy"
+                    minDate={formValues.startDate || new Date()}
                     slotProps={{
                       textField: {
                         fullWidth: true,

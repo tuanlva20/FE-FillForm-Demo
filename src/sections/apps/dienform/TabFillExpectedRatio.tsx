@@ -665,6 +665,7 @@ export default function TabFillExpectedRatio() {
                                   option.id, 
                                   parseInt(e.target.value) || 0
                                 )}
+                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                                 InputProps={{
                                   inputProps: { min: 0 },
                                   endAdornment: <InputAdornment position="end">%</InputAdornment>

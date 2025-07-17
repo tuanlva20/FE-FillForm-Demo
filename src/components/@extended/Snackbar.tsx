@@ -9,8 +9,8 @@ import Slide, { SlideProps } from '@mui/material/Slide';
 import MuiSnackbar from '@mui/material/Snackbar';
 
 // project-imports
-import IconButton from './IconButton';
 import { closeSnackbar, useGetSnackbar } from 'api/snackbar';
+import IconButton from './IconButton';
 
 // types
 import { KeyedObject } from 'types/root';
@@ -68,7 +68,7 @@ export default function Snackbar() {
         <MuiSnackbar
           anchorOrigin={snackbar.anchorOrigin}
           open={snackbar.open}
-          autoHideDuration={1500}
+          autoHideDuration={snackbar.duration || 1500}
           onClose={handleClose}
           message={snackbar.message}
           TransitionComponent={animation[snackbar.transition]}
@@ -113,7 +113,7 @@ export default function Snackbar() {
           TransitionComponent={animation[snackbar.transition]}
           anchorOrigin={snackbar.anchorOrigin}
           open={snackbar.open}
-          autoHideDuration={1500}
+          autoHideDuration={snackbar.duration || 1500}
           onClose={handleClose}
         >
           <Alert
