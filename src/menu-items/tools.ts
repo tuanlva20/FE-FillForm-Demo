@@ -36,6 +36,7 @@ const tools: NavItemType = {
       title: 'Điền form tự động',
       type: 'item',
       url: '/apps/dienform/create',
+      link: '/apps/dienform/:tab',
       icon: icons.form,
       breadcrumbs: false,
     },

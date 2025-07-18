@@ -127,7 +127,7 @@ export default function Header({ layout = 'landing', ...others }: Props) {
               <Box sx={{ display: 'inline-block' }}>
                 <AnimateButton>
                   <Button
-                    href="#"
+                    href="/dashboard/default"
                     disableElevation
                     startIcon={<Send2 />}
                     color="primary"

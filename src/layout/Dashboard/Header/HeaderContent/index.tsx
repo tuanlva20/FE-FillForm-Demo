@@ -1,18 +1,16 @@
 import { useMemo } from 'react';
 
 // material-ui
+import Box from '@mui/material/Box';
 import { Theme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import Box from '@mui/material/Box';
 
 // project-imports
 import FullScreen from './FullScreen';
 import Localization from './Localization';
 import MegaMenuSection from './MegaMenuSection';
-import Message from './Message';
 import MobileSection from './MobileSection';
 import Notification from './Notification';
-import Profile from './Profile';
 import Search from './Search';
 
 import { MenuOrientation } from 'config';
