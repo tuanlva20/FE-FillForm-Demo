@@ -8,8 +8,8 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // project-imports
-import { ThemeMode } from 'config';
 import MainCard from 'components/MainCard';
+import { ThemeMode } from 'config';
 import useConfig from 'hooks/useConfig';
 
 // types
@@ -42,7 +42,7 @@ export default function ColorScheme() {
     },
     {
       id: 'theme2',
-      primary: mode === ThemeMode.DARK ? '#655ac8' : '#7265E6',
+      primary: mode === ThemeMode.DARK ? '#655ac8' : '#673AB7',
       darker: mode === ThemeMode.DARK ? '#c3baf4' : '#5549DB'
     },
     {

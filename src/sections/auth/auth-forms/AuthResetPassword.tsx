@@ -1,7 +1,8 @@
-import { useEffect, useState, SyntheticEvent } from 'react';
+import { SyntheticEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // material-ui
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
@@ -11,7 +12,6 @@ import InputLabel from '@mui/material/InputLabel';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 
 // third-party
 import { Formik } from 'formik';
@@ -32,7 +32,7 @@ import { SnackbarProps } from 'types/snackbar';
 // assets
 import { Eye, EyeSlash } from 'iconsax-react';
 
-// ============================|| FIREBASE - RESET PASSWORD ||============================ //
+// ============================|| FIREBASE - RESET PASSWORD ||============================== //
 
 export default function AuthResetPassword() {
   const scriptedRef = useScriptRef();
@@ -68,10 +68,10 @@ export default function AuthResetPassword() {
           submit: null
         }}
         validationSchema={Yup.object().shape({
-          password: Yup.string().max(255).required('Password is required'),
+          password: Yup.string().max(255).required('Mật khẩu là bắt buộc'),
           confirmPassword: Yup.string()
-            .required('Confirm Password is required')
-            .test('confirmPassword', 'Both Password must be match!', (confirmPassword, yup) => yup.parent.password === confirmPassword)
+            .required('Xác nhận mật khẩu là bắt buộc')
+            .test('confirmPassword', 'Cả hai mật khẩu phải khớp nhau!', (confirmPassword, yup) => yup.parent.password === confirmPassword)
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
@@ -82,7 +82,7 @@ export default function AuthResetPassword() {
 
               openSnackbar({
                 open: true,
-                message: 'Successfuly reset password.',
+                message: 'Đặt lại mật khẩu thành công.',
                 variant: 'alert',
                 alert: {
                   color: 'success'
@@ -108,7 +108,7 @@ export default function AuthResetPassword() {
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="password-reset">Password</InputLabel>
+                  <InputLabel htmlFor="password-reset">Mật khẩu</InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.password && errors.password)}
@@ -134,7 +134,7 @@ export default function AuthResetPassword() {
                         </IconButton>
                       </InputAdornment>
                     }
-                    placeholder="Enter password"
+                    placeholder="Nhập mật khẩu"
                   />
                 </Stack>
                 {touched.password && errors.password && (
@@ -157,7 +157,7 @@ export default function AuthResetPassword() {
               </Grid>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="confirm-password-reset">Confirm Password</InputLabel>
+                  <InputLabel htmlFor="confirm-password-reset">Xác nhận mật khẩu</InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.confirmPassword && errors.confirmPassword)}
@@ -167,7 +167,7 @@ export default function AuthResetPassword() {
                     name="confirmPassword"
                     onBlur={handleBlur}
                     onChange={handleChange}
-                    placeholder="Enter confirm password"
+                    placeholder="Nhập lại mật khẩu"
                   />
                 </Stack>
                 {touched.confirmPassword && errors.confirmPassword && (
@@ -182,10 +182,11 @@ export default function AuthResetPassword() {
                   <FormHelperText error>{errors.submit}</FormHelperText>
                 </Grid>
               )}
+
               <Grid size={12}>
                 <AnimateButton>
                   <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-                    Reset Password
+                    Đặt lại mật khẩu
                   </Button>
                 </AnimateButton>
               </Grid>

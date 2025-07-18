@@ -59,7 +59,7 @@ const config: DefaultConfigProps = {
   miniDrawer: false,
   container: true,
   mode: ThemeMode.LIGHT,
-  presetColor: 'default',
+  presetColor: 'theme2',
   themeDirection: ThemeDirection.LTR,
   themeContrast: false
 };

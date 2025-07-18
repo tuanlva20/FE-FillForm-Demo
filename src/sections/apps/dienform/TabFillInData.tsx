@@ -39,7 +39,8 @@ import {
 } from 'api/form';
 
 // assets
-import { ArrowRight2, Clock } from 'iconsax-react';
+import { ErrorIcon } from 'assets/images/svg/icon';
+import { ArrowRight2, Clock, Data, InfoCircle, Warning2 } from 'iconsax-react';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
@@ -57,7 +58,6 @@ export default function TabFillInData() {
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState<boolean>(false);
   
   // State for form inputs
-  const [formName, setFormName] = useState<string>('');
   const [formLink, setFormLink] = useState<string>('');
   const [sheetLink, setSheetLink] = useState<string>('');
   
@@ -191,7 +191,7 @@ export default function TabFillInData() {
     startDate?: Date;
     endDate?: Date;
   }) => {
-    if (!mappingData) return;
+    if (!mappingData || !selectedFormId) return;
     
     // Validate mappings - allow empty mappings for optional questions
     const mappingArray = Array.from(columnMappings.entries()).map(([questionId, columnName]) => ({
@@ -203,8 +203,7 @@ export default function TabFillInData() {
     setLoading(true);
       
       const request: DataFillRequestDTO = {
-        formName: formName || `Form điền từ data - ${new Date().toLocaleDateString('vi-VN')}`,
-        formLink,
+        formId: selectedFormId,
         sheetLink,
         mappings: mappingArray,
         submissionCount: formValues.submissionCount,
@@ -217,8 +216,6 @@ export default function TabFillInData() {
       await createDataFillRequest(request);
       
       // Reset form
-      setFormName('');
-      setFormLink('');
       setSheetLink('');
       setDataChecked(false);
       setMappingData(null);
@@ -277,7 +274,7 @@ export default function TabFillInData() {
     setSelectedFormId(formId);
     
     // Reset form inputs when changing form
-    setFormName('');
+    setFormLink('');
     setSheetLink('');
     setDataChecked(false);
     setMappingData(null);
@@ -290,20 +287,7 @@ export default function TabFillInData() {
       {/* Form and Sheet Link Inputs */}
       <Grid size={12}>
         <MainCard title="Điền theo data có trước" sx={MAINCARD_STYLE}>
-          {error && <Alert 
-            severity="error" 
-            sx={{ 
-              mb: 2, 
-              alignItems: 'center',
-              '& .MuiAlert-icon': {
-                marginRight: 1,
-                pt: 1,
-                mt: 1
-              }
-            }}
-          >
-            {error}
-          </Alert>}
+          {error && <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 2 }}>{error}</Alert>}
           
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
@@ -362,6 +346,7 @@ export default function TabFillInData() {
                 color="primary"
                 onClick={handleCheckData}
                 disabled={isCheckingData || !selectedFormId || !sheetLink}
+                startIcon={!isCheckingData ? <Data size={20} color="currentColor" /> : null}
               >
                 {isCheckingData ? <CircularProgress size={24} color="inherit" /> : 'Kiểm Tra Dữ Liệu'}
               </Button>
@@ -380,7 +365,7 @@ export default function TabFillInData() {
               
               {/* Show data validation errors if any */}
               {mappingData.errors && mappingData.errors.length > 0 && (
-                <Alert severity="warning" sx={{ mb: 3 }}>
+                <Alert color="warning" icon={<Warning2 variant="Bold" />} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Phát hiện các vấn đề:</Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.errors.map((error, index) => (
@@ -392,7 +377,7 @@ export default function TabFillInData() {
               
               {/* Show unmapped questions if any */}
               {mappingData.unmappedQuestions && mappingData.unmappedQuestions.length > 0 && (
-                <Alert severity="info" sx={{ mb: 3 }}>
+                <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Câu hỏi không tìm thấy trong sheet:</Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.unmappedQuestions.map((question, index) => (
@@ -402,20 +387,46 @@ export default function TabFillInData() {
                 </Alert>
               )}
               
+              {/* Header Row */}
+              <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid size={{ xs: 12, md: 5 }}>
+                    <Typography variant="h6" fontWeight="600" color="text.primary">
+                      Câu hỏi
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    {/* Empty space for arrow */}
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Typography variant="h6" fontWeight="600" color="text.primary">
+                      Cột dữ liệu liên kết
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+
               {mappingData.questions.map((question) => (
                 <Box key={question.id} sx={{ mb: 3 }}>
                   <Grid container spacing={2} alignItems="center">
-                    <Grid size={{ xs: 12, md: 5 }}>
+                    <Grid size={{ xs: 5, md: 5 }}>
                       <Typography fontWeight="500">
-                        Câu hỏi: {question.title}
+                        {question.title}
+                        {question.required && (
+                          <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
+                            *
+                          </Typography>
+                        )}
                       </Typography>
                     </Grid>
                     
-                    <Grid size={{ xs: 12, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                    <Grid size={{ xs: 1, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
                       <ArrowRight2 size={24} />
                     </Grid>
                     
-                    <Grid size={{ xs: 12, md: 6 }}>
+                    <Grid size={{ xs: 6, md: 6 }}>
                       <FormControl fullWidth>
                         <Select
                           value={columnMappings.get(question.id) || ''}
@@ -424,7 +435,7 @@ export default function TabFillInData() {
                           size="small"
                         >
                           <MenuItem value="">
-                            Chọn cột dữ liệu tương ứng
+                            - Chọn cột dữ liệu tương ứng -
                           </MenuItem>
                           {mappingData.sheetColumns.map((column) => (
                             <MenuItem key={column} value={column}>
@@ -479,7 +490,7 @@ export default function TabFillInData() {
       <AutoFillFormModal 
         open={isAutoFillModalOpen} 
         onClose={() => setIsAutoFillModalOpen(false)}
-        formName={formName || (selectedForm?.name || 'Form điền từ data')}
+        formName={selectedForm?.name || 'Form điền từ data'}
         onSubmit={handleCreateFillRequest}
       />
     </Grid>

@@ -75,8 +75,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
               isLoggedIn: true,
               user: {
                 id: '1',
-                email: 'dienform@gmail.com',
-                name: 'Dienform User',
+                email: 'khaosat@gmail.com',
+                name: 'Khaosat User',
                 avatar: "",
                 role: 'admin'
               }
@@ -108,8 +108,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
           isLoggedIn: true,
           user: {
             id: '1',
-            email: email || 'dienform@gmail.com',
-            name: 'Dienform User',
+            email: email || 'khaosat@gmail.com',
+            name: 'Khaosat User',
             avatar: "",
             role: 'admin'
           }

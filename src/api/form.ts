@@ -112,8 +112,7 @@ export interface ColumnMapping {
 }
 
 export interface DataFillRequestDTO {
-  formName: string;
-  formLink: string;
+  formId: string;
   sheetLink: string;
   mappings: ColumnMapping[];
   submissionCount: number;
@@ -126,8 +125,8 @@ export interface DataFillRequestDTO {
 // API endpoints
 export const API_ENDPOINTS = {
   FORM: '/api/form',
-  DATA_MAPPING: '/api/form/data-mapping',
-  DATA_FILL_REQUEST: '/api/form/data-fill-request'
+  DATA_MAPPING: '/api/data-mapping',
+  DATA_FILL_REQUEST: '/api/fill-request/fill-in-data'
 };
 
 // Existing API Functions

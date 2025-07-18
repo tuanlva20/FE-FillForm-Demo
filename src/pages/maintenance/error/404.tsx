@@ -13,6 +13,8 @@ import { APP_DEFAULT_PATH } from 'config';
 
 // assets
 import error404 from 'assets/images/maintenance/img-error-404.svg';
+import { ArrowLeft2 } from 'iconsax-react';
+import { HomeIcon } from 'assets/images/svg/icon';
 
 // ==============================|| ERROR 404 ||============================== //
 
@@ -35,12 +37,12 @@ export default function Error404() {
       </Grid>
       <Grid size={12}>
         <Stack sx={{ gap: 2, justifyContent: 'center', alignItems: 'center' }}>
-          <Typography variant="h1">Page Not Found</Typography>
+          <Typography variant="h1">Không tìm thấy trang</Typography>
           <Typography align="center" sx={{ color: 'text.secondary', width: { xs: '73%', sm: '61%' } }}>
-            The page you are looking was moved, removed, renamed, or might never exist!
+            Trang bạn đang tìm kiếm đã bị xóa, di chuyển, đổi tên hoặc có thể không tồn tại!
           </Typography>
-          <Button component={Link} to={APP_DEFAULT_PATH} variant="contained">
-            Back To Home
+          <Button component={Link} to='/' variant="contained" sx={{ gap: 1 }}>
+            <HomeIcon /> Quay về trang chủ
           </Button>
         </Stack>
       </Grid>

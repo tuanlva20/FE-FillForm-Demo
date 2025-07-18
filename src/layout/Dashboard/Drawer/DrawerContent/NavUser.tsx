@@ -21,7 +21,7 @@ import useAuth from 'hooks/useAuth';
 // assets
 import { Tooltip } from '@mui/material';
 import avatar1 from 'assets/images/users/avatar-6.png';
-import { Logout } from 'iconsax-react';
+import { Logout, More } from 'iconsax-react';
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -73,59 +73,114 @@ export default function UserList() {
   };
 
   return (
-    <Box sx={{ p: 1.25, px: !drawerOpen ? 1.25 : 3, borderTop: '2px solid ', borderTopColor: 'divider' }}>
-      <List disablePadding>
+    <Box 
+      sx={{ 
+        p: drawerOpen ? 1.25 : 0.5,
+        px: drawerOpen ? 3 : 1.25, 
+        borderTop: '2px solid ', 
+        borderTopColor: 'divider',
+        minHeight: drawerOpen ? 'auto' : 64,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: drawerOpen ? 'flex-start' : 'center'
+      }}
+    >
+      <List disablePadding sx={{ width: '100%' }}>
         <ListItem
           disablePadding
           secondaryAction={
-            <ExpandMore
-              expand={open}
-              drawerOpen={drawerOpen}
-              id="basic-button"
-              aria-controls={open ? 'basic-menu' : undefined}
-              aria-haspopup="true"
-              aria-expanded={open ? 'true' : undefined}
-              onClick={handleClick}
-              aria-label="show more"
-            >
-              {/* <ArrowRight2 style={{ fontSize: '0.625rem' }} /> */}
-            </ExpandMore>
+            drawerOpen ? (
+              <ExpandMore
+                expand={open}
+                drawerOpen={drawerOpen}
+                id="basic-button"
+                aria-controls={open ? 'basic-menu' : undefined}
+                aria-haspopup="true"
+                aria-expanded={open ? 'true' : undefined}
+                onClick={handleClick}
+                aria-label="show more"
+                sx={{ display: 'none' }} // Hide the expand button, we'll use menu icon instead
+              >
+                <More />
+              </ExpandMore>
+            ) : (
+              <Tooltip title="Đăng xuất">
+                <IconButton size="small" color="error" sx={{ p: 0.5 }} onClick={handleLogout}>
+                  <Logout variant="Bulk" size={20} />
+                </IconButton>
+              </Tooltip>
+            )
           }
           sx={{
-            ...(!drawerOpen && { display: 'flex', justifyContent: 'flex-end' }),
-            '& .MuiListItemSecondaryAction-root': { right: !drawerOpen ? 16 : -16 }
+            ...(!drawerOpen && { 
+              display: 'flex', 
+              justifyContent: 'center',
+              flexDirection: 'column',
+              alignItems: 'center'
+            }),
+            '& .MuiListItemSecondaryAction-root': { 
+              right: !drawerOpen ? 8 : -16,
+              top: !drawerOpen ? 8 : '50%',
+              transform: !drawerOpen ? 'none' : 'translateY(-50%)'
+            }
           }}
         >
-          <ListItemAvatar>
-            <Avatar alt="Avatar" src={avatar1} sx={{ ...(drawerOpen && { width: 46, height: 46 }) }} />
+          <ListItemAvatar sx={{ minWidth: !drawerOpen ? 'auto' : 56 }}>
+            <Avatar 
+              alt="Avatar" 
+              src={avatar1} 
+              sx={{ 
+                width: drawerOpen ? 46 : 36, 
+                height: drawerOpen ? 46 : 36,
+                mx: !drawerOpen ? 'auto' : 0
+              }} 
+            />
           </ListItemAvatar>
-          <ListItemText primary={user?.name} sx={{ ...(!drawerOpen && { display: 'none' }) }} secondary="Admin" />
-          {/* <Grid> */}
-                                  <Tooltip title="Đăng xuất">
-                                    <IconButton size="large" color="error" sx={{ p: 1 }} onClick={handleLogout}>
-                                      <Logout variant="Bulk" />
-                                    </IconButton>
-                                  </Tooltip>
-                                {/* </Grid> */}
+          
+          {drawerOpen && (
+            <>
+              <ListItemText 
+                primary={user?.name} 
+                secondary="Admin" 
+                sx={{ ml: 1 }}
+              />
+              {/* <Tooltip title="Menu">
+                <IconButton 
+                  size="small" 
+                  onClick={handleClick}
+                  sx={{ ml: 1 }}
+                >
+                  <More size={20} />
+                </IconButton>
+              </Tooltip> */}
+              <Tooltip title="Đăng xuất">
+                <IconButton size="large" color="error" sx={{ ml: 0.5, p: 1 }} onClick={handleLogout}>
+                  <Logout variant="Bulk" size={20} />
+                </IconButton>
+              </Tooltip>
+            </>
+          )}
         </ListItem>
       </List>
-      <Menu
-        id="basic-menu"
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        MenuListProps={{ 'aria-labelledby': 'basic-button' }}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-      >
-        <MenuItem onClick={handleLogout}>Logout</MenuItem>
-        <MenuItem component={Link} to="/apps/profiles/user/personal" onClick={handleClose}>
-          Profile
-        </MenuItem>
-        <MenuItem component={Link} to="/apps/profiles/account/my-account" onClick={handleClose}>
-          My account
-        </MenuItem>
-      </Menu>
+      
+      {/* {drawerOpen && (
+        <Menu
+          id="basic-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleClose}
+          MenuListProps={{ 'aria-labelledby': 'basic-button' }}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <MenuItem component={Link} to="/apps/profiles/user/personal" onClick={handleClose}>
+            Hồ sơ
+          </MenuItem>
+          <MenuItem component={Link} to="/apps/profiles/account/my-account" onClick={handleClose}>
+            Tài khoản của tôi
+          </MenuItem>
+        </Menu>
+      )} */}
     </Box>
   );
 }

@@ -20,7 +20,7 @@ export default function ForgotPassword() {
       <Grid container spacing={3}>
         <Grid size={12}>
           <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline', mb: { xs: -0.5, sm: 0.5 } }}>
-            <Typography variant="h3">Forgot Password</Typography>
+            <Typography variant="h3">Quên mật khẩu</Typography>
             <Typography
               component={Link}
               to={isLoggedIn ? '/auth/login' : '/login'}
@@ -28,7 +28,7 @@ export default function ForgotPassword() {
               sx={{ textDecoration: 'none' }}
               color="primary"
             >
-              Back to Login
+              Quay lại đăng nhập
             </Typography>
           </Stack>
         </Grid>

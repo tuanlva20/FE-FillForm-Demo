@@ -11,11 +11,12 @@ import ComponentHeader from 'components/cards/ComponentHeader';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 
-import ComponentWrapper from 'sections/components-overview/ComponentWrapper';
 import ComponentSkeleton from 'sections/components-overview/ComponentSkeleton';
+import ComponentWrapper from 'sections/components-overview/ComponentWrapper';
 
 // assets
-import { Coin, Ethereum, InfoCircle, MessageQuestion, TickSquare, Warning2 } from 'iconsax-react';
+import { ErrorIcon } from 'assets/images/svg/icon';
+import { Coin, InfoCircle, MessageQuestion, TickSquare, Warning2 } from 'iconsax-react';
 
 // ==============================|| COMPONENTS - ALERTS ||============================== //
 
@@ -37,7 +38,7 @@ export default function ComponentAlert() {
 <Alert color="info" icon={<InfoCircle variant="Bold" />}>
   Info Text
 </Alert>
-<Alert color="error" icon={<Ethereum variant="Bold" />}>
+<Alert color="error" icon={<ErrorIcon />}>
   Error Text
 </Alert>`;
 
@@ -84,7 +85,7 @@ export default function ComponentAlert() {
 <Alert color="info" variant="filled" icon={<InfoCircle variant="Bold" />}>
   Info Text
 </Alert>
-<Alert color="error" variant="filled" icon={<Ethereum variant="Bold" />}>
+<Alert color="error" variant="filled" icon={<ErrorIcon />}>
   Error Text
 </Alert>`;
 
@@ -96,7 +97,7 @@ export default function ComponentAlert() {
   <AlertTitle>Secondary Text</AlertTitle>
   <Typography variant="h6"> This is an secondary alert.</Typography>
 </Alert>
-<Alert color="success" variant="border" icon={<CheckSquareFilled />}>
+<Alert color="success" variant="border" icon={<TickSquare variant="Bold" />}>
   <AlertTitle>Success Text</AlertTitle>
   <Typography variant="h6"> This is an success alert.</Typography>
 </Alert>
@@ -108,7 +109,7 @@ export default function ComponentAlert() {
   <AlertTitle>Info Text</AlertTitle>
   <Typography variant="h6"> This is an info alert.</Typography>
 </Alert>
-<Alert color="error" variant="border" icon={<Ethereum variant="Bold" />}>
+<Alert color="error" variant="border" icon={<ErrorIcon />}>
   <AlertTitle>Error Text</AlertTitle>
   <Typography variant="h6"> This is an error alert.</Typography>
 </Alert>`;
@@ -128,7 +129,7 @@ export default function ComponentAlert() {
 <Alert color="info" variant="outlined" icon={<InfoCircle />}>
   Info Text
 </Alert>
-<Alert color="error" variant="outlined" icon={<Ethereum />}>
+<Alert color="error" variant="outlined" icon={<ErrorIcon />}>
   Error Text
 </Alert>`;
 
@@ -161,7 +162,7 @@ export default function ComponentAlert() {
                   <Alert color="info" icon={<InfoCircle variant="Bold" />}>
                     Info Text
                   </Alert>
-                  <Alert color="error" icon={<Ethereum variant="Bold" />}>
+                  <Alert color="error" icon={<ErrorIcon />}>
                     Error Text
                   </Alert>
                 </Stack>
@@ -227,7 +228,7 @@ export default function ComponentAlert() {
                   <Alert color="info" variant="filled" icon={<InfoCircle variant="Bold" />}>
                     Info Text
                   </Alert>
-                  <Alert color="error" variant="filled" icon={<Ethereum variant="Bold" />}>
+                  <Alert color="error" variant="filled" icon={<ErrorIcon />}>
                     Error Text
                   </Alert>
                 </Stack>
@@ -258,7 +259,7 @@ export default function ComponentAlert() {
                     <AlertTitle>Info Text</AlertTitle>
                     <Typography variant="h6"> This is an info alert.</Typography>
                   </Alert>
-                  <Alert color="error" variant="border" icon={<Ethereum variant="Bold" />}>
+                  <Alert color="error" variant="border" icon={<ErrorIcon />}>
                     <AlertTitle>Error Text</AlertTitle>
                     <Typography variant="h6"> This is an error alert.</Typography>
                   </Alert>
@@ -281,7 +282,7 @@ export default function ComponentAlert() {
                   <Alert color="info" variant="outlined" icon={<InfoCircle />}>
                     Info Text
                   </Alert>
-                  <Alert color="error" variant="outlined" icon={<Ethereum />}>
+                  <Alert color="error" variant="outlined" icon={<ErrorIcon />}>
                     Error Text
                   </Alert>
                 </Stack>

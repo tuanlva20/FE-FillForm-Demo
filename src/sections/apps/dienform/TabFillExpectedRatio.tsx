@@ -39,6 +39,10 @@ import {
   getFormList
 } from 'api/form';
 
+// iconsax-react
+import { ErrorIcon } from 'assets/images/svg/icon';
+import { InfoCircle } from 'iconsax-react';
+
 // styles & constant
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -100,7 +104,7 @@ export default function TabFillExpectedRatio() {
         }
       } catch (err) {
         console.error('Error fetching forms:', err);
-        setError('Failed to load forms. Please try again later.');
+        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
       } finally {
         setLoading(false);
       }
@@ -148,7 +152,7 @@ export default function TabFillExpectedRatio() {
         validatePercentages(newQuestionOptions);
       } catch (err) {
         console.error('Error fetching form details:', err);
-        setError('Failed to load form details. Please try again later.');
+        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
       } finally {
         setFormDetailLoading(false);
       }
@@ -579,11 +583,11 @@ export default function TabFillExpectedRatio() {
               <CircularProgress />
             </Stack>
           ) : error ? (
-            <Typography color="error" sx={{ py: 2 }}>{error}</Typography>
+            <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>{error}</Alert>
           ) : selectedForm ? (
             <>
               {isEditingFillRequest && (
-                <Alert severity="info" sx={{ mb: 3 }}>
+                <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
                   Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
                 </Alert>
               )}
@@ -662,6 +666,7 @@ export default function TabFillExpectedRatio() {
                                   option.id, 
                                   parseInt(e.target.value) || 0
                                 )}
+                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                                 InputProps={{
                                   inputProps: { min: 0 },
                                   endAdornment: <InputAdornment position="end">%</InputAdornment>
@@ -674,8 +679,7 @@ export default function TabFillExpectedRatio() {
                       </Grid>
                       
                       {balanceErrors.has(question.id) && (
-                        <Alert 
-                          severity="error" sx={{ mt: 2 }}>
+                        <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
                           {balanceErrors.get(question.id)}
                         </Alert>
                       )}

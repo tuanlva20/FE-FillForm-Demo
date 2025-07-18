@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react';
 
 // material-ui
-import useMediaQuery from '@mui/material/useMediaQuery';
 import Badge from '@mui/material/Badge';
+import Box from '@mui/material/Box';
 import CardContent from '@mui/material/CardContent';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Link from '@mui/material/Link';
@@ -14,8 +14,9 @@ import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import Stack from '@mui/material/Stack';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project-imports
 import Avatar from 'components/@extended/Avatar';
@@ -25,7 +26,9 @@ import MainCard from 'components/MainCard';
 import SimpleBar from 'components/third-party/SimpleBar';
 
 // assets
-import { Gift, MessageText1, Notification, Setting2 } from 'iconsax-react';
+import moneybank from 'assets/images/icons/gif/moneybank.gif';
+import { CheckCircleIcon } from 'assets/images/svg/icon';
+import { CloseCircle, Notification } from 'iconsax-react';
 
 // types
 
@@ -59,26 +62,66 @@ export default function NotificationPage() {
 
   return (
     <Box sx={{ flexShrink: 0, ml: 0.5 }}>
-      <IconButton
-        color="secondary"
-        variant="light"
-        aria-label="open profile"
-        ref={anchorRef}
-        aria-controls={open ? 'profile-grow' : undefined}
-        aria-haspopup="true"
-        onClick={handleToggle}
-        size="large"
-        sx={(theme) => ({
-          p: 1,
-          color: 'secondary.main',
-          bgcolor: open ? 'secondary.200' : 'secondary.100',
-          ...theme.applyStyles('dark', { bgcolor: open ? 'background.paper' : 'background.default' })
-        })}
-      >
-        <Badge badgeContent={read} color="success" sx={{ '& .MuiBadge-badge': { top: 2, right: 4 } }}>
-          <Notification variant="Bold" />
-        </Badge>
-      </IconButton>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Tooltip 
+          title="Số dư hiện có: 300.000đ"
+          placement="bottom"
+          arrow
+        >
+          <Box 
+            sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 0.5,
+              px: 1.5,
+              py: 0.75,
+              borderRadius: 2,
+              mr: 1,
+              border: '1px solid',
+              borderColor: 'primary.lighter',
+              boxShadow: '0 2px 8px rgba(145, 158, 171, 0.16)',
+              transition: 'all 0.2s ease-in-out',
+              cursor: 'default',
+              '&:hover': {
+                boxShadow: '0 4px 12px rgba(145, 158, 171, 0.24)',
+                borderColor: 'primary.light'
+              }
+            }}
+          >
+            <img src={moneybank} alt="balance" style={{ width: 36, height: 34 }} />
+            <Typography 
+              variant="subtitle1" 
+              sx={{ 
+                color: 'primary.main',
+                fontWeight: 600,
+                fontSize: '1rem'
+              }}
+            >
+              300.000đ
+            </Typography>
+          </Box>
+        </Tooltip>
+        <IconButton
+          color="secondary"
+          variant="light"
+          aria-label="open profile"
+          ref={anchorRef}
+          aria-controls={open ? 'profile-grow' : undefined}
+          aria-haspopup="true"
+          onClick={handleToggle}
+          size="large"
+          sx={(theme) => ({
+            p: 1,
+            color: 'secondary.main',
+            bgcolor: open ? 'secondary.200' : 'secondary.100',
+            ...theme.applyStyles('dark', { bgcolor: open ? 'background.paper' : 'background.default' })
+          })}
+        >
+          <Badge badgeContent={read} color="success" sx={{ '& .MuiBadge-badge': { top: 2, right: 4 } }}>
+            <Notification variant="Bold" />
+          </Badge>
+        </IconButton>
+      </Stack>
       <Popper
         placement={downMD ? 'bottom' : 'bottom-end'}
         open={open}
@@ -115,117 +158,62 @@ export default function NotificationPage() {
                         })}
                       >
                         <ListItem
-                          component={ListItemButton}
-                          secondaryAction={
-                            <Typography variant="caption" noWrap>
-                              3:00 AM
-                            </Typography>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar type="filled">
-                              <Gift size={20} variant="Bold" />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography variant="h6">
-                                It&apos;s{' '}
-                                <Typography component="span" variant="subtitle1">
-                                  Cristina danny&apos;s
-                                </Typography>{' '}
-                                birthday today.
-                              </Typography>
-                            }
-                            secondary="2 min ago"
-                          />
-                        </ListItem>
+  component={ListItemButton}
+  secondaryAction={
+    <Typography variant="caption" noWrap>
+      10:42 AM
+    </Typography>
+  }
+>
+  <ListItemAvatar>
+    <Avatar type="outlined">
+      <CheckCircleIcon/>
+    </Avatar>
+  </ListItemAvatar>
+  <ListItemText
+    primary={
+      <Typography variant="h6">
+        Tự động điền{' '}
+        <Typography component="span" variant="subtitle1">
+          Form khảo sát
+        </Typography>{' '}
+        đã hoàn tất.
+      </Typography>
+    }
+    secondary="Yêu cầu #1243 đã được xử lý thành công."
+  />
+</ListItem>
 
-                        <ListItem
-                          component={ListItemButton}
-                          secondaryAction={
-                            <Typography variant="caption" noWrap>
-                              6:00 PM
-                            </Typography>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar type="outlined">
-                              <MessageText1 size={20} variant="Bold" />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography variant="h6">
-                                <Typography component="span" variant="subtitle1">
-                                  Aida Burg
-                                </Typography>{' '}
-                                commented your post.
-                              </Typography>
-                            }
-                            secondary="5 August"
-                          />
-                        </ListItem>
+<ListItem
+  component={ListItemButton}
+  secondaryAction={
+    <Typography variant="caption" noWrap>
+      2:10 PM
+    </Typography>
+  }
+>
+  <ListItemAvatar>
+    <Avatar type="outlined" sx={{ bgcolor: 'error.main', color: 'background.paper' }}>
+      <CloseCircle size={20} variant="Bold" />
+    </Avatar>
+  </ListItemAvatar>
+  <ListItemText
+    primary={
+      <Typography variant="h6">
+        Gặp lỗi khi xử lý{' '}
+        <Typography component="span" variant="subtitle1">
+          form khảo sát
+        </Typography>
+        .
+      </Typography>
+    }
+    secondary="Vui lòng kiểm tra lại yêu cầu #1244."
+  />
+</ListItem>
 
-                        <ListItem
-                          component={ListItemButton}
-                          secondaryAction={
-                            <Typography variant="caption" noWrap>
-                              2:45 PM
-                            </Typography>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar>
-                              <Setting2 size={20} variant="Bold" />
-                            </Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography variant="h6">
-                                Your Profile is Complete &nbsp;
-                                <Typography component="span" variant="subtitle1">
-                                  60%
-                                </Typography>{' '}
-                              </Typography>
-                            }
-                            secondary="7 hours ago"
-                          />
-                        </ListItem>
 
-                        <ListItem
-                          component={ListItemButton}
-                          secondaryAction={
-                            <Typography variant="caption" noWrap>
-                              9:10 PM
-                            </Typography>
-                          }
-                        >
-                          <ListItemAvatar>
-                            <Avatar type="combined">C</Avatar>
-                          </ListItemAvatar>
-                          <ListItemText
-                            primary={
-                              <Typography variant="h6">
-                                <Typography component="span" variant="subtitle1">
-                                  Cristina Danny
-                                </Typography>{' '}
-                                invited to join{' '}
-                                <Typography component="span" variant="subtitle1">
-                                  Meeting.
-                                </Typography>
-                              </Typography>
-                            }
-                            secondary="Daily scrum meeting time"
-                          />
-                        </ListItem>
                       </List>
                     </SimpleBar>
-                    <Stack direction="row" sx={{ justifyContent: 'center', mt: 1.5 }}>
-                      <Link href="#" variant="h6" color="primary">
-                        Xem tất cả
-                      </Link>
-                    </Stack>
                   </CardContent>
                 </MainCard>
               </ClickAwayListener>
