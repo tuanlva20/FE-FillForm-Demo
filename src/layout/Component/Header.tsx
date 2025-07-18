@@ -114,7 +114,7 @@ export default function Header() {
               <Box className="header-button" sx={{ display: 'inline-block' }}>
                 <AnimateButton>
                   <Button
-                    href="#"
+                    href="/dashboard/default"
                     disableElevation
                     startIcon={<Send2 />}
                     color="primary"
