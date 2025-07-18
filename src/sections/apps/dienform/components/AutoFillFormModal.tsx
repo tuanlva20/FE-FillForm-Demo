@@ -24,6 +24,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 // assets
+import { Add, Calendar, CloseCircle, DocumentText, Money, Send2, Timer1 } from 'iconsax-react';
+import { AddIcon } from 'assets/images/svg/icon';
 
 // Interface
 interface AutoFillFormModalProps {
@@ -223,11 +225,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       fullWidth
     >
       <DialogTitle>
-        <Typography variant="h4" component="div" align="center">
-          TẠO YÊU CẦU ĐIỀN FORM TỰ ĐỘNG
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
+          <DocumentText size={24} variant="Bulk" />
+          <Typography variant="h4" component="div">
+            TẠO YÊU CẦU ĐIỀN FORM TỰ ĐỘNG
+          </Typography>
+        </Stack>
       </DialogTitle>
-      {/* <Divider /> */}
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <Grid container spacing={2}>
@@ -237,7 +241,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 <Typography variant="subtitle1" fontWeight="500" minWidth={100}>
                   Tên Form:
                 </Typography>
-                <Typography variant="body1">
+                <Typography variant="body1" sx={{ color: 'primary.main', fontWeight: 500 }}>
                   {formName}
                 </Typography>
               </Stack>
@@ -247,36 +251,68 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               <Divider sx={{ my: 1 }} />
             </Grid>
 
-            {/* Account balance row */}
-            <Grid size={12} container alignItems="center">
-              <Grid size={6}>
-                <Typography variant="body1">Số dư hiện có:</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="body1" align="right" fontWeight="bold">
-                  300.000đ
-                </Typography>
-              </Grid>
+            {/* Price Info Section */}
+            <Grid size={12}>
+              <Stack spacing={2} sx={{ bgcolor: 'primary.lighter', p: 2, borderRadius: 2 }}>
+                {/* Account balance */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body1">Số dư hiện có:</Typography>
+                  <Typography variant="h6" color="primary">
+                    300.000đ
+                  </Typography>
+                </Stack>
+
+                {/* Base price */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body1">Giá cơ bản mỗi khảo sát:</Typography>
+                  <Typography variant="h6">
+                    350đ
+                  </Typography>
+                </Stack>
+
+                {/* Human-like toggle */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        checked={formValues.isHumanLike} 
+                        onChange={handleSwitchChange} 
+                        name="isHumanLike" 
+                      />
+                    }
+                    label={
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Timer1 size={20} />
+                        <Typography>Điền giãn cách giống người thật</Typography>
+                      </Stack>
+                    }
+                  />
+                  <Typography variant="h6" color={formValues.isHumanLike ? 'success.main' : 'text.secondary'}>
+                    +100đ
+                  </Typography>
+                </Stack>
+
+                <Divider />
+
+                {/* Final price per survey */}
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body1" fontWeight={500}>Tổng giá mỗi khảo sát:</Typography>
+                  <Typography variant="h6" color="success.main" fontWeight={500}>
+                    {formValues.pricePerSurvey}đ
+                  </Typography>
+                </Stack>
+              </Stack>
             </Grid>
 
-            {/* Price per survey row */}
-            <Grid size={12} container alignItems="center">
-              <Grid size={6}>
-                <Typography variant="body1">Đơn giá mỗi khảo sát:</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="body1" align="right" fontWeight="bold">
-                  {formValues.pricePerSurvey}đ/khảo sát
-                </Typography>
-              </Grid>
-            </Grid>
-
-            {/* Survey count row */}
-            <Grid size={12} container alignItems="center">
-              <Grid size={6}>
-                <Typography variant="body1">Số lượng khảo sát cần tăng:</Typography>
-              </Grid>
-              <Grid size={6}>
+            {/* Survey count */}
+            <Grid size={12}>
+              <Stack spacing={1}>
+                <InputLabel>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <AddIcon/>
+                    <Typography>Số lượng khảo sát cần tăng</Typography>
+                  </Stack>
+                </InputLabel>
                 <TextField
                   fullWidth
                   type="number"
@@ -285,144 +321,103 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   error={!!errors.submissionCount}
                   helperText={errors.submissionCount}
                 />
-              </Grid>
+              </Stack>
             </Grid>
 
-            {/* Human-like toggle */}
-            <Grid size={12}>
-              <FormControlLabel
-                control={
-                  <Switch 
-                    checked={formValues.isHumanLike} 
-                    onChange={handleSwitchChange} 
-                    name="isHumanLike" 
-                  />
-                }
-                label="Điền rất giống người thật (+100đ/khảo sát)"
-                sx={{ '& .MuiFormControlLabel-label': { fontWeight: 500 } }}
-              />
-            </Grid>
-
-            <Grid size={12}>
-              <Divider sx={{ my: 1 }} />
-            </Grid>
-
-            {/* Time interval selection */}
-            {/* <Grid size={12}>
-              <InputLabel htmlFor="time-interval-select">Thời gian giãn cách</InputLabel>
-              <Select
-                fullWidth
-                id="time-interval-select"
-                value={formValues.timeInterval}
-                onChange={handleTimeIntervalChange as any}
-              >
-                <MenuItem value="1-5 phút">1-5 phút</MenuItem>
-                <MenuItem value="5-10 phút">5-10 phút</MenuItem>
-                <MenuItem value="10-30 phút">10-30 phút</MenuItem>
-                <MenuItem value="30-60 phút">30-60 phút</MenuItem>
-                <MenuItem value="1-3 giờ">1-3 giờ</MenuItem>
-              </Select>
-            </Grid> */}
-
-            {/* Time-based submissions toggle */}
-            {/* <Grid size={12}>
-              <FormControlLabel
-                control={
-                  <Switch 
-                    checked={formValues.varySubmissionsByTime} 
-                    onChange={handleSwitchChange} 
-                    name="varySubmissionsByTime"
-                  />
-                }
-                label="Thay đổi số lượng khảo sát tùy vào thời gian hiện tại trong ngày (Múi giờ UTC +7)"
-                sx={{ 
-                  '& .MuiFormControlLabel-label': { 
-                    fontWeight: 500,
-                    fontSize: '0.875rem',
-                    lineHeight: 1.5
-                  } 
-                }}
-              />
-            </Grid> */}
-
-            {/* <Grid size={12}>
-              <Divider sx={{ my: 1 }} />
-            </Grid> */}
-
-            {/* Date selection row */}
+            {/* Date selection */}
             <Grid size={12} container spacing={2}>
               <Grid size={6}>
-                <InputLabel htmlFor="start-date" sx={{ mb: 1 }}>Ngày bắt đầu</InputLabel>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    value={formValues.startDate}
-                    onChange={handleStartDateChange}
-                    format="dd-MM-yyyy"
-                    minDate={new Date()}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        id: "start-date",
-                        placeholder: "DD-MM-YYYY",
-                        error: !!errors.startDate,
-                        helperText: errors.startDate
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
+                <Stack spacing={1}>
+                  <InputLabel>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Calendar size={20} />
+                      <Typography>Ngày bắt đầu</Typography>
+                    </Stack>
+                  </InputLabel>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      value={formValues.startDate}
+                      onChange={handleStartDateChange}
+                      format="dd-MM-yyyy"
+                      minDate={new Date()}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          id: "start-date",
+                          placeholder: "DD-MM-YYYY",
+                          error: !!errors.startDate,
+                          helperText: errors.startDate
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Stack>
               </Grid>
 
               <Grid size={6}>
-                <InputLabel htmlFor="end-date" sx={{ mb: 1 }}>Ngày kết thúc</InputLabel>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <DatePicker
-                    value={formValues.endDate}
-                    onChange={handleEndDateChange}
-                    format="dd-MM-yyyy"
-                    minDate={formValues.startDate || new Date()}
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        id: "end-date",
-                        error: !!errors.endDate,
-                        helperText: errors.endDate,
-                        placeholder: "DD-MM-YYYY"
-                      }
-                    }}
-                  />
-                </LocalizationProvider>
+                <Stack spacing={1}>
+                  <InputLabel>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Calendar size={20} />
+                      <Typography>Ngày kết thúc</Typography>
+                    </Stack>
+                  </InputLabel>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
+                    <DatePicker
+                      value={formValues.endDate}
+                      onChange={handleEndDateChange}
+                      format="dd-MM-yyyy"
+                      minDate={formValues.startDate || new Date()}
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          id: "end-date",
+                          error: !!errors.endDate,
+                          helperText: errors.endDate,
+                          placeholder: "DD-MM-YYYY"
+                        }
+                      }}
+                    />
+                  </LocalizationProvider>
+                </Stack>
               </Grid>
             </Grid>
 
+            {/* Total cost */}
             <Grid size={12}>
-              <Divider sx={{ my: 1 }} />
-            </Grid>
-
-            {/* Total cost row */}
-            <Grid size={12} container alignItems="center">
-              {/* <Grid size={6}>
-                <Typography variant="h3">Tổng cộng</Typography>
-              </Grid>
-              <Grid size={6}>
-                <Typography variant="h4" align="right" fontWeight="bold">
+              <Stack 
+                direction="row" 
+                justifyContent="space-between" 
+                alignItems="center"
+                sx={{ 
+                  bgcolor: 'success.lighter',
+                  p: 2,
+                  borderRadius: 2,
+                  mt: 1
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Money size={24} variant="Bulk" />
+                  <Typography variant="h4">Tổng chi phí:</Typography>
+                </Stack>
+                <Typography 
+                  variant="h4" 
+                  color="success.dark"
+                  fontWeight="bold"
+                >
                   {calculateTotalCost()}đ
                 </Typography>
-              </Grid> */}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', width: '100%', gap: 2 }}>
-                <Typography variant="h4">Tổng cộng:</Typography>
-                <Typography variant="h4" align="right" fontWeight="bold" sx={{ color: 'red' }}>
-                  {calculateTotalCost()}đ
-                </Typography>
-              </Box>
+              </Stack>
             </Grid>
           </Grid>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3, pt: 0 }}>
+      <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3 }}>
         <Button 
-          variant="contained" 
+          variant="outlined" 
           color="error" 
           onClick={onClose}
+          startIcon={<CloseCircle />}
           sx={{ borderRadius: '100px' }}
         >
           Đóng
@@ -431,6 +426,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
           variant="contained" 
           color="primary" 
           onClick={handleSubmit}
+          endIcon={<Send2 />}
           sx={{ borderRadius: '100px' }}
           disabled={
             formValues.submissionCount <= 0 || 

@@ -25,7 +25,7 @@ const ITEM_PADDING_TOP = 8;
 const MenuProps = { PaperProps: { style: { maxHeight: ITEM_HEIGHT * 4.5 + ITEM_PADDING_TOP } } };
 
 // iconsax-react
-import { Ethereum } from 'iconsax-react';
+import { ErrorIcon } from 'assets/images/svg/icon';
 
 // ==============================|| DIENFORM - CREATE ||============================== //
 
@@ -114,7 +114,7 @@ export default function TabCreate() {
             </Grid>
             {error && (
               <Grid size={{ xs: 24, sm: 24 }}>
-                <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ mb: 1 }}>
+                <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 1 }}>
                   {error}
                 </Alert>
               </Grid>

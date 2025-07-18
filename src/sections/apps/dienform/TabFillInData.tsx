@@ -39,7 +39,8 @@ import {
 } from 'api/form';
 
 // assets
-import { ArrowRight2, Clock, Data, Ethereum, InfoCircle, Warning2 } from 'iconsax-react';
+import { ErrorIcon } from 'assets/images/svg/icon';
+import { ArrowRight2, Clock, Data, InfoCircle, Warning2 } from 'iconsax-react';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
@@ -286,7 +287,7 @@ export default function TabFillInData() {
       {/* Form and Sheet Link Inputs */}
       <Grid size={12}>
         <MainCard title="Điền theo data có trước" sx={MAINCARD_STYLE}>
-          {error && <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ mb: 2 }}>{error}</Alert>}
+          {error && <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 2 }}>{error}</Alert>}
           
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>

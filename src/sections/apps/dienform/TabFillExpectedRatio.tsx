@@ -30,17 +30,18 @@ import ExpectedRatioFormList from './components/tabfillexpectedRatio/FormList';
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  AnswerDistribution,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // iconsax-react
-import { Ethereum, InfoCircle } from 'iconsax-react';
+import { ErrorIcon } from 'assets/images/svg/icon';
+import { InfoCircle } from 'iconsax-react';
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -582,7 +583,7 @@ export default function TabFillExpectedRatio() {
               <CircularProgress />
             </Stack>
           ) : error ? (
-            <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ py: 2 }}>{error}</Alert>
+            <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>{error}</Alert>
           ) : selectedForm ? (
             <>
               {isEditingFillRequest && (
@@ -678,7 +679,7 @@ export default function TabFillExpectedRatio() {
                       </Grid>
                       
                       {balanceErrors.has(question.id) && (
-                        <Alert color="error" icon={<Ethereum variant="Bold" />} sx={{ mt: 2 }}>
+                        <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
                           {balanceErrors.get(question.id)}
                         </Alert>
                       )}

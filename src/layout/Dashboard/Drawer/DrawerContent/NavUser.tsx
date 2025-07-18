@@ -144,7 +144,7 @@ export default function UserList() {
                 secondary="Admin" 
                 sx={{ ml: 1 }}
               />
-              <Tooltip title="Menu">
+              {/* <Tooltip title="Menu">
                 <IconButton 
                   size="small" 
                   onClick={handleClick}
@@ -152,9 +152,9 @@ export default function UserList() {
                 >
                   <More size={20} />
                 </IconButton>
-              </Tooltip>
+              </Tooltip> */}
               <Tooltip title="Đăng xuất">
-                <IconButton size="small" color="error" sx={{ ml: 0.5, p: 1 }} onClick={handleLogout}>
+                <IconButton size="large" color="error" sx={{ ml: 0.5, p: 1 }} onClick={handleLogout}>
                   <Logout variant="Bulk" size={20} />
                 </IconButton>
               </Tooltip>
@@ -163,7 +163,7 @@ export default function UserList() {
         </ListItem>
       </List>
       
-      {drawerOpen && (
+      {/* {drawerOpen && (
         <Menu
           id="basic-menu"
           anchorEl={anchorEl}
@@ -180,7 +180,7 @@ export default function UserList() {
             Tài khoản của tôi
           </MenuItem>
         </Menu>
-      )}
+      )} */}
     </Box>
   );
 }
