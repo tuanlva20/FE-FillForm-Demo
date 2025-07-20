@@ -69,6 +69,9 @@ export default function TabFillExpectedRatio() {
   // State for tracking custom data checkboxes and text
   const [customData, setCustomData] = useState<Map<string, { useCustomData: boolean, data: string }>>(new Map());
   
+  // State for tracking date input requirements
+  const [dateInputs, setDateInputs] = useState<Map<string, { useCustomData: boolean, data: string }>>(new Map());
+  
   // State for balance errors
   const [balanceErrors, setBalanceErrors] = useState<Map<string, string>>(new Map());
   
@@ -129,6 +132,7 @@ export default function TabFillExpectedRatio() {
         // Initialize question options percentages
         const newQuestionOptions = new Map<string, Map<string, number>>();
         const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
+        const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
         
         formDetails.questions.forEach(question => {
           const optionsMap = new Map<string, number>();
@@ -144,10 +148,16 @@ export default function TabFillExpectedRatio() {
           if (question.type === 'text') {
             newCustomData.set(question.id, { useCustomData: false, data: '' });
           }
+
+          // Initialize date input state for date fields
+          if (question.type === 'date') {
+            newDateInputs.set(question.id, { useCustomData: false, data: '' });
+          }
         });
         
         setQuestionOptions(newQuestionOptions);
         setCustomData(newCustomData);
+        setDateInputs(newDateInputs);
         setIsEditing(false);
         validatePercentages(newQuestionOptions);
       } catch (err) {
@@ -237,6 +247,30 @@ export default function TabFillExpectedRatio() {
       const currentData = newCustomData.get(questionId)!;
       newCustomData.set(questionId, { ...currentData, data: value });
       setCustomData(newCustomData);
+    }
+  };
+
+  // Handle date input toggle
+  const handleDateInputToggle = (questionId: string, checked: boolean) => {
+    setIsEditing(true);
+    const newDateInputs = new Map(dateInputs);
+    
+    if (newDateInputs.has(questionId)) {
+      const currentData = newDateInputs.get(questionId)!;
+      newDateInputs.set(questionId, { ...currentData, useCustomData: checked });
+      setDateInputs(newDateInputs);
+    }
+  };
+  
+  // Handle date input data change
+  const handleDateInputChange = (questionId: string, value: string) => {
+    setIsEditing(true);
+    const newDateInputs = new Map(dateInputs);
+    
+    if (newDateInputs.has(questionId)) {
+      const currentData = newDateInputs.get(questionId)!;
+      newDateInputs.set(questionId, { ...currentData, data: value });
+      setDateInputs(newDateInputs);
     }
   };
   
@@ -360,6 +394,7 @@ export default function TabFillExpectedRatio() {
           // Reset question options percentages
           const newQuestionOptions = new Map<string, Map<string, number>>();
           const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
+          const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
           
           formDetails.questions.forEach(question => {
             const optionsMap = new Map<string, number>();
@@ -373,10 +408,15 @@ export default function TabFillExpectedRatio() {
             if (question.type === 'text') {
               newCustomData.set(question.id, { useCustomData: false, data: '' });
             }
+
+            if (question.type === 'date') {
+              newDateInputs.set(question.id, { useCustomData: false, data: '' });
+            }
           });
           
           setQuestionOptions(newQuestionOptions);
           setCustomData(newCustomData);
+          setDateInputs(newDateInputs);
           setIsEditing(false);
           setIsEditingFillRequest(false);
           validatePercentages(newQuestionOptions);
@@ -414,7 +454,7 @@ export default function TabFillExpectedRatio() {
         const question = selectedForm.questions.find(q => q.id === questionId);
         
         // For multiple-choice questions
-        if (question && question.type !== 'text') {
+        if (question && question.type !== 'text' && question.type !== 'date') {
           optionMap.forEach((percentage, optionId) => {
             if (percentage > 0) {
               answerDistributions.push({
@@ -450,6 +490,42 @@ export default function TabFillExpectedRatio() {
             }
             
             // Create a separate entry for each line
+            lines.forEach(line => {
+              answerDistributions.push({
+                questionId: question.id,
+                optionId: null,
+                percentage: 100 / lines.length, // Distribute percentage evenly
+                count: 0,
+                option: null,
+                valueString: line
+              });
+            });
+          } else {
+            // Default entry with no valueString
+            answerDistributions.push({
+              questionId: question.id,
+              optionId: null,
+              percentage: 0,
+              count: 0,
+              option: null
+            });
+          }
+        } else if (question.type === 'date') {
+          const dateInputEntry = dateInputs.get(question.id);
+          
+          if (dateInputEntry && dateInputEntry.useCustomData && dateInputEntry.data.trim()) {
+            const lines = dateInputEntry.data
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0);
+            
+            // Validate date format
+            const invalidDates = lines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
+            if (invalidDates.length > 0) {
+              validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
+            }
+            
+            // Create a separate entry for each date
             lines.forEach(line => {
               answerDistributions.push({
                 questionId: question.id,
@@ -598,7 +674,6 @@ export default function TabFillExpectedRatio() {
                     {question.title}
                   </Typography>
 
-                  
                   {question.type === 'text' ? (
                     <>
                       <FormControlLabel
@@ -620,6 +695,31 @@ export default function TabFillExpectedRatio() {
                           onChange={(e) => handleCustomDataChange(question.id, e.target.value)}
                           placeholder="Nhập dữ liệu của bạn"
                           sx={{ mt: 2 }}
+                        />
+                      )}
+                    </>
+                  ) : question.type === 'date' ? (
+                    <>
+                      <FormControlLabel
+                        control={
+                          <Switch 
+                            checked={dateInputs.get(question.id)?.useCustomData || false} 
+                            onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+                          />
+                        }
+                        label="Điền theo data của bạn"
+                      />
+                      
+                      {dateInputs.get(question.id)?.useCustomData && (
+                        <TextField
+                          fullWidth
+                          multiline
+                          rows={4}
+                          value={dateInputs.get(question.id)?.data || ''}
+                          onChange={(e) => handleDateInputChange(question.id, e.target.value)}
+                          placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
+                          sx={{ mt: 2 }}
+                          helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
                         />
                       )}
                     </>
@@ -678,7 +778,7 @@ export default function TabFillExpectedRatio() {
                         })}
                       </Grid>
                       
-                      {balanceErrors.has(question.id) && (
+                      {balanceErrors.has(question.id) && question.type !== 'date' && (
                         <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
                           {balanceErrors.get(question.id)}
                         </Alert>

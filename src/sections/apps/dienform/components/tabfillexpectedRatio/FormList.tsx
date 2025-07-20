@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 
 // project utils and constants
-import { formatFullDateTime } from 'utils/DateUtil';
+import { formatDate, formatFullDateTime } from 'utils/DateUtil';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -62,16 +62,24 @@ export default function ExpectedRatioFormList({
   const filteredForms = searchText.trim() === '' 
     ? fillRequests 
     : fillRequests.filter(request => {
-        // Convert date to string for searching if available
-        const dateStr = request.createdAt 
+        // Convert dates to string for searching
+        const createdDateStr = request.createdAt 
           ? new Date(request.createdAt).toLocaleDateString('vi-VN')
+          : '';
+        const startDateStr = request.startDate
+          ? new Date(request.startDate).toLocaleDateString('vi-VN')
+          : '';
+        const endDateStr = request.endDate
+          ? new Date(request.endDate).toLocaleDateString('vi-VN')
           : '';
         
         // Convert total price to string for searching
         const priceStr = request.totalPrice?.toString() || '';
         
-        // Search by date, status, or price
-        return dateStr.toLowerCase().includes(searchText.toLowerCase()) || 
+        // Search by dates, status, or price
+        return createdDateStr.toLowerCase().includes(searchText.toLowerCase()) || 
+               startDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
+               endDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
                (request.status && request.status.toLowerCase().includes(searchText.toLowerCase())) ||
                priceStr.includes(searchText);
       });
@@ -138,10 +146,21 @@ export default function ExpectedRatioFormList({
     return `0/${request.surveyCount || 0}`;
   };
 
-  // Format date string from ISO format
-  const formatDate = (dateString: string) => {
+  // Format date string from ISO format for created date
+  const formatCreatedDate = (dateString: string) => {
     if (!dateString) return '';
-    return formatFullDateTime(dateString, '');
+    return formatFullDateTime(dateString);
+  };
+
+  // Format date string to dd/mm/yyyy
+  const formatDateOnly = (dateString: string) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
   };
 
   // Handle view details with proper ID handling
@@ -187,6 +206,8 @@ export default function ExpectedRatioFormList({
               <TableCell align="center">Tên Form</TableCell>
               <TableCell align="center">Hẹn giờ điền</TableCell>
               <TableCell align="center">Ngày tạo</TableCell>
+              <TableCell align="center">Ngày bắt đầu</TableCell>
+              <TableCell align="center">Ngày kết thúc</TableCell>
               <TableCell align="center">Số lượng</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
               <TableCell align="center">Hành động</TableCell>
@@ -201,12 +222,14 @@ export default function ExpectedRatioFormList({
                   <TableCell align="center">
                     <IconButton 
                       color="primary" 
-                      onClick={() => request.id && onSchedule(request.id)} // Pass ID directly
+                      onClick={() => request.id && onSchedule(request.id)}
                     >
                       {getScheduleIcon(request.scheduledTime !== undefined && request.scheduledTime !== null)}
                     </IconButton>
                   </TableCell>
-                  <TableCell align="center">{formatDate(request.createdAt || '')}</TableCell>
+                  <TableCell align="center">{formatCreatedDate(request.createdAt || '')}</TableCell>
+                  <TableCell align="center">{formatDate(request.startDate || '')}</TableCell>
+                  <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
                   <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
                   <TableCell align="center">
@@ -250,7 +273,7 @@ export default function ExpectedRatioFormList({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchText ? 'Không tìm thấy yêu cầu điền nào phù hợp' : 'Chưa có yêu cầu điền nào cho form này'}
                   </Typography>
