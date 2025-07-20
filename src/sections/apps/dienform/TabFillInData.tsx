@@ -27,15 +27,15 @@ import FillRequestList from './components/tabfillindata/FillRequestList';
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // assets
@@ -176,10 +176,19 @@ export default function TabFillInData() {
     }
   };
   
-  // Handle mapping change
-  const handleMappingChange = (questionId: string, columnValue: string) => {
+  // Handle column mapping change
+  const handleMappingChange = (questionId: string, rowTitle: string | null, columnIndex: number) => {
     const newMappings = new Map(columnMappings);
-    newMappings.set(questionId, columnValue);
+    const columnName = mappingData?.sheetColumns[columnIndex] || '';
+    
+    if (rowTitle) {
+      // For grid questions, store mapping with row title
+      newMappings.set(`${questionId}:${rowTitle}`, columnName);
+    } else {
+      // For regular questions, store mapping directly
+      newMappings.set(questionId, columnName);
+    }
+    
     setColumnMappings(newMappings);
   };
   
@@ -430,7 +439,7 @@ export default function TabFillInData() {
                       <FormControl fullWidth>
                         <Select
                           value={columnMappings.get(question.id) || ''}
-                          onChange={(e) => handleMappingChange(question.id, e.target.value)}
+                          onChange={(e) => handleMappingChange(question.id, null, parseInt(e.target.value, 10))}
                           displayEmpty
                           size="small"
                         >
@@ -438,7 +447,7 @@ export default function TabFillInData() {
                             - Chọn cột dữ liệu tương ứng -
                           </MenuItem>
                           {mappingData.sheetColumns.map((column) => (
-                            <MenuItem key={column} value={column}>
+                            <MenuItem key={column} value={columnMappings.get(question.id) === column ? columnMappings.get(question.id) : column}>
                               {column}
                             </MenuItem>
                           ))}
