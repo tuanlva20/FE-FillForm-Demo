@@ -27,6 +27,8 @@ import AutoFillFormModal from './components/AutoFillFormModal';
 import FormDetailModal from './components/FormDetailModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
 import ExpectedRatioFormList from './components/tabfillexpectedRatio/FormList';
+import CheckboxGridPercentInput from './components/tabfillexpectedRatio/elements/CheckboxGridPercentInput';
+import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/elements/MultipleChoiceGridPercentInput';
 
 // API
 import {
@@ -723,6 +725,33 @@ export default function TabFillExpectedRatio() {
                         />
                       )}
                     </>
+                  ) : question.type === 'multiple_choice_grid' ? (
+                    <MultipleChoiceGridPercentInput
+                      question={{
+                        ...question,
+                        options: Array.isArray(question.options)
+                          ? question.options.map(opt => ({
+                              id: opt.id,
+                              text: opt.text || '',
+                              value: opt.value || ''
+                            }))
+                          : []
+                      }}
+                    />
+                  ) : question.type === 'checkbox_grid' ? (
+                    <CheckboxGridPercentInput
+                      question={{
+                        ...question,
+                        options: Array.isArray(question.options)
+                          ? question.options.map(opt => ({
+                              ...(opt as any), // spread all original fields
+                              id: opt.id,
+                              title: opt.text || '',
+                              subOptions: [] // Always empty, since API Option does not have subOptions
+                            }))
+                          : []
+                      }}
+                    />
                   ) : (
                     <>
                       <Grid container spacing={2}>

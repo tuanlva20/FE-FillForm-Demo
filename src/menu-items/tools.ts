@@ -41,10 +41,10 @@ const tools: NavItemType = {
       breadcrumbs: false,
     },
     {
-      id: 'chat',
+      id: 'ma-hoa-data',
       title: 'Mã hóa data',
       type: 'item',
-      url: '/mahoadata',
+      url: '/ma-hoa-data',
       icon: icons.encrypt,
       breadcrumbs: false
     },

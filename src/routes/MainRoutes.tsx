@@ -167,6 +167,8 @@ const DienFormFillExpectedRatio = Loadable(lazy(() => import('sections/apps/dien
 const DienFormFillInData = Loadable(lazy(() => import('sections/apps/dienform/TabFillInData')));
 const DienFormLichSu = Loadable(lazy(() => import('sections/apps/dienform/TabHistory')));
 
+const MaHoaDataPage = Loadable(lazy(() => import('sections/ma-hoa-data')));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -176,6 +178,10 @@ const MainRoutes = {
       path: '/',
       element: <DashboardLayout />,
       children: [
+        {
+          path: 'ma-hoa-data',
+          element: <MaHoaDataPage />
+        },
         {
           path: 'dashboard',
           children: [
