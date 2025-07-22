@@ -42,6 +42,7 @@ import {
 } from 'api/form';
 
 // iconsax-react
+import StarIcon from '@mui/icons-material/Star';
 import { ErrorIcon } from 'assets/images/svg/icon';
 import { InfoCircle } from 'iconsax-react';
 
@@ -92,6 +93,13 @@ export default function TabFillExpectedRatio() {
   // State to track if edit mode is active
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isEditingFillRequest, setIsEditingFillRequest] = useState<boolean>(false);
+  
+  // Thêm state lưu giá trị grid cho từng câu hỏi
+  type GridValues = Map<string, Map<string, Map<string, number>>>; // questionId -> rowId -> optionId -> percentage
+  const [gridValues, setGridValues] = useState<GridValues>(new Map());
+  
+  // Thêm state lưu trạng thái loading cho AI gợi ý
+  const [isAiLoading, setIsAiLoading] = useState(false);
   
   // Load form list on component mount
   useEffect(() => {
@@ -156,10 +164,17 @@ export default function TabFillExpectedRatio() {
             newDateInputs.set(question.id, { useCustomData: false, data: '' });
           }
         });
-        
+        // Reset grid values for grid questions
+        const newGridValues = new Map<string, Map<string, Map<string, number>>>();
+        formDetails.questions.forEach(question => {
+          if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+            newGridValues.set(question.id, new Map());
+          }
+        });
         setQuestionOptions(newQuestionOptions);
         setCustomData(newCustomData);
         setDateInputs(newDateInputs);
+        setGridValues(newGridValues);
         setIsEditing(false);
         validatePercentages(newQuestionOptions);
       } catch (err) {
@@ -178,27 +193,30 @@ export default function TabFillExpectedRatio() {
     const newErrors = new Map<string, string>();
     
     options.forEach((optionMap, questionId) => {
-      // Skip validation for text questions
-      if (selectedForm?.questions.find(q => q.id === questionId)?.type === 'text') {
+      const qType = selectedForm?.questions.find(q => q.id === questionId)?.type;
+      // Bỏ validate cho các loại không phải grid, không phải text/date/time/select
+      if (
+        qType === 'text' ||
+        qType === 'date' ||
+        qType === 'time' ||
+        qType === 'multiple_choice_grid' ||
+        qType === 'checkbox_grid' ||
+        qType === 'select'
+      ) {
         return;
       }
-      
       let totalPercentage = 0;
-      
       optionMap.forEach(percentage => {
         totalPercentage += percentage || 0; // Add 0 if percentage is undefined or null
       });
-      
       // Round to handle floating point precision issues
       const roundedTotal = Math.round(totalPercentage * 10) / 10;
-      
       if (roundedTotal > 100) {
         newErrors.set(questionId, `Tổng tỉ lệ vượt quá 100%. Hiện tại: ${roundedTotal}%`);
       } else if (roundedTotal < 100) {
         newErrors.set(questionId, `Tổng tỉ lệ phải đạt 100%. Hiện tại: ${roundedTotal}%`);
       }
     });
-    
     setBalanceErrors(newErrors);
     return newErrors.size === 0;
   };
@@ -551,6 +569,104 @@ export default function TabFillExpectedRatio() {
         }
       });
       
+      // Trong handleCreateFillRequest, bổ sung logic cho grid
+      selectedForm.questions.forEach(question => {
+        if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+          const gridMap = gridValues.get(question.id);
+          if (gridMap) {
+            gridMap.forEach((colMap, rowId) => {
+              colMap.forEach((percentage, optionId) => {
+                if (percentage > 0) {
+                  answerDistributions.push({
+                    questionId: question.id,
+                    rowId,
+                    optionId,
+                    percentage,
+                    count: 0,
+                    option: null
+                  });
+                }
+              });
+            });
+          }
+        } else if (question.type === 'text') {
+          const customDataEntry = customData.get(question.id);
+          
+          if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
+            const lines = customDataEntry.data
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0);
+            
+            // For email fields, validate each line is a valid email
+            if (question.title.toLowerCase().includes('email')) {
+              const invalidEmails = lines.filter(line => !emailRegex.test(line));
+              
+              if (invalidEmails.length > 0) {
+                validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
+              }
+            }
+            
+            // Create a separate entry for each line
+            lines.forEach(line => {
+              answerDistributions.push({
+                questionId: question.id,
+                optionId: null,
+                percentage: 100 / lines.length, // Distribute percentage evenly
+                count: 0,
+                option: null,
+                valueString: line
+              });
+            });
+          } else {
+            // Default entry with no valueString
+            answerDistributions.push({
+              questionId: question.id,
+              optionId: null,
+              percentage: 0,
+              count: 0,
+              option: null
+            });
+          }
+        } else if (question.type === 'date') {
+          const dateInputEntry = dateInputs.get(question.id);
+          
+          if (dateInputEntry && dateInputEntry.useCustomData && dateInputEntry.data.trim()) {
+            const lines = dateInputEntry.data
+              .split('\n')
+              .map(line => line.trim())
+              .filter(line => line.length > 0);
+            
+            // Validate date format
+            const invalidDates = lines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
+            if (invalidDates.length > 0) {
+              validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
+            }
+            
+            // Create a separate entry for each date
+            lines.forEach(line => {
+              answerDistributions.push({
+                questionId: question.id,
+                optionId: null,
+                percentage: 100 / lines.length, // Distribute percentage evenly
+                count: 0,
+                option: null,
+                valueString: line
+              });
+            });
+          } else {
+            // Default entry with no valueString
+            answerDistributions.push({
+              questionId: question.id,
+              optionId: null,
+              percentage: 0,
+              count: 0,
+              option: null
+            });
+          }
+        }
+      });
+      
       // If there are validation errors, show them and don't submit
       if (validationErrors.length > 0) {
         setError(validationErrors.join('\n'));
@@ -592,6 +708,104 @@ export default function TabFillExpectedRatio() {
       console.error('Error creating fill request:', err);
       setError('Failed to create fill request. Please try again later.');
     }
+  };
+
+  function randomPercentages(n: number): number[] {
+    if (n <= 1) return [100];
+    const cuts = Array.from({ length: n - 1 }, () => Math.random());
+    cuts.sort((a, b) => a - b);
+    const result = [];
+    let prev = 0;
+    for (let i = 0; i < cuts.length; i++) {
+      result.push(Math.floor((cuts[i] - prev) * 100));
+      prev = cuts[i];
+    }
+    result.push(Math.floor((1 - prev) * 100));
+    // Điều chỉnh tổng cho đúng 100 (do làm tròn)
+    let sum = result.reduce((a, b) => a + b, 0);
+    while (sum < 100) { result[result.length - 1]++; sum++; }
+    while (sum > 100) { result[result.length - 1]--; sum--; }
+    return result;
+  }
+
+  // Handle AI gợi ý
+  const handleAiSuggest = async () => {
+    setIsAiLoading(true);
+    await new Promise(res => setTimeout(res, 1200));
+    const newQuestionOptions = new Map(questionOptions);
+    const newGridValues = new Map(gridValues);
+    selectedForm?.questions.forEach(question => {
+      if (
+        question.type === 'radio' ||
+        question.type === 'combobox' ||
+        question.type === 'select'
+      ) {
+        const options = question.options;
+        if (options.length > 0) {
+          const percents = randomPercentages(options.length);
+          const optionMap = new Map<string, number>();
+          options.forEach((opt, idx) => {
+            optionMap.set(opt.id, percents[idx]);
+          });
+          newQuestionOptions.set(question.id, optionMap);
+        }
+      } else if (question.type === 'checkbox') {
+        const options = question.options;
+        if (options.length > 0) {
+          const percents = randomPercentages(options.length);
+          const optionMap = new Map<string, number>();
+          options.forEach((opt, idx) => {
+            optionMap.set(opt.id, percents[idx]);
+          });
+          newQuestionOptions.set(question.id, optionMap);
+        }
+      } else if (
+        question.type === 'multiple_choice_grid'
+      ) {
+        const rows = question.options.filter(opt => opt.value && opt.value.startsWith('row'));
+        const seen = new Set();
+        const columns = question.options.filter(
+          opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+        );
+        const rowMap = new Map<string, Map<string, number>>();
+        rows.forEach(row => {
+          if (columns.length > 0) {
+            const percents = randomPercentages(columns.length);
+            const colMap = new Map<string, number>();
+            columns.forEach((col, idx) => {
+              colMap.set(col.value, percents[idx]); // Use col.value
+            });
+            rowMap.set(row.value, colMap); // Use row.value
+          }
+        });
+        newGridValues.set(question.id, rowMap);
+        // Đảm bảo không giữ lại state cũ ở questionOptions cho grid
+        newQuestionOptions.delete(question.id);
+      } else if (question.type === 'checkbox_grid') {
+        const rows = question.options.filter(opt => opt.value && opt.value.startsWith('row'));
+        const seen = new Set();
+        const columns = question.options.filter(
+          opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+        );
+        const rowMap = new Map<string, Map<string, number>>();
+        rows.forEach(row => {
+          if (columns.length > 0) {
+            const percents = randomPercentages(columns.length);
+            const colMap = new Map<string, number>();
+            columns.forEach((col, idx) => {
+              colMap.set(col.id, percents[idx]);
+            });
+            rowMap.set(row.id, colMap);
+          }
+        });
+        newGridValues.set(question.id, rowMap);
+        newQuestionOptions.delete(question.id);
+      }
+    });
+    setQuestionOptions(newQuestionOptions);
+    setGridValues(newGridValues);
+    validatePercentages(newQuestionOptions);
+    setIsAiLoading(false);
   };
   
   // Check if there are any balance errors
@@ -675,7 +889,6 @@ export default function TabFillExpectedRatio() {
                   <Typography variant="h5" sx={{ mb: 2 }}>
                     {question.title}
                   </Typography>
-
                   {question.type === 'text' ? (
                     <>
                       <FormControlLabel
@@ -687,7 +900,6 @@ export default function TabFillExpectedRatio() {
                         }
                         label="Điền theo data của bạn"
                       />
-                      
                       {customData.get(question.id)?.useCustomData && (
                         <TextField
                           fullWidth
@@ -711,7 +923,6 @@ export default function TabFillExpectedRatio() {
                         }
                         label="Điền theo data của bạn"
                       />
-                      
                       {dateInputs.get(question.id)?.useCustomData && (
                         <TextField
                           fullWidth
@@ -729,92 +940,137 @@ export default function TabFillExpectedRatio() {
                     <MultipleChoiceGridPercentInput
                       question={{
                         ...question,
-                        options: Array.isArray(question.options)
-                          ? question.options.map(opt => ({
-                              id: opt.id,
-                              text: opt.text || '',
-                              value: opt.value || ''
-                            }))
-                          : []
+                        options: question.options.map(opt => ({
+                          ...opt,
+                          title: opt.text ?? '',
+                        })),
+                      }}
+                      value={(() => {
+                        const grid = gridValues.get(question.id);
+                        if (!grid) return {};
+                        const obj: Record<string, Record<string, number>> = {};
+                        grid.forEach((colMap, rowId) => {
+                          obj[rowId] = {};
+                          colMap.forEach((percent, colId) => {
+                            obj[rowId][colId] = percent;
+                          });
+                        });
+                        return obj;
+                      })()}
+                      onChange={(value) => {
+                        setGridValues(prev => {
+                          const newMap = new Map(prev);
+                          const rowMap = new Map<string, Map<string, number>>();
+                          Object.entries(value).forEach(([rowId, colObj]) => {
+                            const colMap = new Map<string, number>();
+                            Object.entries(colObj).forEach(([optionId, percent]) => {
+                              colMap.set(optionId, percent);
+                            });
+                            rowMap.set(rowId, colMap);
+                          });
+                          newMap.set(question.id, rowMap);
+                          return newMap;
+                        });
                       }}
                     />
                   ) : question.type === 'checkbox_grid' ? (
                     <CheckboxGridPercentInput
                       question={{
                         ...question,
-                        options: Array.isArray(question.options)
-                          ? question.options.map(opt => ({
-                              ...(opt as any), // spread all original fields
-                              id: opt.id,
-                              title: opt.text || '',
-                              subOptions: [] // Always empty, since API Option does not have subOptions
-                            }))
-                          : []
+                        options: question.options.map(opt => ({
+                          ...opt,
+                          title: opt.text ?? '',
+                        })),
+                      }}
+                      value={(() => {
+                        const grid = gridValues.get(question.id);
+                        if (!grid) return {};
+                        const obj: Record<string, Record<string, number>> = {};
+                        grid.forEach((colMap, rowId) => {
+                          obj[rowId] = {};
+                          colMap.forEach((percent, colId) => {
+                            obj[rowId][colId] = percent;
+                          });
+                        });
+                        return obj;
+                      })()}
+                      onChange={(value) => {
+                        setGridValues(prev => {
+                          const newMap = new Map(prev);
+                          const rowMap = new Map<string, Map<string, number>>();
+                          Object.entries(value).forEach(([rowId, colObj]) => {
+                            const colMap = new Map<string, number>();
+                            Object.entries(colObj).forEach(([optionId, percent]) => {
+                              colMap.set(optionId, percent);
+                            });
+                            rowMap.set(rowId, colMap);
+                          });
+                          newMap.set(question.id, rowMap);
+                          return newMap;
+                        });
                       }}
                     />
                   ) : (
-                    <>
-                      <Grid container spacing={2}>
-                        {question.options.map((option) => {
-                          const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
-
-                          return (
-                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
-                              <Tooltip 
-                                title={option.text} 
-                                arrow 
-                                placement="top" 
-                                slotProps={{
-                                  tooltip: {
-                                    sx: {
-                                      backgroundColor: 'gray',
-                                      color: 'white'
-                                    }
+                    <Grid container spacing={2}>
+                      {question.options.map((option) => {
+                        const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
+                        return (
+                          <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
+                            <Tooltip 
+                              title={option.text} 
+                              arrow 
+                              placement="top" 
+                              slotProps={{
+                                tooltip: {
+                                  sx: {
+                                    backgroundColor: 'gray',
+                                    color: 'white'
                                   }
+                                }
+                              }}
+                            >
+                              <Typography 
+                                variant="body1" 
+                                sx={{ 
+                                  mb: 1, 
+                                  whiteSpace: 'nowrap', 
+                                  overflow: 'hidden', 
+                                  textOverflow: 'ellipsis', 
+                                  cursor: 'pointer' 
                                 }}
                               >
-                                <Typography 
-                                  variant="body1" 
-                                  sx={{ 
-                                    mb: 1, 
-                                    whiteSpace: 'nowrap', 
-                                    overflow: 'hidden', 
-                                    textOverflow: 'ellipsis', 
-                                    cursor: 'pointer' 
-                                  }}
-                                >
-                                  {option.text}
-                                </Typography>
-                              </Tooltip>
-                              <TextField
-                                fullWidth
-                                type="number"
-                                value={percentage}
-                                onChange={(e) => handlePercentageChange(
-                                  question.id, 
-                                  option.id, 
-                                  parseInt(e.target.value) || 0
-                                )}
-                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                                InputProps={{
-                                  inputProps: { min: 0 },
-                                  endAdornment: <InputAdornment position="end">%</InputAdornment>
-                                }}
-                                error={balanceErrors.has(question.id)}
-                              />
-                            </Grid>
-                          );
-                        })}
-                      </Grid>
-                      
-                      {balanceErrors.has(question.id) && question.type !== 'date' && (
-                        <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
-                          {balanceErrors.get(question.id)}
-                        </Alert>
-                      )}
-                    </>
+                                {option.text}
+                              </Typography>
+                            </Tooltip>
+                            <TextField
+                              fullWidth
+                              type="number"
+                              value={percentage}
+                              onChange={(e) => handlePercentageChange(
+                                question.id, 
+                                option.id, 
+                                parseInt(e.target.value) || 0
+                              )}
+                              onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
+                              InputProps={{
+                                inputProps: { min: 0 },
+                                endAdornment: <InputAdornment position="end">%</InputAdornment>
+                              }}
+                              error={balanceErrors.has(question.id)}
+                            />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
                   )}
-                  
+                  {balanceErrors.has(question.id) && question.type !== 'date' &&
+                    question.type !== 'multiple_choice_grid' &&
+                    question.type !== 'checkbox_grid' &&
+                    question.type !== 'text' && (
+                    <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
+                      {balanceErrors.get(question.id)}
+                    </Alert>
+                  )}
                   <Divider sx={{ mt: 3, mb: 1 }} />
                 </Box>
               ))}
@@ -824,22 +1080,25 @@ export default function TabFillExpectedRatio() {
                   variant="outlined" 
                   color="secondary"
                   onClick={handleCancel}
-                  disabled={!isEditing}
+                  disabled={!isEditing || isAiLoading}
                 >
                   Hủy
                 </Button>
-                {/* <Button 
+                <Button
                   variant="contained"
-                  onClick={handleSaveChanges}
-                  disabled={hasBalanceErrors || !isEditing}
+                  color="info"
+                  startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <StarIcon />}
+                  onClick={handleAiSuggest}
+                  disabled={isAiLoading}
+                  sx={{ minWidth: 160, fontWeight: 600 }}
                 >
-                  Lưu thay đổi
-                </Button> */}
-                <Button 
-                  variant="contained" 
+                  {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
+                </Button>
+                <Button
+                  variant="contained"
                   color="primary"
                   onClick={handleOpenAutoFillModal}
-                  disabled={hasBalanceErrors}
+                  disabled={loading || selectedForm == null || balanceErrors.size > 0 || isAiLoading}
                 >
                   Tạo yêu cầu điền Form
                 </Button>

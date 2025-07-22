@@ -1,4 +1,4 @@
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Alert, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import CustomPercentTextField from './CustomPercentTextField';
 
@@ -17,9 +17,10 @@ interface Question {
 interface Props {
   question: Question;
   onChange?: (value: Record<string, Record<string, number>>) => void;
+  value?: Record<string, Record<string, number>>;
 }
 
-const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange }) => {
+const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }) => {
   // Rows: options with value starting with 'row'
   const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
   // Columns: unique options with value not starting with 'row'
@@ -31,6 +32,11 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange }) => {
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
   // State lưu lỗi tổng phần trăm
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
+
+  // Đồng bộ state khi prop value thay đổi
+  React.useEffect(() => {
+    if (value) setValues(value);
+  }, [value]);
 
   useEffect(() => {
     // Validate tổng phần trăm mỗi row
@@ -78,7 +84,7 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange }) => {
                     {row.title}
                     {rowErrors[row.id] && (
                       <Typography color="error" variant="caption" display="block">
-                        Tổng phải = 100% (Hiện tại: {total}% )
+                        Tổng hiện tại: {columns.reduce((sum, col) => sum + (Number(values[row.id]?.[col.id]) || 0), 0)}%
                       </Typography>
                     )}
                   </TableCell>
@@ -97,6 +103,9 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange }) => {
           </TableBody>
         </Table>
       </TableContainer>
+      {Object.values(rowErrors).some(Boolean) && (
+        <Alert severity="error" sx={{ mt: 2 }}>Tổng nên = 100%</Alert>
+      )}
     </Box>
   );
 };

@@ -1,4 +1,4 @@
-import { Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
+import { Alert, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import CustomPercentTextField from './CustomPercentTextField';
 
@@ -17,9 +17,10 @@ interface Question {
 interface Props {
   question: Question;
   onChange?: (value: Record<string, Record<string, number>>) => void;
+  value?: Record<string, Record<string, number>>;
 }
 
-const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange }) => {
+const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange, value }) => {
   // Phân tích row & column
   const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
   // Loại bỏ value trùng ở column
@@ -31,6 +32,11 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange })
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
   // State lưu lỗi tổng phần trăm
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
+
+  // Đồng bộ state khi prop value thay đổi
+  React.useEffect(() => {
+    if (value) setValues(value);
+  }, [value]);
 
   useEffect(() => {
     // Validate tổng phần trăm mỗi row
@@ -78,7 +84,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange })
                     {row.text}
                     {rowErrors[row.value] && (
                       <Typography color="error" variant="caption" display="block">
-                        Tổng phải = 100% (Hiện tại: {total}%)
+                        Tổng: {columns.reduce((sum, col) => sum + (Number(values[row.value]?.[col.value]) || 0), 0)}%
                       </Typography>
                     )}
                   </TableCell>
@@ -97,6 +103,9 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange })
           </TableBody>
         </Table>
       </TableContainer>
+      {Object.values(rowErrors).some(Boolean) && (
+        <Alert severity="error" sx={{ mt: 2 }}>Tổng nên = 100%</Alert>
+      )}
     </Box>
   );
 };

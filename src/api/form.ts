@@ -68,6 +68,7 @@ export interface AnswerDistribution {
   count: number;
   option: Option | null;
   valueString?: string;
+  rowId?: string; // Thêm trường này để hỗ trợ grid
 }
 
 export interface FillRequestDTO {
