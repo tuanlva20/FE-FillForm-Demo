@@ -19,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
+import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
 
 // components
 import AutoFillFormModal from './components/AutoFillFormModal';
@@ -27,15 +28,15 @@ import FillRequestList from './components/tabfillindata/FillRequestList';
 
 // API
 import {
-  checkDataMapping,
-  createDataFillRequest,
-  DataFillRequestDTO,
-  DataMappingRequest,
-  DataMappingResponse,
-  FormData,
-  FormDetailResponse,
-  getFormDetail,
-  getFormList
+    checkDataMapping,
+    createDataFillRequest,
+    DataFillRequestDTO,
+    DataMappingRequest,
+    DataMappingResponse,
+    FormData,
+    FormDetailResponse,
+    getFormDetail,
+    getFormList
 } from 'api/form';
 
 // assets
@@ -81,9 +82,9 @@ export default function TabFillInData() {
         setForms(response.content);
         
         // Don't select any form by default - user must choose
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching forms:', err);
-        setError('Không thể tải danh sách form. Vui lòng thử lại.');
+        setError(handleFormError(err, 'fetch'));
       } finally {
         setLoading(false);
       }
@@ -105,9 +106,9 @@ export default function TabFillInData() {
         const formDetails = await getFormDetail(selectedFormId);
         setSelectedForm(formDetails);
         setFormLink(formDetails.editLink);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching form details:', err);
-        setError('Không thể tải chi tiết form. Vui lòng thử lại.');
+        setError(handleFormError(err, 'fetch'));
       }
     };
     
@@ -162,15 +163,7 @@ export default function TabFillInData() {
       
     } catch (err: any) {
       // Handle specific error types
-      if (err.response?.status === 403) {
-        setError('Không thể truy cập link Google Sheet. Vui lòng đảm bảo sheet được chia sẻ công khai hoặc có quyền truy cập.');
-      } else if (err.response?.status === 404) {
-        setError('Không tìm thấy Google Form hoặc Sheet. Vui lòng kiểm tra lại link.');
-      } else if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Có lỗi xảy ra khi kiểm tra dữ liệu. Vui lòng thử lại!');
-      }
+      setError(handleDataMappingError(err, 'check'));
     } finally {
       setIsCheckingData(false);
     }
@@ -233,8 +226,13 @@ export default function TabFillInData() {
       
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
-        const formDetails = await getFormDetail(selectedFormId);
-        setSelectedForm(formDetails);
+        try {
+          const formDetails = await getFormDetail(selectedFormId);
+          setSelectedForm(formDetails);
+        } catch (err: any) {
+          console.error('Error refreshing form details:', err);
+          // Không hiển thị lỗi ở đây vì đã tạo thành công fill request
+        }
       }
       
       // Show success message
@@ -242,11 +240,7 @@ export default function TabFillInData() {
       
     } catch (err: any) {
       console.error('Error creating fill request:', err);
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError('Có lỗi xảy ra khi tạo yêu cầu điền form. Vui lòng thử lại.');
-      }
+      setError(handleDataMappingError(err, 'create'));
     } finally {
       setLoading(false);
     }

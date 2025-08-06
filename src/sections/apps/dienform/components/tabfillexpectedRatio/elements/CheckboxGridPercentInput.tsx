@@ -104,7 +104,7 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }
         </Table>
       </TableContainer>
       {Object.values(rowErrors).some(Boolean) && (
-        <Alert severity="error" sx={{ mt: 2 }}>Tổng nên = 100%</Alert>
+        <Alert severity="error" sx={{ mt: 2 }}>Tổng tỉ lệ nên = 100%</Alert>
       )}
     </Box>
   );

@@ -7,7 +7,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
-import Grid from '@mui/material/Grid'; // Changed from Grid2 to standard Grid
+import Grid from '@mui/material/Grid';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import Link from '@mui/material/Link';
@@ -20,9 +20,11 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 // project-imports
+import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
+import { handleFormError, testErrorStructure } from 'utils/errorHandler';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import FormDetailModal from './components/FormDetailModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
@@ -32,13 +34,13 @@ import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/el
 
 // API
 import {
-  AnswerDistribution,
-  createFillRequest,
-  FillRequestDTO,
-  FormData,
-  FormDetailResponse,
-  getFormDetail,
-  getFormList
+    AnswerDistribution,
+    createFillRequest,
+    FillRequestDTO,
+    FormData,
+    FormDetailResponse,
+    getFormDetail,
+    getFormList
 } from 'api/form';
 
 // iconsax-react
@@ -89,6 +91,8 @@ export default function TabFillExpectedRatio() {
   const [loading, setLoading] = useState<boolean>(false);
   const [formDetailLoading, setFormDetailLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  // Thêm state cho alert popup
+  const [alertPopup, setAlertPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   
   // State to track if edit mode is active
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -115,9 +119,9 @@ export default function TabFillExpectedRatio() {
         if (response.content.length > 0) {
           setSelectedFormId(response.content[0].id);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching forms:', err);
-        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
+        setError(handleFormError(err, 'fetch'));
       } finally {
         setLoading(false);
       }
@@ -177,9 +181,9 @@ export default function TabFillExpectedRatio() {
         setGridValues(newGridValues);
         setIsEditing(false);
         validatePercentages(newQuestionOptions);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching form details:', err);
-        setError('Không thể load chi tiết Form. Vui lòng thử lại!');
+        setError(handleFormError(err, 'fetch'));
       } finally {
         setFormDetailLoading(false);
       }
@@ -214,7 +218,7 @@ export default function TabFillExpectedRatio() {
       if (roundedTotal > 100) {
         newErrors.set(questionId, `Tổng tỉ lệ vượt quá 100%. Hiện tại: ${roundedTotal}%`);
       } else if (roundedTotal < 100) {
-        newErrors.set(questionId, `Tổng tỉ lệ phải đạt 100%. Hiện tại: ${roundedTotal}%`);
+        newErrors.set(questionId, `Tổng tỉ lệ nên = 100%. Hiện tại: ${roundedTotal}%`);
       }
     });
     setBalanceErrors(newErrors);
@@ -440,8 +444,9 @@ export default function TabFillExpectedRatio() {
           setIsEditing(false);
           setIsEditingFillRequest(false);
           validatePercentages(newQuestionOptions);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error resetting form details:', err);
+          setAlertPopup({ open: true, message: handleFormError(err, 'fetch') });
         }
       };
       
@@ -520,16 +525,8 @@ export default function TabFillExpectedRatio() {
                 valueString: line
               });
             });
-          } else {
-            // Default entry with no valueString
-            answerDistributions.push({
-              questionId: question.id,
-              optionId: null,
-              percentage: 0,
-              count: 0,
-              option: null
-            });
           }
+          // Không thêm answer distribution nếu không có custom data
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);
           
@@ -556,22 +553,38 @@ export default function TabFillExpectedRatio() {
                 valueString: line
               });
             });
-          } else {
-            // Default entry with no valueString
-            answerDistributions.push({
-              questionId: question.id,
-              optionId: null,
-              percentage: 0,
-              count: 0,
-              option: null
-            });
           }
+          // Không thêm answer distribution nếu không có custom data
         }
       });
       
       // Trong handleCreateFillRequest, bổ sung logic cho grid
       selectedForm.questions.forEach(question => {
-        if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+        if (question.type === 'multiple_choice_grid') {
+          const gridMap = gridValues.get(question.id);
+          if (gridMap) {
+            gridMap.forEach((colMap, rowValue) => {
+              // Map rowValue (option.value) sang rowOption.id
+              const rowOption = question.options.find(opt => opt.value === rowValue && opt.value.startsWith('row'));
+              if (!rowOption) return;
+              colMap.forEach((percentage, colValue) => {
+                // Map colValue (option.value) sang colOption.id
+                const colOption = question.options.find(opt => opt.value === colValue && !opt.value.startsWith('row'));
+                if (!colOption) return;
+                if (percentage > 0) {
+                  answerDistributions.push({
+                    questionId: question.id,
+                    rowId: rowOption.id, // UUID
+                    optionId: colOption.id, // UUID
+                    percentage,
+                    count: 0,
+                    option: null
+                  });
+                }
+              });
+            });
+          }
+        } else if (question.type === 'checkbox_grid') {
           const gridMap = gridValues.get(question.id);
           if (gridMap) {
             gridMap.forEach((colMap, rowId) => {
@@ -579,8 +592,8 @@ export default function TabFillExpectedRatio() {
                 if (percentage > 0) {
                   answerDistributions.push({
                     questionId: question.id,
-                    rowId,
-                    optionId,
+                    rowId, // UUID
+                    optionId, // UUID
                     percentage,
                     count: 0,
                     option: null
@@ -591,22 +604,18 @@ export default function TabFillExpectedRatio() {
           }
         } else if (question.type === 'text') {
           const customDataEntry = customData.get(question.id);
-          
           if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
             const lines = customDataEntry.data
               .split('\n')
               .map(line => line.trim())
               .filter(line => line.length > 0);
-            
             // For email fields, validate each line is a valid email
             if (question.title.toLowerCase().includes('email')) {
               const invalidEmails = lines.filter(line => !emailRegex.test(line));
-              
               if (invalidEmails.length > 0) {
                 validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
               }
             }
-            
             // Create a separate entry for each line
             lines.forEach(line => {
               answerDistributions.push({
@@ -630,19 +639,16 @@ export default function TabFillExpectedRatio() {
           }
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);
-          
           if (dateInputEntry && dateInputEntry.useCustomData && dateInputEntry.data.trim()) {
             const lines = dateInputEntry.data
               .split('\n')
               .map(line => line.trim())
               .filter(line => line.length > 0);
-            
             // Validate date format
             const invalidDates = lines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
             if (invalidDates.length > 0) {
               validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
             }
-            
             // Create a separate entry for each date
             lines.forEach(line => {
               answerDistributions.push({
@@ -697,16 +703,18 @@ export default function TabFillExpectedRatio() {
         try {
           const formDetails = await getFormDetail(selectedFormId);
           setSelectedForm(formDetails);
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error refreshing form details:', err);
+          setAlertPopup({ open: true, message: handleFormError(err, 'fetch') });
         } finally {
           setFormDetailLoading(false);
         }
       }
       
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error creating fill request:', err);
-      setError('Failed to create fill request. Please try again later.');
+      testErrorStructure(err);
+      setAlertPopup({ open: true, message: handleFormError(err, 'create') });
     }
   };
 
@@ -812,337 +820,344 @@ export default function TabFillExpectedRatio() {
   const hasBalanceErrors = balanceErrors.size > 0;
   
   return (
-    <Grid container spacing={GRID_COMMON_SPACING}>
-      <Grid item xs={12}>
-        <MainCard 
-          title="Chọn Form muốn điền" 
-          sx={MAINCARD_STYLE}
-        >
-          {loading ? (
-            <Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
-              <CircularProgress />
-            </Stack>
-          ) : (
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <Stack direction="column" sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
-                  <Select 
-                    size="medium" 
-                    fullWidth 
-                    id="ten-form" 
-                    value={selectedFormId || ''} 
-                    onChange={handleFormChange} 
-                    MenuProps={MenuProps}
-                    disabled={loading}
-                  >
-                    {forms.map((form) => (
-                      <MenuItem key={form.id} value={form.id}>
-                        {form.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </Stack>
-              </Grid>
-              <Grid item xs={12}>
-                <Stack direction="row" sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="form-link">Link Form</InputLabel>
-                  {formLink ? (
-                    <Link 
-                      href={formLink} 
-                      id="form-link"
-                      target="_blank"
-                      rel="noopener noreferrer"
+    <>
+      <AlertSnackbarWithProgress
+        open={alertPopup.open}
+        message={alertPopup.message}
+        onClose={() => setAlertPopup({ open: false, message: '' })}
+      />
+      <Grid container spacing={GRID_COMMON_SPACING}>
+        <Grid item xs={12}>
+          <MainCard 
+            title="Chọn Form muốn điền" 
+            sx={MAINCARD_STYLE}
+          >
+            {loading ? (
+              <Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
+                <CircularProgress />
+              </Stack>
+            ) : (
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <Stack direction="column" sx={{ gap: 1 }}>
+                    <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
+                    <Select 
+                      size="medium" 
+                      fullWidth 
+                      id="ten-form" 
+                      value={selectedFormId || ''} 
+                      onChange={handleFormChange} 
+                      MenuProps={MenuProps}
+                      disabled={loading}
                     >
-                      {formLink}
-                    </Link>
-                  ) : (
-                    <Typography variant="body2" color="text.secondary">
-                      Chọn form để xem link
-                    </Typography>
-                  )}
-                </Stack>
+                      {forms.map((form) => (
+                        <MenuItem key={form.id} value={form.id}>
+                          {form.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </Stack>
+                </Grid>
+                <Grid item xs={12}>
+                  <Stack direction="row" sx={{ gap: 1 }}>
+                    <InputLabel htmlFor="form-link">Link Form</InputLabel>
+                    {formLink ? (
+                      <Link 
+                        href={formLink} 
+                        id="form-link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {formLink}
+                      </Link>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Chọn form để xem link
+                      </Typography>
+                    )}
+                  </Stack>
+                </Grid>
               </Grid>
-            </Grid>
-          )}
-        </MainCard>
-      </Grid>
+            )}
+          </MainCard>
+        </Grid>
 
-      <Grid item xs={12}>
-        <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
-          {formDetailLoading ? (
-            <Stack direction="row" justifyContent="center" sx={{ py: 4 }}>
-              <CircularProgress />
-            </Stack>
-          ) : error ? (
-            <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>{error}</Alert>
-          ) : selectedForm ? (
-            <>
-              {isEditingFillRequest && (
-                <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
-                  Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
-                </Alert>
-              )}
-              
-              {selectedForm.questions.map((question) => (
-                <Box key={question.id} sx={{ mb: 4 }}>
-                  <Typography variant="h5" sx={{ mb: 2 }}>
-                    {question.title}
-                  </Typography>
-                  {question.type === 'text' ? (
-                    <>
-                      <FormControlLabel
-                        control={
-                          <Switch 
-                            checked={customData.get(question.id)?.useCustomData || false} 
-                            onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
-                          />
-                        }
-                        label="Điền theo data của bạn"
-                      />
-                      {customData.get(question.id)?.useCustomData && (
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={4}
-                          value={customData.get(question.id)?.data || ''}
-                          onChange={(e) => handleCustomDataChange(question.id, e.target.value)}
-                          placeholder="Nhập dữ liệu của bạn"
-                          sx={{ mt: 2 }}
+        <Grid item xs={12}>
+          <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
+            {formDetailLoading ? (
+              <Stack direction="row" justifyContent="center" sx={{ py: 4 }}>
+                <CircularProgress />
+              </Stack>
+            ) : error ? (
+              <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>{error}</Alert>
+            ) : selectedForm ? (
+              <>
+                {isEditingFillRequest && (
+                  <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
+                    Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
+                  </Alert>
+                )}
+                
+                {selectedForm.questions.map((question) => (
+                  <Box key={question.id} sx={{ mb: 4 }}>
+                    <Typography variant="h5" sx={{ mb: 2 }}>
+                      {question.title}
+                    </Typography>
+                    {question.type === 'text' ? (
+                      <>
+                        <FormControlLabel
+                          control={
+                            <Switch 
+                              checked={customData.get(question.id)?.useCustomData || false} 
+                              onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
+                            />
+                          }
+                          label="Điền theo data của bạn"
                         />
-                      )}
-                    </>
-                  ) : question.type === 'date' ? (
-                    <>
-                      <FormControlLabel
-                        control={
-                          <Switch 
-                            checked={dateInputs.get(question.id)?.useCustomData || false} 
-                            onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+                        {customData.get(question.id)?.useCustomData && (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            value={customData.get(question.id)?.data || ''}
+                            onChange={(e) => handleCustomDataChange(question.id, e.target.value)}
+                            placeholder="Nhập dữ liệu của bạn"
+                            sx={{ mt: 2 }}
                           />
-                        }
-                        label="Điền theo data của bạn"
-                      />
-                      {dateInputs.get(question.id)?.useCustomData && (
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={4}
-                          value={dateInputs.get(question.id)?.data || ''}
-                          onChange={(e) => handleDateInputChange(question.id, e.target.value)}
-                          placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
-                          sx={{ mt: 2 }}
-                          helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
+                        )}
+                      </>
+                    ) : question.type === 'date' ? (
+                      <>
+                        <FormControlLabel
+                          control={
+                            <Switch 
+                              checked={dateInputs.get(question.id)?.useCustomData || false} 
+                              onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+                            />
+                          }
+                          label="Điền theo data của bạn"
                         />
-                      )}
-                    </>
-                  ) : question.type === 'multiple_choice_grid' ? (
-                    <MultipleChoiceGridPercentInput
-                      question={{
-                        ...question,
-                        options: question.options.map(opt => ({
-                          ...opt,
-                          title: opt.text ?? '',
-                        })),
-                      }}
-                      value={(() => {
-                        const grid = gridValues.get(question.id);
-                        if (!grid) return {};
-                        const obj: Record<string, Record<string, number>> = {};
-                        grid.forEach((colMap, rowId) => {
-                          obj[rowId] = {};
-                          colMap.forEach((percent, colId) => {
-                            obj[rowId][colId] = percent;
-                          });
-                        });
-                        return obj;
-                      })()}
-                      onChange={(value) => {
-                        setGridValues(prev => {
-                          const newMap = new Map(prev);
-                          const rowMap = new Map<string, Map<string, number>>();
-                          Object.entries(value).forEach(([rowId, colObj]) => {
-                            const colMap = new Map<string, number>();
-                            Object.entries(colObj).forEach(([optionId, percent]) => {
-                              colMap.set(optionId, percent);
+                        {dateInputs.get(question.id)?.useCustomData && (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={4}
+                            value={dateInputs.get(question.id)?.data || ''}
+                            onChange={(e) => handleDateInputChange(question.id, e.target.value)}
+                            placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
+                            sx={{ mt: 2 }}
+                            helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
+                          />
+                        )}
+                      </>
+                    ) : question.type === 'multiple_choice_grid' ? (
+                      <MultipleChoiceGridPercentInput
+                        question={{
+                          ...question,
+                          options: question.options.map(opt => ({
+                            ...opt,
+                            title: opt.text ?? '',
+                          })),
+                        }}
+                        value={(() => {
+                          const grid = gridValues.get(question.id);
+                          if (!grid) return {};
+                          const obj: Record<string, Record<string, number>> = {};
+                          grid.forEach((colMap, rowId) => {
+                            obj[rowId] = {};
+                            colMap.forEach((percent, colId) => {
+                              obj[rowId][colId] = percent;
                             });
-                            rowMap.set(rowId, colMap);
                           });
-                          newMap.set(question.id, rowMap);
-                          return newMap;
-                        });
-                      }}
-                    />
-                  ) : question.type === 'checkbox_grid' ? (
-                    <CheckboxGridPercentInput
-                      question={{
-                        ...question,
-                        options: question.options.map(opt => ({
-                          ...opt,
-                          title: opt.text ?? '',
-                        })),
-                      }}
-                      value={(() => {
-                        const grid = gridValues.get(question.id);
-                        if (!grid) return {};
-                        const obj: Record<string, Record<string, number>> = {};
-                        grid.forEach((colMap, rowId) => {
-                          obj[rowId] = {};
-                          colMap.forEach((percent, colId) => {
-                            obj[rowId][colId] = percent;
-                          });
-                        });
-                        return obj;
-                      })()}
-                      onChange={(value) => {
-                        setGridValues(prev => {
-                          const newMap = new Map(prev);
-                          const rowMap = new Map<string, Map<string, number>>();
-                          Object.entries(value).forEach(([rowId, colObj]) => {
-                            const colMap = new Map<string, number>();
-                            Object.entries(colObj).forEach(([optionId, percent]) => {
-                              colMap.set(optionId, percent);
+                          return obj;
+                        })()}
+                        onChange={(value) => {
+                          setGridValues(prev => {
+                            const newMap = new Map(prev);
+                            const rowMap = new Map<string, Map<string, number>>();
+                            Object.entries(value).forEach(([rowId, colObj]) => {
+                              const colMap = new Map<string, number>();
+                              Object.entries(colObj).forEach(([optionId, percent]) => {
+                                colMap.set(optionId, percent);
+                              });
+                              rowMap.set(rowId, colMap);
                             });
-                            rowMap.set(rowId, colMap);
+                            newMap.set(question.id, rowMap);
+                            return newMap;
                           });
-                          newMap.set(question.id, rowMap);
-                          return newMap;
-                        });
-                      }}
-                    />
-                  ) : (
-                    <Grid container spacing={2}>
-                      {question.options.map((option) => {
-                        const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
-                        return (
-                          <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
-                            <Tooltip 
-                              title={option.text} 
-                              arrow 
-                              placement="top" 
-                              slotProps={{
-                                tooltip: {
-                                  sx: {
-                                    backgroundColor: 'gray',
-                                    color: 'white'
+                        }}
+                      />
+                    ) : question.type === 'checkbox_grid' ? (
+                      <CheckboxGridPercentInput
+                        question={{
+                          ...question,
+                          options: question.options.map(opt => ({
+                            ...opt,
+                            title: opt.text ?? '',
+                          })),
+                        }}
+                        value={(() => {
+                          const grid = gridValues.get(question.id);
+                          if (!grid) return {};
+                          const obj: Record<string, Record<string, number>> = {};
+                          grid.forEach((colMap, rowId) => {
+                            obj[rowId] = {};
+                            colMap.forEach((percent, colId) => {
+                              obj[rowId][colId] = percent;
+                            });
+                          });
+                          return obj;
+                        })()}
+                        onChange={(value) => {
+                          setGridValues(prev => {
+                            const newMap = new Map(prev);
+                            const rowMap = new Map<string, Map<string, number>>();
+                            Object.entries(value).forEach(([rowId, colObj]) => {
+                              const colMap = new Map<string, number>();
+                              Object.entries(colObj).forEach(([optionId, percent]) => {
+                                colMap.set(optionId, percent);
+                              });
+                              rowMap.set(rowId, colMap);
+                            });
+                            newMap.set(question.id, rowMap);
+                            return newMap;
+                          });
+                        }}
+                      />
+                    ) : (
+                      <Grid container spacing={2}>
+                        {question.options.map((option) => {
+                          const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
+                          return (
+                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
+                              <Tooltip 
+                                title={option.text} 
+                                arrow 
+                                placement="top" 
+                                slotProps={{
+                                  tooltip: {
+                                    sx: {
+                                      backgroundColor: 'gray',
+                                      color: 'white'
+                                    }
                                   }
-                                }
-                              }}
-                            >
-                              <Typography 
-                                variant="body1" 
-                                sx={{ 
-                                  mb: 1, 
-                                  whiteSpace: 'nowrap', 
-                                  overflow: 'hidden', 
-                                  textOverflow: 'ellipsis', 
-                                  cursor: 'pointer' 
                                 }}
                               >
-                                {option.text}
-                              </Typography>
-                            </Tooltip>
-                            <TextField
-                              fullWidth
-                              type="number"
-                              value={percentage}
-                              onChange={(e) => handlePercentageChange(
-                                question.id, 
-                                option.id, 
-                                parseInt(e.target.value) || 0
-                              )}
-                              onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                              InputProps={{
-                                inputProps: { min: 0 },
-                                endAdornment: <InputAdornment position="end">%</InputAdornment>
-                              }}
-                              error={balanceErrors.has(question.id)}
-                            />
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  )}
-                  {balanceErrors.has(question.id) && question.type !== 'date' &&
-                    question.type !== 'multiple_choice_grid' &&
-                    question.type !== 'checkbox_grid' &&
-                    question.type !== 'text' && (
-                    <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
-                      {balanceErrors.get(question.id)}
-                    </Alert>
-                  )}
-                  <Divider sx={{ mt: 3, mb: 1 }} />
-                </Box>
-              ))}
-              
-              <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
-                <Button 
-                  variant="outlined" 
-                  color="secondary"
-                  onClick={handleCancel}
-                  disabled={!isEditing || isAiLoading}
-                >
-                  Hủy
-                </Button>
-                <Button
-                  variant="contained"
-                  color="info"
-                  startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <StarIcon />}
-                  onClick={handleAiSuggest}
-                  disabled={isAiLoading}
-                  sx={{ minWidth: 160, fontWeight: 600 }}
-                >
-                  {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={handleOpenAutoFillModal}
-                  disabled={loading || selectedForm == null || balanceErrors.size > 0 || isAiLoading}
-                >
-                  Tạo yêu cầu điền Form
-                </Button>
-              </Stack>
-            </>
-          ) : (
-            <Typography color="textSecondary" sx={{ py: 2 }}>
-              Vui lòng chọn form để xem chi tiết
-            </Typography>
-          )}
-        </MainCard>
-      </Grid>
+                                <Typography 
+                                  variant="body1" 
+                                  sx={{ 
+                                    mb: 1, 
+                                    whiteSpace: 'nowrap', 
+                                    overflow: 'hidden', 
+                                    textOverflow: 'ellipsis', 
+                                    cursor: 'pointer' 
+                                  }}
+                                >
+                                  {option.text}
+                                </Typography>
+                              </Tooltip>
+                              <TextField
+                                fullWidth
+                                type="number"
+                                value={percentage}
+                                onChange={(e) => handlePercentageChange(
+                                  question.id, 
+                                  option.id, 
+                                  parseInt(e.target.value) || 0
+                                )}
+                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
+                                InputProps={{
+                                  inputProps: { min: 0 },
+                                  endAdornment: <InputAdornment position="end">%</InputAdornment>
+                                }}
+                                error={balanceErrors.has(question.id)}
+                              />
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    )}
+                    {balanceErrors.has(question.id) && question.type !== 'date' &&
+                      question.type !== 'multiple_choice_grid' &&
+                      question.type !== 'checkbox_grid' &&
+                      question.type !== 'text' && (
+                      <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
+                        {balanceErrors.get(question.id)}
+                      </Alert>
+                    )}
+                    <Divider sx={{ mt: 3, mb: 1 }} />
+                  </Box>
+                ))}
+                
+                <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
+                  <Button 
+                    variant="outlined" 
+                    color="secondary"
+                    onClick={handleCancel}
+                    disabled={!isEditing || isAiLoading}
+                  >
+                    Hủy
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <StarIcon />}
+                    onClick={handleAiSuggest}
+                    disabled={isAiLoading}
+                    sx={{ minWidth: 160, fontWeight: 600 }}
+                  >
+                    {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleOpenAutoFillModal}
+                    disabled={loading || selectedForm == null || balanceErrors.size > 0 || isAiLoading}
+                  >
+                    Tạo yêu cầu điền Form
+                  </Button>
+                </Stack>
+              </>
+            ) : (
+              <Typography color="textSecondary" sx={{ py: 2 }}>
+                Vui lòng chọn form để xem chi tiết
+              </Typography>
+            )}
+          </MainCard>
+        </Grid>
 
-      <Grid item xs={12}>
-        <ExpectedRatioFormList 
-          onSchedule={handleOpenScheduleModal}
-          onViewDetails={handleOpenDetailModal}
-          onEdit={handleEditFillRequest}
-          fillRequests={selectedForm?.fillRequests || []}
+        <Grid item xs={12}>
+          <ExpectedRatioFormList 
+            onSchedule={handleOpenScheduleModal}
+            onViewDetails={handleOpenDetailModal}
+            onEdit={handleEditFillRequest}
+            fillRequests={selectedForm?.fillRequests || []}
+            formName={selectedForm?.name || ''}
+            formLink={formLink}
+          />
+        </Grid>
+        
+        {/* Modals */}
+        <AutoFillFormModal 
+          open={isAutoFillModalOpen} 
+          onClose={() => setIsAutoFillModalOpen(false)}
           formName={selectedForm?.name || ''}
-          formLink={formLink}
+          onSubmit={handleCreateFillRequest}
+        />
+        
+        <ScheduleFormModal 
+          open={isScheduleModalOpen} 
+          onClose={() => setIsScheduleModalOpen(false)}
+          formId={selectedDetailFormId}
+        />
+        
+        <FormDetailModal 
+          open={isDetailModalOpen} 
+          onClose={() => setIsDetailModalOpen(false)}
+          fillRequest={selectedFillRequest}
+          formName={selectedForm?.name || ''}
         />
       </Grid>
-      
-      {/* Modals */}
-      <AutoFillFormModal 
-        open={isAutoFillModalOpen} 
-        onClose={() => setIsAutoFillModalOpen(false)}
-        formName={selectedForm?.name || ''}
-        onSubmit={handleCreateFillRequest}
-      />
-      
-      <ScheduleFormModal 
-        open={isScheduleModalOpen} 
-        onClose={() => setIsScheduleModalOpen(false)}
-        formId={selectedDetailFormId}
-      />
-      
-      <FormDetailModal 
-        open={isDetailModalOpen} 
-        onClose={() => setIsDetailModalOpen(false)}
-        fillRequest={selectedFillRequest}
-        formName={selectedForm?.name || ''}
-      />
-    </Grid>
+    </>
   );
 }

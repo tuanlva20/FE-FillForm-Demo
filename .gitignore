@@ -34,3 +34,5 @@ yarn-debug.log
 Thumbs.db
 
 .gitignore
+
+/fileInstruct

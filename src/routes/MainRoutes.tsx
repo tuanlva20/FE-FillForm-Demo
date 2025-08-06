@@ -169,6 +169,8 @@ const DienFormLichSu = Loadable(lazy(() => import('sections/apps/dienform/TabHis
 
 const MaHoaDataPage = Loadable(lazy(() => import('sections/ma-hoa-data')));
 
+const MoneyPage = Loadable(lazy(() => import('pages/money')));
+
 // ==============================|| MAIN ROUTES ||============================== //
 
 const MainRoutes = {
@@ -702,6 +704,10 @@ const MainRoutes = {
               element: <PricingPage2 />
             }
           ]
+        },
+        {
+          path: 'money',
+          element: <MoneyPage />
         }
       ]
     },

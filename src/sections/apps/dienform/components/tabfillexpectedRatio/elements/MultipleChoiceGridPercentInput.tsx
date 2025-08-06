@@ -84,7 +84,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange, v
                     {row.text}
                     {rowErrors[row.value] && (
                       <Typography color="error" variant="caption" display="block">
-                        Tổng: {columns.reduce((sum, col) => sum + (Number(values[row.value]?.[col.value]) || 0), 0)}%
+                        Tổng hiện tại: {columns.reduce((sum, col) => sum + (Number(values[row.value]?.[col.value]) || 0), 0)}%
                       </Typography>
                     )}
                   </TableCell>
@@ -104,7 +104,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = ({ question, onChange, v
         </Table>
       </TableContainer>
       {Object.values(rowErrors).some(Boolean) && (
-        <Alert severity="error" sx={{ mt: 2 }}>Tổng nên = 100%</Alert>
+        <Alert severity="error" sx={{ mt: 2 }}>Tổng tỉ lệ nên = 100%</Alert>
       )}
     </Box>
   );
