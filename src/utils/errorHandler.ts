@@ -6,45 +6,44 @@
  */
 export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi xảy ra. Vui lòng thử lại.'): string => {
   console.log('Error object:', err);
-  console.log('Error response:', err.response);
-  console.log('Error response data:', err.response?.data);
-  
+  console.log('Error response:', err?.response);
+  console.log('Error response data:', err?.response?.data);
+
+  // Do axios interceptor đang trả về error.response.data trực tiếp,
+  // nên cần lấy data từ nhiều khả năng khác nhau
+  const responseData = (err && err.response && err.response.data) ? err.response.data : err;
+
   // Kiểm tra nhiều cấu trúc response khác nhau từ backend
-  let backendMessage = null;
-  
-  // Cấu trúc 1: err.response.data.message
-  if (err.response?.data?.message) {
-    backendMessage = err.response.data.message;
+  let backendMessage: string | null = null;
+
+  // Trường hợp data là string
+  if (typeof responseData === 'string') {
+    backendMessage = responseData;
   }
-  // Cấu trúc 2: err.response.data.error
-  else if (err.response?.data?.error) {
-    backendMessage = err.response.data.error;
-  }
-  // Cấu trúc 3: err.response.data (nếu là string)
-  else if (typeof err.response?.data === 'string') {
-    backendMessage = err.response.data;
-  }
-  // Cấu trúc 4: err.response.data.detail (Spring Boot error)
-  else if (err.response?.data?.detail) {
-    backendMessage = err.response.data.detail;
-  }
-  // Cấu trúc 5: err.response.data.errors (array of errors)
-  else if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-    backendMessage = err.response.data.errors.map((e: any) => e.message || e).join(', ');
-  }
-  // Cấu trúc 6: err.message
-  else if (err.message) {
+  // Các trường phổ biến
+  else if (responseData?.message) {
+    backendMessage = responseData.message;
+  } else if (responseData?.error) {
+    backendMessage = responseData.error;
+  } else if (Array.isArray(responseData?.errors)) {
+    backendMessage = responseData.errors.map((e: any) => (typeof e === 'string' ? e : (e?.message ?? ''))).filter(Boolean).join(', ');
+  } else if (typeof responseData?.errors === 'string') {
+    backendMessage = responseData.errors;
+  } else if (responseData?.detail) {
+    backendMessage = responseData.detail;
+  } else if (err?.message) {
     backendMessage = err.message;
   }
-  
+
   // Nếu có message từ backend, ưu tiên sử dụng
   if (backendMessage) {
     console.log('Using backend message:', backendMessage);
     return backendMessage;
   }
-  
-  // Xử lý theo HTTP status code
-  switch (err.response?.status) {
+
+  // Xử lý theo HTTP status code (nếu có)
+  const statusCode = err?.response?.status ?? err?.status;
+  switch (statusCode) {
     case 400:
       return 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
     case 401:
@@ -101,8 +100,37 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
     create: 'Có lỗi xảy ra khi tạo yêu cầu điền form từ data. Vui lòng thử lại.'
   };
   
+  // Chuẩn hóa data từ error
+  const data = (err && err.response && err.response.data) ? err.response.data : err;
+
   // Xử lý các lỗi đặc biệt cho data mapping
-  if (err.response?.status === 403) {
+  const statusCode = err?.response?.status ?? err?.status;
+
+  // BE cập nhật: khi isAccessible=false trả về 400 cùng errors và sheetAccessibilityInfo
+  // Do interceptor có thể loại bỏ response wrapper, đừng phụ thuộc duy nhất vào status code
+  if ((data?.sheetAccessibilityInfo && data?.sheetAccessibilityInfo?.isAccessible === false) || data?.errors) {
+    // Ưu tiên hiển thị danh sách lỗi BE gửi về
+    const reasons = Array.isArray(data?.errors)
+      ? data.errors.join(', ')
+      : (typeof data?.errors === 'string' ? data.errors : null);
+
+    if (data?.sheetAccessibilityInfo?.isAccessible === false) {
+      const details: string[] = [];
+      if (data.sheetAccessibilityInfo?.isPublic === false) details.push('sheet không công khai');
+      if (!data.sheetAccessibilityInfo?.accessMethod) details.push('không có quyền truy cập');
+
+      const base = 'Không thể truy cập Google Sheet.';
+      const reasonText = reasons ? ` Lý do: ${reasons}.` : '';
+      const detailText = details.length ? ` Chi tiết: ${details.join(', ')}.` : '';
+      return `${base}${reasonText}${detailText}`.trim();
+    }
+
+    // Nếu không có sheetAccessibilityInfo nhưng có reasons
+    if (reasons) return reasons;
+  }
+
+  // Trường hợp cũ: trả về 403 khi không truy cập được
+  if (statusCode === 403) {
     return 'Không thể truy cập link Google Sheet. Vui lòng đảm bảo sheet được chia sẻ công khai hoặc có quyền truy cập.';
   }
   

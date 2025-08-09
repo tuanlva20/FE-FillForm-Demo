@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -53,6 +54,7 @@ export default function TabFillInData() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedForm, setSelectedForm] = useState<FormDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorAlert, setErrorAlert] = useState<{ title: string; description: string } | null>(null);
   
   // State for payment modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
@@ -84,7 +86,9 @@ export default function TabFillInData() {
         // Don't select any form by default - user must choose
       } catch (err: any) {
         console.error('Error fetching forms:', err);
-        setError(handleFormError(err, 'fetch'));
+        const msg = handleFormError(err, 'fetch');
+        setError(msg);
+        setErrorAlert({ title: 'Lỗi tải danh sách form', description: msg });
       } finally {
         setLoading(false);
       }
@@ -108,17 +112,42 @@ export default function TabFillInData() {
         setFormLink(formDetails.editLink);
       } catch (err: any) {
         console.error('Error fetching form details:', err);
-        setError(handleFormError(err, 'fetch'));
+        const msg = handleFormError(err, 'fetch');
+        setError(msg);
+        setErrorAlert({ title: 'Lỗi tải chi tiết form', description: msg });
       }
     };
     
     fetchFormDetails();
   }, [selectedFormId]);
   
+  // Helper: build alert from data-mapping error (check)
+  const buildAlertForCheckDataError = (err: any): { title: string; description: string } => {
+    const data = err?.response?.data ?? err;
+    if (data?.sheetAccessibilityInfo?.isAccessible === false) {
+      const title = 'Lỗi link Google sheet';
+      const reasons = Array.isArray(data?.errors)
+        ? data.errors.join(', ')
+        : (typeof data?.errors === 'string' ? data.errors : '');
+      const details: string[] = [];
+      if (data.sheetAccessibilityInfo?.isPublic === false) details.push('sheet không công khai');
+      if (!data.sheetAccessibilityInfo?.accessMethod) details.push('không có quyền truy cập');
+      const descriptionParts = [] as string[];
+      if (reasons) descriptionParts.push(reasons);
+      if (details.length) descriptionParts.push(`Chi tiết: ${details.join(', ')}`);
+      const description = descriptionParts.join('. ');
+      return { title, description: description || 'Không thể truy cập Google Sheet.' };
+    }
+    const message = handleDataMappingError(err, 'check');
+    return { title: 'Lỗi kiểm tra dữ liệu', description: message };
+  };
+
   // Check data function
   const handleCheckData = async () => {
     if (!selectedFormId || !sheetLink) {
-      setError('Vui lòng chọn form và nhập link sheet');
+      const msg = 'Vui lòng chọn form và nhập link sheet';
+      setError(msg);
+      setErrorAlert({ title: 'Thiếu thông tin', description: msg });
       return;
     }
     
@@ -126,12 +155,15 @@ export default function TabFillInData() {
     const sheetUrlPattern = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+/;
     
     if (!sheetUrlPattern.test(sheetLink)) {
-      setError('Link Google Sheet không hợp lệ. Vui lòng nhập link Google Sheets (không phải Google Forms). Ví dụ: https://docs.google.com/spreadsheets/d/1ABC123.../edit');
+      const msg = 'Link Google Sheet không hợp lệ. Vui lòng nhập link Google Sheets (không phải Google Forms). Ví dụ: https://docs.google.com/spreadsheets/d/1ABC123.../edit';
+      setError(msg);
+      setErrorAlert({ title: 'Link Google Sheet không hợp lệ', description: msg });
       return;
     }
     
     setIsCheckingData(true);
     setError(null);
+    setErrorAlert(null);
     
     try {
       const request: DataMappingRequest = {
@@ -163,7 +195,9 @@ export default function TabFillInData() {
       
     } catch (err: any) {
       // Handle specific error types
-      setError(handleDataMappingError(err, 'check'));
+      const msg = handleDataMappingError(err, 'check');
+      setError(msg);
+      setErrorAlert(buildAlertForCheckDataError(err));
     } finally {
       setIsCheckingData(false);
     }
@@ -223,6 +257,8 @@ export default function TabFillInData() {
       setMappingData(null);
       setColumnMappings(new Map());
       setIsAutoFillModalOpen(false);
+      setError(null);
+      setErrorAlert(null);
       
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
@@ -240,7 +276,9 @@ export default function TabFillInData() {
       
     } catch (err: any) {
       console.error('Error creating fill request:', err);
-      setError(handleDataMappingError(err, 'create'));
+      const msg = handleDataMappingError(err, 'create');
+      setError(msg);
+      setErrorAlert({ title: 'Lỗi tạo yêu cầu điền form', description: msg });
     } finally {
       setLoading(false);
     }
@@ -254,7 +292,9 @@ export default function TabFillInData() {
   // Open auto fill modal
   const handleOpenAutoFillModal = () => {
     if (!dataChecked || !mappingData) {
-      setError('Vui lòng kiểm tra dữ liệu trước khi tạo yêu cầu điền form.');
+      const msg = 'Vui lòng kiểm tra dữ liệu trước khi tạo yêu cầu điền form.';
+      setError(msg);
+      setErrorAlert({ title: 'Thiếu thông tin', description: msg });
       return;
     }
     setIsAutoFillModalOpen(true);
@@ -283,6 +323,7 @@ export default function TabFillInData() {
     setMappingData(null);
     setColumnMappings(new Map());
     setError(null);
+    setErrorAlert(null);
   };
 
   return (
@@ -290,7 +331,12 @@ export default function TabFillInData() {
       {/* Form and Sheet Link Inputs */}
       <Grid size={12}>
         <MainCard title="Điền theo data có trước" sx={MAINCARD_STYLE}>
-          {error && <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 2 }}>{error}</Alert>}
+          {errorAlert && (
+            <Alert color="error" variant="border" icon={<ErrorIcon />} sx={{ mb: 2 }}>
+              <AlertTitle>{errorAlert.title}</AlertTitle>
+              <Typography variant="h6">{errorAlert.description}</Typography>
+            </Alert>
+          )}
           
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
