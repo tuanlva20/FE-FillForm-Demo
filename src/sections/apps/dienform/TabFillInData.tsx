@@ -26,23 +26,26 @@ import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import PaymentModal from './components/PaymentModal';
 import FillRequestList from './components/tabfillindata/FillRequestList';
+import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping';
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // assets
 import { ErrorIcon } from 'assets/images/svg/icon';
+import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import { ArrowRight2, Clock, Data, InfoCircle, Warning2 } from 'iconsax-react';
+import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
@@ -74,6 +77,9 @@ export default function TabFillInData() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [page, setPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  // Snackbar for prominent error display
+  const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
+  const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
   
   // Load forms on component mount
   useEffect(() => {
@@ -142,6 +148,24 @@ export default function TabFillInData() {
     return { title: 'Lỗi kiểm tra dữ liệu', description: message };
   };
 
+  // Helper: score for grid column matching (prefer explicit containment of question + row)
+  const scoreGridColumnMatch = (questionTitle: string, rowTitle: string, columnName: string): number => {
+    const qNorm = normalizeForCompare(questionTitle);
+    const rNorm = normalizeForCompare(rowTitle);
+    const cNorm = normalizeForCompare(columnName);
+
+    if (!qNorm || !rNorm || !cNorm) return 0;
+
+    const bothContain = cNorm.includes(qNorm) && cNorm.includes(rNorm);
+    if (bothContain) return 1;
+
+    if (cNorm.includes(rNorm)) return 0.9;
+    if (cNorm.includes(qNorm)) return 0.6;
+
+    // fallback fuzzy
+    return fuzzyScore(`${qNorm} ${rNorm}`, cNorm);
+  };
+
   // Check data function
   const handleCheckData = async () => {
     if (!selectedFormId || !sheetLink) {
@@ -183,12 +207,56 @@ export default function TabFillInData() {
         response.autoMappings.forEach(mapping => {
           initialMappings.set(mapping.questionId, mapping.columnName);
         });
-      } else {
-        // Initialize with empty values for manual mapping
-        response.questions.forEach(question => {
-        initialMappings.set(question.id, '');
-      });
       }
+
+      // Fuzzy auto-mapping for grid + non-grid (fill only empty ones)
+      const SHEET_COLUMNS = response.sheetColumns || [];
+      const SHEET_COLUMNS_NORM = SHEET_COLUMNS.map((c) => normalizeForCompare(c));
+      const SCORE_THRESHOLD = 0.55; // conservative
+      response.questions.forEach((q) => {
+        const isGrid = q.type === 'multiple_choice_grid' || q.type === 'checkbox_grid';
+        if (isGrid) {
+          const rows = (q.options || []).filter((opt: any) => opt?.value && String(opt.value).startsWith('row'));
+          rows.forEach((row: any) => {
+            const key = `${q.id}:${row.text}`;
+            if (initialMappings.get(key)) return;
+
+            let bestIdx = -1;
+            let bestScore = 0;
+            SHEET_COLUMNS.forEach((colName, idx) => {
+              const s = scoreGridColumnMatch(q.title, row.text, colName);
+              if (s > bestScore) {
+                bestScore = s;
+                bestIdx = idx;
+              }
+            });
+            // Hạ ngưỡng cho grid vì tên cột thường chứa dạng [Row]
+            const GRID_THRESHOLD = 0.5;
+            if (bestIdx >= 0 && bestScore >= GRID_THRESHOLD) {
+              initialMappings.set(key, SHEET_COLUMNS[bestIdx]);
+            } else {
+              if (!initialMappings.has(key)) initialMappings.set(key, '');
+            }
+          });
+        } else {
+          if (initialMappings.get(q.id)) return;
+          let bestIdx = -1;
+          let bestScore = 0;
+          const targetNorm = normalizeForCompare(q.title);
+          SHEET_COLUMNS_NORM.forEach((normName, idx) => {
+            const s = fuzzyScore(targetNorm, normName);
+            if (s > bestScore) {
+              bestScore = s;
+              bestIdx = idx;
+            }
+          });
+          if (bestIdx >= 0 && bestScore >= SCORE_THRESHOLD) {
+            initialMappings.set(q.id, SHEET_COLUMNS[bestIdx]);
+          } else {
+            if (!initialMappings.has(q.id)) initialMappings.set(q.id, '');
+          }
+        }
+      });
       
       setColumnMappings(initialMappings);
       setDataChecked(true);
@@ -272,13 +340,16 @@ export default function TabFillInData() {
       }
       
       // Show success message
-      alert('Tạo yêu cầu điền form thành công!');
+      setErrorSnackMessage('Tạo yêu cầu điền form thành công!');
+      setErrorSnackOpen(true);
       
     } catch (err: any) {
       console.error('Error creating fill request:', err);
       const msg = handleDataMappingError(err, 'create');
       setError(msg);
       setErrorAlert({ title: 'Lỗi tạo yêu cầu điền form', description: msg });
+      setErrorSnackMessage(msg);
+      setErrorSnackOpen(true);
     } finally {
       setLoading(false);
     }
@@ -295,6 +366,8 @@ export default function TabFillInData() {
       const msg = 'Vui lòng kiểm tra dữ liệu trước khi tạo yêu cầu điền form.';
       setError(msg);
       setErrorAlert({ title: 'Thiếu thông tin', description: msg });
+      setErrorSnackMessage(msg);
+      setErrorSnackOpen(true);
       return;
     }
     setIsAutoFillModalOpen(true);
@@ -457,46 +530,65 @@ export default function TabFillInData() {
                 </Grid>
               </Box>
 
-              {mappingData.questions.map((question) => (
-                <Box key={question.id} sx={{ mb: 3 }}>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid size={{ xs: 5, md: 5 }}>
-                      <Typography fontWeight="500">
-                        {question.title}
-                        {question.required && (
-                          <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
-                            *
-                          </Typography>
-                        )}
-                      </Typography>
-                    </Grid>
-                    
-                    <Grid size={{ xs: 1, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
-                      <ArrowRight2 size={24} />
-                    </Grid>
-                    
-                    <Grid size={{ xs: 6, md: 6 }}>
-                      <FormControl fullWidth>
-                        <Select
-                          value={columnMappings.get(question.id) || ''}
-                          onChange={(e) => handleMappingChange(question.id, null, parseInt(e.target.value, 10))}
-                          displayEmpty
-                          size="small"
-                        >
-                          <MenuItem value="">
-                            - Chọn cột dữ liệu tương ứng -
-                          </MenuItem>
-                          {mappingData.sheetColumns.map((column) => (
-                            <MenuItem key={column} value={columnMappings.get(question.id) === column ? columnMappings.get(question.id) : column}>
-                              {column}
+              {mappingData.questions
+                .sort((a, b) => a.position - b.position)
+                .map((question) => {
+                const isGridQuestion = question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid';
+                const getColumnIndex = (columnName: string) => mappingData.sheetColumns.findIndex((c) => c === columnName);
+
+                if (isGridQuestion) {
+                  return (
+                    <Box key={question.id} sx={{ mb: 3 }}>
+                      <GridQuestionMapping
+                        question={question as any}
+                        sheetColumns={mappingData.sheetColumns}
+                        columnMappings={columnMappings}
+                        onMappingChange={handleMappingChange}
+                      />
+                    </Box>
+                  );
+                }
+
+                // Non-grid question (single mapping)
+                return (
+                  <Box key={question.id} sx={{ mb: 3 }}>
+                    <Grid container spacing={2} alignItems="center">
+                      <Grid size={{ xs: 5, md: 5 }}>
+                        <Typography fontWeight="500">
+                          {question.title}
+                          {question.required && (
+                            <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
+                              *
+                            </Typography>
+                          )}
+                        </Typography>
+                      </Grid>
+                      <Grid size={{ xs: 1, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                        <ArrowRight2 size={24} />
+                      </Grid>
+                      <Grid size={{ xs: 6, md: 6 }}>
+                        <FormControl fullWidth>
+                          <Select
+                            value={getColumnIndex(columnMappings.get(question.id) || '')}
+                            onChange={(e) => handleMappingChange(question.id, null, Number(e.target.value))}
+                            displayEmpty
+                            size="small"
+                          >
+                            <MenuItem value={-1}>
+                              - Chọn cột dữ liệu tương ứng -
                             </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                            {mappingData.sheetColumns.map((column, idx) => (
+                              <MenuItem key={`${question.id}:${column}`} value={idx}>
+                                {column}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
                     </Grid>
-                  </Grid>
-                </Box>
-              ))}
+                  </Box>
+                );
+              })}
               
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
@@ -541,6 +633,14 @@ export default function TabFillInData() {
         onClose={() => setIsAutoFillModalOpen(false)}
         formName={selectedForm?.name || 'Form điền từ data'}
         onSubmit={handleCreateFillRequest}
+      />
+
+      {/* Prominent error snackbar */}
+      <AlertSnackbarWithProgress
+        open={errorSnackOpen}
+        message={errorSnackMessage}
+        onClose={() => setErrorSnackOpen(false)}
+        severity={errorSnackMessage.toLowerCase().includes('thành công') ? 'success' : 'error'}
       />
     </Grid>
   );

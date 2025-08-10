@@ -8,9 +8,10 @@ interface AlertSnackbarWithProgressProps {
   open: boolean;
   message: string;
   onClose: () => void;
+  severity?: 'error' | 'success' | 'info' | 'warning';
 }
 
-export default function AlertSnackbarWithProgress({ open, message, onClose }: AlertSnackbarWithProgressProps) {
+export default function AlertSnackbarWithProgress({ open, message, onClose, severity = 'error' }: AlertSnackbarWithProgressProps) {
   const [progress, setProgress] = useState(100);
 
   useEffect(() => {
@@ -44,13 +45,26 @@ export default function AlertSnackbarWithProgress({ open, message, onClose }: Al
         zIndex: 1400
       }}
     >
-      <Alert severity="error" sx={{ width: '100%', alignItems: 'flex-start', px: 2, py: 1.5 }}>
+      <Alert severity={severity} sx={{ width: '100%', alignItems: 'flex-start', px: 2, py: 1.5 }}>
         {message}
         <Box sx={{ width: '100%', mt: 1 }}>
           <LinearProgress
             variant="determinate"
             value={progress}
-            sx={{ height: 4, borderRadius: 2, background: '#ffeaea', '& .MuiLinearProgress-bar': { background: '#f44336' } }}
+            sx={{
+              height: 4,
+              borderRadius: 2,
+              background:
+                severity === 'success' ? '#e7f6ec' :
+                severity === 'info' ? '#e8f4fd' :
+                severity === 'warning' ? '#fff7e6' : '#ffeaea',
+              '& .MuiLinearProgress-bar': {
+                background:
+                  severity === 'success' ? '#4caf50' :
+                  severity === 'info' ? '#2196f3' :
+                  severity === 'warning' ? '#ff9800' : '#f44336'
+              }
+            }}
           />
         </Box>
       </Alert>
