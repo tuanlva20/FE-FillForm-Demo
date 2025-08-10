@@ -1,6 +1,5 @@
 import { MouseEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { Link } from 'react-router-dom';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -9,8 +8,6 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemText from '@mui/material/ListItemText';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
 
 // project-imports
@@ -126,33 +123,24 @@ export default function UserList() {
           }}
         >
           <ListItemAvatar sx={{ minWidth: !drawerOpen ? 'auto' : 56 }}>
-            <Avatar 
-              alt="Avatar" 
-              src={avatar1} 
-              sx={{ 
-                width: drawerOpen ? 46 : 36, 
+            <Avatar
+              alt={user?.name || 'Avatar'}
+              src={user?.avatar || avatar1}
+              sx={{
+                width: drawerOpen ? 46 : 36,
                 height: drawerOpen ? 46 : 36,
                 mx: !drawerOpen ? 'auto' : 0
-              }} 
+              }}
             />
           </ListItemAvatar>
           
           {drawerOpen && (
             <>
-              <ListItemText 
-                primary={user?.name} 
-                secondary="Admin" 
+              <ListItemText
+                primary={user?.name || 'User'}
+                secondary={user?.role || 'User'}
                 sx={{ ml: 1 }}
               />
-              {/* <Tooltip title="Menu">
-                <IconButton 
-                  size="small" 
-                  onClick={handleClick}
-                  sx={{ ml: 1 }}
-                >
-                  <More size={20} />
-                </IconButton>
-              </Tooltip> */}
               <Tooltip title="Đăng xuất">
                 <IconButton size="large" color="error" sx={{ ml: 0.5, p: 1 }} onClick={handleLogout}>
                   <Logout variant="Bulk" size={20} />

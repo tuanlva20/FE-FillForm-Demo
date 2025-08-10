@@ -15,11 +15,12 @@ export default function AuthGuard({ children }: GuardProps) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      navigate('login', {
-        state: {
-          from: location.pathname
-        },
+    // Only guard pages under /apps/*
+    const pathname = location.pathname || '';
+    const isProtected = pathname.startsWith('/apps/');
+    if (isProtected && !isLoggedIn) {
+      navigate('/auth/login', {
+        state: { from: location.pathname },
         replace: true
       });
     }

@@ -1,10 +1,10 @@
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { RouterProvider } from 'react-router-dom';
 
 // project-imports
 import router from 'routes';
 import ThemeCustomization from 'themes';
 
-import Customization from 'components/Customization';
 import Locales from 'components/Locales'; // Re-enabled with simplified implementation
 import RTLLayout from 'components/RTLLayout';
 import ScrollTop from 'components/ScrollTop';
@@ -20,21 +20,24 @@ import { JWTProvider as AuthProvider } from 'contexts/JWTContext';
 // ==============================|| APP - THEME, ROUTER, LOCAL  ||============================== //
 
 export default function App() {
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_APP_GOOGLE_CLIENT_ID || '';
   return (
     <>
       <ThemeCustomization>
         <RTLLayout>
           <Locales>
             <ScrollTop>
-              <AuthProvider>
-                <>
-                  <Notistack>
-                    <RouterProvider router={router} />
-                    {/* <Customization /> */}
-                    {/* <Snackbar /> */}
-                  </Notistack>
-                </>
-              </AuthProvider>
+              <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+                <AuthProvider>
+                  <>
+                    <Notistack>
+                      <RouterProvider router={router} />
+                      {/* <Customization /> */}
+                      {/* <Snackbar /> */}
+                    </Notistack>
+                  </>
+                </AuthProvider>
+              </GoogleOAuthProvider>
             </ScrollTop>
           </Locales>
         </RTLLayout>

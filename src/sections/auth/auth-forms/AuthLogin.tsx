@@ -1,5 +1,6 @@
+import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -34,6 +35,8 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
 
   const { isLoggedIn, login } = useAuth();
   const scriptedRef = useScriptRef();
+  const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
 
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => {
@@ -62,7 +65,6 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
           password: Yup.string()
             .required('Mật khẩu là bắt buộc')
             .test('no-leading-trailing-whitespace', 'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng', (value) => value === value.trim())
-            .max(10, 'Mật khẩu phải ít hơn 10 ký tự')
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
@@ -71,7 +73,8 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
             if (scriptedRef.current) {
               setStatus({ success: true });
               setSubmitting(false);
-              // preload('api/menu/dashboard', fetcher); // load menu on login success
+              enqueueSnackbar('Đăng nhập thành công!', { variant: 'success' });
+              navigate('/dashboard/default');
             }
           } catch (err: any) {
             console.error(err);
@@ -79,6 +82,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               setStatus({ success: false });
               setErrors({ submit: err.message });
               setSubmitting(false);
+              enqueueSnackbar(err.message || 'Đăng nhập thất bại', { variant: 'error' });
             }
           }
         }}

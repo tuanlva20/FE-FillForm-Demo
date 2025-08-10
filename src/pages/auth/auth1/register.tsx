@@ -9,15 +9,14 @@ import Typography from '@mui/material/Typography';
 // project-imports
 import Logo from 'components/logo';
 import useAuth from 'hooks/useAuth';
+import FirebaseRegister from 'sections/auth/auth-forms/AuthRegister';
 import AuthDivider from 'sections/auth/AuthDivider';
 import AuthSocButton from 'sections/auth/AuthSocButton';
 import AuthWrapper from 'sections/auth/AuthWrapper';
-import FirebaseRegister from 'sections/auth/auth-forms/AuthRegister';
+import GoogleOAuthButton from 'sections/auth/GoogleOAuthButton';
 
 // assets
 import imgFacebook from 'assets/images/auth/facebook.svg';
-import imgGoogle from 'assets/images/auth/google.svg';
-import imgTwitter from 'assets/images/auth/twitter.svg';
 
 // ================================|| REGISTER ||================================ //
 
@@ -43,9 +42,7 @@ export default function Register() {
               </AuthSocButton>
             </Grid> */}
             <Grid size={12}>
-              <AuthSocButton>
-                <CardMedia component="img" src={imgGoogle} alt="Google" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng ký với Google
-              </AuthSocButton>
+              <GoogleOAuthButton mode="register" />
             </Grid>
           </Grid>
         </Grid>

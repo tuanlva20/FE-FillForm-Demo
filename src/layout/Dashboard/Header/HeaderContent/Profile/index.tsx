@@ -1,8 +1,8 @@
-import { useRef, useState, ReactNode, SyntheticEvent } from 'react';
+import { ReactNode, SyntheticEvent, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 // material-ui
-import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import CardContent from '@mui/material/CardContent';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
@@ -10,25 +10,25 @@ import Grid from '@mui/material/Grid2';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 
 // project-imports
-import ProfileTab from './ProfileTab';
-import SettingTab from './SettingTab';
 import Avatar from 'components/@extended/Avatar';
 import IconButton from 'components/@extended/IconButton';
 import Transitions from 'components/@extended/Transitions';
 import MainCard from 'components/MainCard';
+import ProfileTab from './ProfileTab';
+import SettingTab from './SettingTab';
 
 import useAuth from 'hooks/useAuth';
 
 // assets
 import avatar1 from 'assets/images/users/avatar-6.png';
-import { Setting2, Profile, Logout } from 'iconsax-react';
+import { Logout, Profile, Setting2 } from 'iconsax-react';
 
 // types
 interface TabPanelProps {
@@ -127,7 +127,7 @@ export default function ProfilePage() {
         aria-haspopup="true"
         onClick={handleToggle}
       >
-        <Avatar alt="profile user" src={avatar1} />
+        <Avatar alt={user?.name || 'profile user'} src={user?.avatar || avatar1} />
       </ButtonBase>
       <Popper
         placement="bottom-end"
@@ -156,12 +156,10 @@ export default function ProfilePage() {
                     <Grid container sx={{ justifyContent: 'space-between', alignItems: 'center' }}>
                       <Grid>
                         <Stack direction="row" sx={{ gap: 1.25, alignItems: 'center' }}>
-                          <Avatar alt="profile user" src={avatar1} />
+                          <Avatar alt={user?.name || 'profile user'} src={user?.avatar || avatar1} />
                           <Stack>
-                            <Typography variant="subtitle1">{user?.name}</Typography>
-                            <Typography variant="body2" color="secondary">
-                              UI/UX Designer
-                            </Typography>
+                            <Typography variant="subtitle1">{user?.name || 'User'}</Typography>
+                            <Typography variant="body2" color="secondary">{user?.role || 'User'}</Typography>
                           </Stack>
                         </Stack>
                       </Grid>

@@ -2,6 +2,7 @@ import { SyntheticEvent, useEffect, useState } from 'react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 // material-ui
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
@@ -24,6 +25,7 @@ import AnimateButton from 'components/@extended/AnimateButton';
 import IconButton from 'components/@extended/IconButton';
 import useAuth from 'hooks/useAuth';
 import useScriptRef from 'hooks/useScriptRef';
+import { combineFormikErrors, parseApiError, severityFromParsedError } from 'utils/errorHandler';
 import { strengthColor, strengthIndicator } from 'utils/password-strength';
 
 // types
@@ -42,8 +44,12 @@ export default function AuthRegister() {
 
   const [level, setLevel] = useState<StringColorProps>();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const handleMouseDownPassword = (event: SyntheticEvent) => {
@@ -63,32 +69,35 @@ export default function AuthRegister() {
     <>
       <Formik
         initialValues={{
-          firstname: '',
-          lastname: '',
+          name: '',
           email: '',
           company: '',
           password: '',
+          confirmPassword: '',
           submit: null
         }}
         validationSchema={Yup.object().shape({
-          firstname: Yup.string().max(255).required('Họ là bắt buộc'),
-          lastname: Yup.string().max(255).required('Tên là bắt buộc'),
+          name: Yup.string().max(255).required('Họ và tên là bắt buộc'),
           email: Yup.string().email('Phải là một email hợp lệ').max(255).required('Email là bắt buộc'),
           password: Yup.string()
             .required('Mật khẩu là bắt buộc')
+            .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
             .test('no-leading-trailing-whitespace', 'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng', (value) => value === value.trim())
-            .max(10, 'Mật khẩu phải ít hơn 10 ký tự')
+            ,
+          confirmPassword: Yup.string()
+            .required('Xác nhận mật khẩu là bắt buộc')
+            .test('confirmPassword', 'Cả hai mật khẩu phải khớp nhau!', (confirmPassword, yup) => yup.parent.password === confirmPassword)
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {
             const trimmedEmail = values.email.trim();
-            await register(trimmedEmail, values.password, values.firstname, values.lastname);
+            await register(trimmedEmail, values.password, values.name, values.confirmPassword);
             if (scriptedRef.current) {
               setStatus({ success: true });
               setSubmitting(false);
               openSnackbar({
                 open: true,
-                message: 'Đăng ký của bạn đã được hoàn thành thành công.',
+                message: 'Đăng ký thành công.',
                 variant: 'alert',
                 alert: {
                   color: 'success'
@@ -100,10 +109,16 @@ export default function AuthRegister() {
               }, 1500);
             }
           } catch (err: any) {
-            console.error(err);
+            const parsed = parseApiError(err);
+            setErrors(combineFormikErrors(parsed));
+            openSnackbar({
+              open: true,
+              message: parsed.message,
+              variant: 'alert',
+              alert: { color: severityFromParsedError(parsed) }
+            } as SnackbarProps);
             if (scriptedRef.current) {
               setStatus({ success: false });
-              setErrors({ submit: err.message });
               setSubmitting(false);
             }
           }
@@ -114,23 +129,23 @@ export default function AuthRegister() {
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="lastname-signup">Họ và Tên <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <InputLabel htmlFor="name-signup">Họ và Tên <span style={{ color: 'red' }}>*</span></InputLabel>
                   <OutlinedInput
                     fullWidth
-                    error={Boolean(touched.lastname && errors.lastname)}
-                    id="lastname-signup"
-                    type="lastname"
-                    value={values.lastname}
-                    name="lastname"
+                    error={Boolean(touched.name && errors.name)}
+                    id="name-signup"
+                    type="text"
+                    value={values.name}
+                    name="name"
                     onBlur={handleBlur}
                     onChange={handleChange}
-                    placeholder="Văn A"
+                    placeholder="Nguyễn Văn A"
                     inputProps={{}}
                   />
                 </Stack>
-                {touched.lastname && errors.lastname && (
-                  <FormHelperText error id="helper-text-lastname-signup">
-                    {errors.lastname}
+                {touched.name && errors.name && (
+                  <FormHelperText error id="helper-text-name-signup">
+                    {errors.name}
                   </FormHelperText>
                 )}
               </Grid>
@@ -207,6 +222,41 @@ export default function AuthRegister() {
                 </FormControl>
               </Grid>
               <Grid size={12}>
+                <Stack sx={{ gap: 1 }}>
+                  <InputLabel htmlFor="confirm-password-signup">Xác nhận mật khẩu <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <OutlinedInput
+                    fullWidth
+                    error={Boolean(touched.confirmPassword && errors.confirmPassword)}
+                    id="confirm-password-signup"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={values.confirmPassword}
+                    name="confirmPassword"
+                    onBlur={handleBlur}
+                    onChange={handleChange}
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle confirm password visibility"
+                          onClick={handleClickShowConfirmPassword}
+                          onMouseDown={handleMouseDownPassword}
+                          edge="end"
+                          color="secondary"
+                        >
+                          {showConfirmPassword ? <Eye /> : <EyeSlash />}
+                        </IconButton>
+                      </InputAdornment>
+                    }
+                    placeholder="******"
+                    inputProps={{}}
+                  />
+                </Stack>
+                {touched.confirmPassword && errors.confirmPassword && (
+                  <FormHelperText error id="helper-text-confirm-password-signup">
+                    {errors.confirmPassword}
+                  </FormHelperText>
+                )}
+              </Grid>
+              <Grid size={12}>
                 <Typography variant="body2">
                   Bằng cách đăng ký, bạn đồng ý với &nbsp;
                   <Link variant="subtitle2" component={RouterLink} to="#">
@@ -220,7 +270,7 @@ export default function AuthRegister() {
               </Grid>
               {errors.submit && (
                 <Grid size={12}>
-                  <FormHelperText error>{errors.submit}</FormHelperText>
+                  <Alert severity="error" variant="outlined" sx={{ color: 'red' }}>{errors.submit}</Alert>
                 </Grid>
               )}
               <Grid size={12}>

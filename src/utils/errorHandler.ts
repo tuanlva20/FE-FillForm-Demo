@@ -1,3 +1,85 @@
+export type FieldErrorMap = Record<string, string>;
+
+export type ParsedApiError = {
+  type: 'ResponseModel' | 'AuthFailure' | 'Axios' | 'Network' | 'Unknown';
+  httpStatus?: number;
+  status?: string; // e.g., 'BAD_REQUEST', 'CONFLICT'
+  errorCode?: number;
+  message: string;
+  fieldErrors?: FieldErrorMap;
+  raw?: any;
+};
+
+const DEFAULT_ERROR_MESSAGE = 'Có lỗi hệ thống, vui lòng thử lại sau';
+
+function extractFieldErrors(details: any): FieldErrorMap | undefined {
+  if (!details) return undefined;
+  const errors = details.errors;
+  if (errors && typeof errors === 'object' && !Array.isArray(errors)) {
+    const mapped: FieldErrorMap = {};
+    Object.keys(errors).forEach((key) => {
+      const value = (errors as any)[key];
+      if (value == null) return;
+      mapped[key] = typeof value === 'string' ? value : String(value);
+    });
+    return mapped;
+  }
+  return undefined;
+}
+
+export function parseApiError(error: any): ParsedApiError {
+  // Already normalized ResponseModel
+  if (error && typeof error === 'object' && 'status' in error && ('errorCode' in error || 'errorMessage' in error)) {
+    const status = (error as any).status as string | undefined;
+    const errorCode = (error as any).errorCode as number | undefined;
+    const message = (error as any).errorMessage || DEFAULT_ERROR_MESSAGE;
+    const fieldErrors = extractFieldErrors((error as any).errorDetails);
+    return { type: 'ResponseModel', status, errorCode, message, fieldErrors, raw: error };
+  }
+
+  // AuthResponse failure shape
+  if (error && typeof error === 'object' && 'success' in error && (error as any).success === false) {
+    const message = (error as any).message || DEFAULT_ERROR_MESSAGE;
+    return { type: 'AuthFailure', message, raw: error };
+  }
+
+  // AxiosError
+  const maybeAxiosStatus = error?.response?.status;
+  const maybeAxiosData = error?.response?.data;
+  if (maybeAxiosStatus || maybeAxiosData) {
+    // If server returned our standardized shapes inside data
+    if (maybeAxiosData && typeof maybeAxiosData === 'object') {
+      const parsedData = parseApiError(maybeAxiosData);
+      return { ...parsedData, httpStatus: maybeAxiosStatus ?? parsedData.httpStatus };
+    }
+    const message = error?.message || DEFAULT_ERROR_MESSAGE;
+    return { type: 'Axios', httpStatus: maybeAxiosStatus, message, raw: error };
+  }
+
+  // String or generic Error
+  if (typeof error === 'string') {
+    return { type: 'Unknown', message: error, raw: error };
+  }
+  if (error?.message) {
+    return { type: 'Unknown', message: error.message, raw: error };
+  }
+
+  return { type: 'Unknown', message: DEFAULT_ERROR_MESSAGE, raw: error };
+}
+
+export function severityFromParsedError(parsed: ParsedApiError): 'warning' | 'error' {
+  if (parsed.type === 'ResponseModel') {
+    if (parsed.status === 'BAD_REQUEST') return 'warning';
+    return 'error';
+  }
+  return 'error';
+}
+
+export function combineFormikErrors(parsed: ParsedApiError): FieldErrorMap {
+  const fieldErrors = parsed.fieldErrors || {};
+  return { ...fieldErrors, submit: parsed.message };
+}
+
 /**
  * Utility function để xử lý lỗi từ backend API
  * @param err - Error object từ axios

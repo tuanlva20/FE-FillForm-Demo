@@ -1,28 +1,16 @@
 import React, { createContext, useEffect, useReducer } from 'react';
 
-// third-party
-import { Chance } from 'chance';
-import { jwtDecode } from 'jwt-decode';
-
 // reducer - state management
 import { LOGIN, LOGOUT } from 'contexts/auth-reducer/actions';
 import authReducer from 'contexts/auth-reducer/auth';
 
 // project-imports
+import { authAPI } from 'api/auth';
 import Loader from 'components/Loader';
-import axios from 'utils/axios';
+import { clearTokens, setAccessExpiry } from 'utils/authToken';
 
 // types
 import { AuthProps, JWTContextType } from 'types/auth';
-import { KeyedObject } from 'types/root';
-
-const chance = new Chance();
-
-// Always bypass authentication by setting it to true
-const BYPASS_AUTH = true;
-
-// mock token with long validity
-const MOCK_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkRldiBVc2VyIiwiaWF0IjoxNTE2MjM5MDIyfQ.L7CjWRnK2W9ODJ0kSMgX3nMVXMxhzqgRZUTh8_OW1y8';
 
 // constant
 const initialState: AuthProps = {
@@ -31,26 +19,8 @@ const initialState: AuthProps = {
   user: null
 };
 
-const verifyToken: (st: string) => boolean = (serviceToken) => {
-  if (!serviceToken) {
-    return false;
-  }
-  const decoded: KeyedObject = jwtDecode(serviceToken);
-  /**
-   * Property 'exp' does not exist on type '<T = unknown>(token: string, options?: JwtDecodeOptions | undefined) => T'.
-   */
-  return decoded.exp > Date.now() / 1000;
-};
-
-const setSession = (serviceToken?: string | null) => {
-  if (serviceToken) {
-    localStorage.setItem('serviceToken', serviceToken);
-    axios.defaults.headers.common.Authorization = `Bearer ${serviceToken}`;
-  } else {
-    localStorage.removeItem('serviceToken');
-    delete axios.defaults.headers.common.Authorization;
-  }
-};
+// No-op for cookie-based sessions. Kept for symmetry if needed in future.
+const setSession = () => {};
 
 // ==============================|| JWT CONTEXT & PROVIDER ||============================== //
 
@@ -58,106 +28,150 @@ const JWTContext = createContext<JWTContextType | null>(null);
 
 export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const getIsAppsPath = () => {
+    if (typeof window === 'undefined') return false;
+    return (window.location.pathname || '').startsWith('/apps/');
+  };
 
   useEffect(() => {
-    const init = async () => {
+    const isAppsPath = getIsAppsPath();
+    const initAuth = async () => {
       try {
-        // Check for existing session token
-        const serviceToken = window.localStorage.getItem('serviceToken');
-        if (serviceToken && verifyToken(serviceToken)) {
-          // Use existing token
-          setSession(serviceToken);
-          
-          // Set mock user data
+        const response = await authAPI.getCurrentUser();
+        if (response?.success) {
+          if (typeof response.exp === 'number') setAccessExpiry(response.exp);
           dispatch({
             type: LOGIN,
             payload: {
               isLoggedIn: true,
-              user: {
-                id: '1',
-                email: 'khaosat@gmail.com',
-                name: 'Khaosat User',
-                avatar: "",
-                role: 'admin'
-              }
+              user: response.data
             }
           });
         } else {
-          dispatch({
-            type: LOGOUT
-          });
+          dispatch({ type: LOGOUT });
         }
       } catch (err) {
-        console.error(err);
-        dispatch({
-          type: LOGOUT
-        });
+        dispatch({ type: LOGOUT });
       }
     };
 
-    init();
+    if (isAppsPath) {
+      // On protected routes, ensure auth is hydrated
+      if (!state.isLoggedIn || state.user == null) {
+        void initAuth();
+      }
+    } else {
+      // On public routes, avoid background refresh and mark initialized without network
+      setAccessExpiry(null);
+      if (state.isInitialized === false) {
+        dispatch({ type: LOGOUT });
+      }
+    }
+    // Also re-run when browser back/forward occurs
+    const onPopState = () => {
+      const nowApps = getIsAppsPath();
+      if (nowApps && (!state.isLoggedIn || state.user == null)) {
+        void initAuth();
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email: string, password: string) => {
-    // Use mock token and bypass authentication completely
     try {
-      setSession(MOCK_TOKEN);
-      dispatch({
-        type: LOGIN,
-        payload: {
-          isLoggedIn: true,
-          user: {
-            id: '1',
-            email: email || 'khaosat@gmail.com',
-            name: 'Khaosat User',
-            avatar: "",
-            role: 'admin'
+      await authAPI.login({ email, password });
+      const me = await authAPI.getCurrentUser();
+      if (me?.success) {
+        if (typeof me.exp === 'number') setAccessExpiry(me.exp);
+        dispatch({
+          type: LOGIN,
+          payload: {
+            isLoggedIn: true,
+            user: me.data
           }
-        }
-      });
-    } catch (error) {
-      throw new Error('Authentication failed');
+        });
+      } else {
+        throw new Error('Login failed');
+      }
+    } catch (error: any) {
+      throw new Error(error?.message || 'Authentication failed');
     }
   };
 
-  // Rest of the code remains unchanged
-  const register = async (email: string, password: string, firstName: string, lastName: string) => {
-    // todo: this flow need to be recode as it not verified
-    const id = chance.bb_pin();
-    
-    // Simply return success without making API call
-    setSession(MOCK_TOKEN);
-    dispatch({
-      type: LOGIN,
-      payload: {
-        isLoggedIn: true,
-        user: {
-          id,
-          email,
-          name: `${firstName} ${lastName}`,
-          role: 'user'
-        }
+  const googleLogin = async (idToken: string) => {
+    try {
+      await authAPI.googleLogin({ idToken });
+      const me = await authAPI.getCurrentUser();
+      if (me?.success) {
+        if (typeof me.exp === 'number') setAccessExpiry(me.exp);
+        dispatch({
+          type: LOGIN,
+          payload: {
+            isLoggedIn: true,
+            user: me.data
+          }
+        });
+      } else {
+        throw new Error('Google login failed');
       }
-    });
+    } catch (error: any) {
+      throw new Error(error?.message || 'Google login failed');
+    }
   };
 
-  const logout = () => {
-    setSession(null);
-    dispatch({ type: LOGOUT });
+  const register = async (email: string, password: string, firstNameOrName: string, confirmPassword?: string) => {
+    try {
+      // Treat provided name as full name
+      const fullName = [firstNameOrName].filter(Boolean).join(' ').trim();
+      await authAPI.register({ email, password, confirmPassword: confirmPassword || password, name: fullName });
+      const me = await authAPI.getCurrentUser();
+      if (me?.success) {
+        if (typeof me.exp === 'number') setAccessExpiry(me.exp);
+        dispatch({
+          type: LOGIN,
+          payload: {
+            isLoggedIn: true,
+            user: me.data
+          }
+        });
+      } else {
+        throw new Error('Register failed');
+      }
+    } catch (error: any) {
+      // Re-throw original error so form can parse structured error response
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authAPI.logout();
+    } catch (e) {
+      // ignore
+    } finally {
+      clearTokens();
+      dispatch({ type: LOGOUT });
+    }
   };
 
   const resetPassword = async (email: string) => {
-    console.log('Password reset bypassed for:', email);
-    // Don't return anything to match the Promise<void> type
+    await authAPI.forgotPassword(email);
   };
 
   const updateProfile = () => {};
 
-  if (state.isInitialized !== undefined && !state.isInitialized) {
+  const isAppsPathRender = getIsAppsPath();
+  if (isAppsPathRender && state.isInitialized !== undefined && !state.isInitialized) {
     return <Loader />;
   }
 
-  return <JWTContext.Provider value={{ ...state, login, logout, register, resetPassword, updateProfile }}>{children}</JWTContext.Provider>;
+  return (
+    <JWTContext.Provider value={{ ...state, login, googleLogin, logout, register, resetPassword, updateProfile }}>
+      {children}
+    </JWTContext.Provider>
+  );
 };
 
 export default JWTContext;

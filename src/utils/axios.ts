@@ -1,45 +1,66 @@
+import { openSnackbar } from 'api/snackbar';
 import axios, { AxiosRequestConfig } from 'axios';
+import { ensureFreshToken } from './authToken';
 
-const axiosServices = axios.create({ baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/' });
+// Create axios instance with cookie-based auth and CSRF protection
+const axiosServices = axios.create({
+  baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/',
+  withCredentials: true
+});
+
+// Configure Axios to automatically send CSRF header based on XSRF-TOKEN cookie
+axiosServices.defaults.xsrfCookieName = 'XSRF-TOKEN';
+axiosServices.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 
 // Define constants for mock services (replace with actual values or configuration)
 const BYPASS_AUTH = false; // Set to true to bypass authentication for all requests
-const MOCK_TOKEN = 'mock-token'; // Example mock token
 const BYPASS_ENDPOINTS: string[] = []; // Add endpoints to bypass here, e.g., ['/api/users']
 const MOCK_RESPONSES: { [key: string]: any } = {}; // Add mock responses here, e.g., {'/api/users': [{id: 1, name: 'Mock User'}]}
 
-// ==============================|| AXIOS - FOR MOCK SERVICES ||============================== //
+// ==============================|| AXIOS INTERCEPTORS ||============================== //
 
 axiosServices.interceptors.request.use(
   async (config) => {
-    // If bypass auth is enabled, always set the mock token
-    if (BYPASS_AUTH) {
-      config.headers['Authorization'] = `Bearer ${MOCK_TOKEN}`;
-      return config;
-    }
-
-    // Regular authentication flow
-    const accessToken = localStorage.getItem('serviceToken');
-    if (accessToken) {
-      config.headers['Authorization'] = `Bearer ${accessToken}`;
+    // Only refresh auth on protected /apps/* routes
+    const url = (config.url || '').toString();
+    const isAppsApi = url.startsWith('/apps/') || url.includes('/api/') && window.location.pathname.startsWith('/apps/');
+    if (isAppsApi) {
+      await ensureFreshToken(false);
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
 axiosServices.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Skip redirection to maintenance page if bypassing auth
+  async (error) => {
     if (BYPASS_AUTH) {
       return Promise.reject(error);
     }
-    
-    if (error.response?.status === 401 && !window.location.href.includes('/login')) {
-      window.location.pathname = '/maintenance/500';
+
+    const originalRequest: any = error.config;
+    if (error.response?.status === 401) {
+      // Retry up to 3 times attempting to refresh the session
+      originalRequest._retryCount = originalRequest._retryCount || 0;
+      while (originalRequest._retryCount < 3) {
+        originalRequest._retryCount += 1;
+        const ok = await ensureFreshToken(true);
+        if (ok) {
+          return axiosServices(originalRequest);
+        }
+      }
+      try {
+        openSnackbar({
+          open: true,
+          message: 'Phiên đăng nhập hết hạn/không hợp lệ. Vui lòng đăng nhập lại.',
+          variant: 'alert',
+          alert: { color: 'error' }
+        } as any);
+      } catch {}
+      if (!window.location.pathname.includes('/auth/login')) {
+        window.location.pathname = '/auth/login';
+      }
     }
     return Promise.reject((error.response && error.response.data) || 'Wrong Services');
   }
@@ -51,15 +72,15 @@ export const fetcher = async (args: string | [string, AxiosRequestConfig]) => {
   const [url, config] = Array.isArray(args) ? args : [args];
 
   // Check if this is an endpoint we want to bypass
-  const bypassEndpoint = BYPASS_ENDPOINTS.find(endpoint => url.includes(endpoint));
-  
+  const bypassEndpoint = BYPASS_ENDPOINTS.find((endpoint) => url.includes(endpoint));
+
   if (bypassEndpoint) {
     console.log(`📦 Bypassing API call to ${url} and returning mock data`);
     return MOCK_RESPONSES[bypassEndpoint];
   }
 
-  // const res = await axiosServices.get(url, { ...config });
-  const res = "";
+  // Keep original stub to avoid unintended side-effects for existing modules
+  const res = '';
   return res;
 };
 

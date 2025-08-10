@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 // material-ui
 import CardMedia from '@mui/material/CardMedia';
@@ -8,20 +8,20 @@ import Typography from '@mui/material/Typography';
 
 // project-imports
 import useAuth from 'hooks/useAuth';
+import AuthLogin from 'sections/auth/auth-forms/AuthLogin';
 import AuthDivider from 'sections/auth/AuthDivider';
 import AuthSocButton from 'sections/auth/AuthSocButton';
 import AuthWrapper from 'sections/auth/AuthWrapper';
-import AuthLogin from 'sections/auth/auth-forms/AuthLogin';
+import GoogleOAuthButton from 'sections/auth/GoogleOAuthButton';
 
 // assets
 import imgFacebook from 'assets/images/auth/facebook.svg';
-import imgGoogle from 'assets/images/auth/google.svg';
-import imgTwitter from 'assets/images/auth/twitter.svg';
 
 // ================================|| LOGIN ||================================ //
 
 export default function Login() {
   const { isLoggedIn } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <AuthWrapper>
@@ -42,9 +42,7 @@ export default function Login() {
               </AuthSocButton>
             </Grid> */}
             <Grid size={12}>
-              <AuthSocButton>
-                <CardMedia component="img" src={imgGoogle} alt="Google" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng nhập với Google
-              </AuthSocButton>
+              <GoogleOAuthButton mode="login" onSuccess={() => navigate('/dashboard/default')} />
             </Grid>
           </Grid>
         </Grid>
