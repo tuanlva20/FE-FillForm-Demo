@@ -18,13 +18,14 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
+// import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Typography from '@mui/material/Typography';
 
 // project-imports
 import MainCard from 'components/MainCard';
+import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
@@ -103,9 +104,9 @@ export default function TabHistory() {
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   
-  // Pagination states
-  const [page, setPage] = useState<number>(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(5);
+  // Pagination states (align with custom TablePagination)
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
   
   // Sorting states
   const [orderBy, setOrderBy] = useState<ColumnKey>('createdAt');
@@ -148,16 +149,29 @@ export default function TabHistory() {
     setFilteredHistory(filtered);
   };
 
-  // Handle page change
-  const handleChangePage = (event: unknown, newPage: number) => {
-    setPage(newPage);
-  };
-
-  // Handle rows per page change
-  const handleChangeRowsPerPage = (event: ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  // Build state for ReactTablePagination
+  const getTableState = () => ({
+    pagination: { pageIndex, pageSize },
+    columnVisibility: {},
+    columnOrder: [],
+    columnPinning: { left: [], right: [] },
+    rowSelection: {},
+    sorting: [],
+    columnFilters: [],
+    globalFilter: '',
+    expanded: {},
+    columnSizing: {},
+    columnSizingInfo: { 
+      startOffset: null, 
+      columnSizingStart: [], 
+      isResizingColumn: false, 
+      deltaOffset: null,
+      deltaPercentage: null,
+      startSize: null
+    },
+    rowPinning: { top: [], bottom: [] },
+    grouping: []
+  } as any);
 
   // Handle sort request
   const handleRequestSort = (property: ColumnKey) => {
@@ -366,11 +380,11 @@ export default function TabHistory() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortData(filteredHistory)
-                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      {sortData(filteredHistory)
+                        .slice(pageIndex * pageSize, pageIndex * pageSize + pageSize)
                       .map((item, index) => (
                         <TableRow key={item.id} hover>
-                          <TableCell>{page * rowsPerPage + index + 1}</TableCell>
+                          <TableCell>{pageIndex * pageSize + index + 1}</TableCell>
                           <TableCell>{item.name}</TableCell>
                           <TableCell>{item.type}</TableCell>
                           <TableCell>{item.createdAt}</TableCell>
@@ -402,16 +416,15 @@ export default function TabHistory() {
                 </Table>
               </TableContainer>
               
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={filteredHistory.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
-                labelRowsPerPage="Hiển thị:"
-              />
+              <Box sx={{ p: 2 }}>
+                <ReactTablePagination
+                  setPageSize={setPageSize as any}
+                  setPageIndex={setPageIndex as any}
+                  getState={getTableState as any}
+                  getPageCount={() => Math.ceil(filteredHistory.length / pageSize)}
+                  initialPageSize={10}
+                />
+              </Box>
             </>
           )}
         </MainCard>

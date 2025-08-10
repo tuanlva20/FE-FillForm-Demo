@@ -23,6 +23,7 @@ import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
 
 // components
+import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import PaymentModal from './components/PaymentModal';
 import FillRequestList from './components/tabfillindata/FillRequestList';
@@ -75,8 +76,8 @@ export default function TabFillInData() {
   
   // States for form list - Updated default limit to 10
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [page, setPage] = useState<number>(1);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
   // Snackbar for prominent error display
   const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
   const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
@@ -375,14 +376,37 @@ export default function TabFillInData() {
   
   // Handle page change
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
-    setPage(value);
+    setPageIndex(value - 1);
   };
   
   // Handle rows per page change
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(1);
+    setPageSize(parseInt(event.target.value, 10));
+    setPageIndex(0);
   };
+
+  const getTableState = () => ({
+    pagination: { pageIndex, pageSize },
+    columnVisibility: {},
+    columnOrder: [],
+    columnPinning: { left: [], right: [] },
+    rowSelection: {},
+    sorting: [],
+    columnFilters: [],
+    globalFilter: '',
+    expanded: {},
+    columnSizing: {},
+    columnSizingInfo: {
+      startOffset: null,
+      columnSizingStart: [],
+      isResizingColumn: false,
+      deltaOffset: null,
+      deltaPercentage: null,
+      startSize: null
+    },
+    rowPinning: { top: [], bottom: [] },
+    grouping: []
+  } as any);
 
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
@@ -610,15 +634,30 @@ export default function TabFillInData() {
       {selectedFormId && selectedForm && (
       <Grid size={12}>
           <FillRequestList 
-            fillRequests={selectedForm.fillRequests || []}
+            fillRequests={(selectedForm.fillRequests || []).filter(
+              (req) => !req.answerDistributions || req.answerDistributions.length === 0
+            )}
             loading={loading}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
-                page={page}
-            rowsPerPage={rowsPerPage}
+            page={pageIndex + 1}
+            rowsPerPage={pageSize}
             onPageChange={handlePageChange}
             onRowsPerPageChange={handleRowsPerPageChange}
-              />
+          />
+          
+          <Divider />
+          <Box sx={{ p: 2 }}>
+            <ReactTablePagination
+              setPageSize={setPageSize as any}
+              setPageIndex={setPageIndex as any}
+              getState={getTableState as any}
+              getPageCount={() => Math.ceil(((selectedForm.fillRequests || []).filter(
+                (req) => !req.answerDistributions || req.answerDistributions.length === 0
+              ).length) / pageSize)}
+              initialPageSize={10}
+            />
+          </Box>
       </Grid>
       )}
       

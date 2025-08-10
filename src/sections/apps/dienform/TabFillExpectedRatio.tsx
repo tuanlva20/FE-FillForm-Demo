@@ -22,6 +22,7 @@ import Typography from '@mui/material/Typography';
 // project-imports
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
+import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleFormError, testErrorStructure } from 'utils/errorHandler';
@@ -34,13 +35,13 @@ import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/el
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  AnswerDistribution,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // iconsax-react
@@ -94,6 +95,10 @@ export default function TabFillExpectedRatio() {
   // Thêm state cho alert popup
   const [alertPopup, setAlertPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
   
+  // Snackbar for prominent success/error display
+  const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
+  const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
+  
   // State to track if edit mode is active
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isEditingFillRequest, setIsEditingFillRequest] = useState<boolean>(false);
@@ -104,6 +109,32 @@ export default function TabFillExpectedRatio() {
   
   // Thêm state lưu trạng thái loading cho AI gợi ý
   const [isAiLoading, setIsAiLoading] = useState(false);
+  
+  // Pagination state
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const getTableState = () => ({
+    pagination: { pageIndex, pageSize },
+    columnVisibility: {},
+    columnOrder: [],
+    columnPinning: { left: [], right: [] },
+    rowSelection: {},
+    sorting: [],
+    columnFilters: [],
+    globalFilter: '',
+    expanded: {},
+    columnSizing: {},
+    columnSizingInfo: { 
+      startOffset: null, 
+      columnSizingStart: [], 
+      isResizingColumn: false, 
+      deltaOffset: null,
+      deltaPercentage: null,
+      startSize: null
+    },
+    rowPinning: { top: [], bottom: [] },
+    grouping: []
+  } as any);
   
   // Load form list on component mount
   useEffect(() => {
@@ -711,10 +742,17 @@ export default function TabFillExpectedRatio() {
         }
       }
       
+      // Show success message
+      setErrorSnackMessage('Tạo yêu cầu điền form thành công!');
+      setErrorSnackOpen(true);
+      
     } catch (err: any) {
       console.error('Error creating fill request:', err);
       testErrorStructure(err);
-      setAlertPopup({ open: true, message: handleFormError(err, 'create') });
+      const msg = handleFormError(err, 'create');
+      setAlertPopup({ open: true, message: msg });
+      setErrorSnackMessage(msg);
+      setErrorSnackOpen(true);
     }
   };
 
@@ -825,6 +863,14 @@ export default function TabFillExpectedRatio() {
         open={alertPopup.open}
         message={alertPopup.message}
         onClose={() => setAlertPopup({ open: false, message: '' })}
+      />
+      
+      {/* Prominent error/success snackbar */}
+      <AlertSnackbarWithProgress
+        open={errorSnackOpen}
+        message={errorSnackMessage}
+        onClose={() => setErrorSnackOpen(false)}
+        severity={errorSnackMessage.toLowerCase().includes('thành công') ? 'success' : 'error'}
       />
       <Grid container spacing={GRID_COMMON_SPACING}>
         <Grid item xs={12}>
@@ -1131,10 +1177,23 @@ export default function TabFillExpectedRatio() {
             onSchedule={handleOpenScheduleModal}
             onViewDetails={handleOpenDetailModal}
             onEdit={handleEditFillRequest}
-            fillRequests={selectedForm?.fillRequests || []}
+            fillRequests={(selectedForm?.fillRequests || []).filter(req => (req.answerDistributions?.length || 0) > 0)}
             formName={selectedForm?.name || ''}
             formLink={formLink}
+            page={pageIndex + 1}
+            rowsPerPage={pageSize}
           />
+          
+          <Divider />
+          <Box sx={{ p: 2 }}>
+            <ReactTablePagination
+              setPageSize={setPageSize as any}
+              setPageIndex={setPageIndex as any}
+              getState={getTableState as any}
+              getPageCount={() => Math.ceil(((selectedForm?.fillRequests || []).filter(req => (req.answerDistributions?.length || 0) > 0).length) / pageSize)}
+              initialPageSize={10}
+            />
+          </Box>
         </Grid>
         
         {/* Modals */}

@@ -37,6 +37,8 @@ interface ExpectedRatioFormListProps {
   fillRequests?: FillRequestDTO[]; 
   formName?: string;
   formLink?: string;
+  page?: number;
+  rowsPerPage?: number;
 }
 
 export default function ExpectedRatioFormList({ 
@@ -45,7 +47,9 @@ export default function ExpectedRatioFormList({
   onEdit,
   fillRequests = [],
   formName = '',
-  formLink = ''
+  formLink = '',
+  page = 1,
+  rowsPerPage = 10
 }: ExpectedRatioFormListProps) {
   const [searchText, setSearchText] = useState('');
   
@@ -83,6 +87,13 @@ export default function ExpectedRatioFormList({
                (request.status && request.status.toLowerCase().includes(searchText.toLowerCase())) ||
                priceStr.includes(searchText);
       });
+  
+  // Get paginated forms
+  const getPaginatedForms = () => {
+    const startIndex = (page - 1) * rowsPerPage;
+    const endIndex = startIndex + rowsPerPage;
+    return filteredForms.slice(startIndex, endIndex);
+  };
   
   const getStatusChip = (status: string) => {
     switch (status) {
@@ -214,8 +225,8 @@ export default function ExpectedRatioFormList({
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredForms.length > 0 ? (
-              filteredForms.map((request, index) => (
+            {getPaginatedForms().length > 0 ? (
+              getPaginatedForms().map((request, index) => (
                 <TableRow hover key={request.id || index}>
                   <TableCell align="center">{index + 1}</TableCell>
                   <TableCell>{formName}</TableCell>

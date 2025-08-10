@@ -261,31 +261,7 @@ export default function FillRequestList({
         </Table>
       </TableContainer>
       
-      {/* Pagination */}
-      {filteredRequests.length > 0 && (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Typography variant="body2">Hiển thị</Typography>
-            <Select
-              size="small"
-              value={rowsPerPage.toString()}
-              onChange={(event) => onRowsPerPageChange({ target: { value: event.target.value } } as React.ChangeEvent<HTMLInputElement>)}
-            >
-              <MenuItem value={10}>10</MenuItem>
-              <MenuItem value={25}>25</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-            </Select>
-            <Typography variant="body2">mỗi trang</Typography>
-          </Stack>
-          
-          <Pagination 
-            count={Math.ceil(filteredRequests.length / rowsPerPage)} 
-            page={page}
-            onChange={onPageChange}
-            shape="rounded"
-          />
-        </Box>
-      )}
+
     </MainCard>
   );
 } 
