@@ -265,10 +265,11 @@ export default function TabCreate() {
                   alt="Cấp quyền hiển thị cho người trả lời trong Google Form"
                   sx={{
                     width: '100%',
-                    maxWidth: 720,
+                    maxWidth: 480,
                     borderRadius: 1,
                     border: '1px solid',
                     borderColor: 'divider',
+                    alignSelf: 'center',
                     boxShadow: 0
                   }}
                 />
@@ -308,7 +309,7 @@ export default function TabCreate() {
                     <Stack direction="row" sx={{ alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                       <Chip size="small" color="error" label="Không hợp lệ" />
                       <Typography variant="body2" sx={{ fontFamily: 'mono', wordBreak: 'break-all' }}>
-                        Không dùng link dạng <strong>.../edit</strong> hoặc link chỉnh sửa form.
+                        Không dùng link dạng <strong>.../edit .../preview</strong> hoặc link chỉnh sửa, xem trước form.
                       </Typography>
                     </Stack>
                   </Alert>

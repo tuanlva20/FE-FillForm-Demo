@@ -36,7 +36,7 @@ export default function AlertSnackbarWithProgress({ open, message, onClose, seve
 
   return (
     <MuiSnackbar
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       open={open}
       onClose={onClose}
       autoHideDuration={6000} // Thay đổi từ 1000 thành 5000 (5 giây)
