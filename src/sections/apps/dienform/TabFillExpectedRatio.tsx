@@ -145,11 +145,6 @@ export default function TabFillExpectedRatio() {
       try {
         const response = await getFormList();
         setForms(response.content);
-        
-        // Select first form by default if available
-        if (response.content.length > 0) {
-          setSelectedFormId(response.content[0].id);
-        }
       } catch (err: any) {
         console.error('Error fetching forms:', err);
         setError(handleFormError(err, 'fetch'));
@@ -258,8 +253,18 @@ export default function TabFillExpectedRatio() {
   
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
-    const formId = event.target.value;
-    setSelectedFormId(formId);
+    const formId = event.target.value as string;
+    setSelectedFormId(formId || null);
+    setSelectedForm(null);
+    setFormLink('');
+    setQuestionOptions(new Map());
+    setCustomData(new Map());
+    setDateInputs(new Map());
+    setGridValues(new Map());
+    setBalanceErrors(new Map());
+    setIsEditing(false);
+    setIsEditingFillRequest(false);
+    setPageIndex(0);
   };
   
   // Handle option percentage change
@@ -895,7 +900,11 @@ export default function TabFillExpectedRatio() {
                       onChange={handleFormChange} 
                       MenuProps={MenuProps}
                       disabled={loading}
+                      displayEmpty
                     >
+                      <MenuItem value="">
+                        <em>- Chọn form cần điền -</em>
+                      </MenuItem>
                       {forms.map((form) => (
                         <MenuItem key={form.id} value={form.id}>
                           {form.name}
@@ -928,6 +937,7 @@ export default function TabFillExpectedRatio() {
           </MainCard>
         </Grid>
 
+        {selectedFormId && selectedForm && (
         <Grid item xs={12}>
           <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
             {formDetailLoading ? (
@@ -1171,7 +1181,9 @@ export default function TabFillExpectedRatio() {
             )}
           </MainCard>
         </Grid>
+        )}
 
+        {selectedFormId && selectedForm && (
         <Grid item xs={12}>
           <ExpectedRatioFormList 
             onSchedule={handleOpenScheduleModal}
@@ -1195,6 +1207,7 @@ export default function TabFillExpectedRatio() {
             />
           </Box>
         </Grid>
+        )}
         
         {/* Modals */}
         <AutoFillFormModal 
