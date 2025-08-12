@@ -78,6 +78,9 @@ export default function TabFillExpectedRatio() {
   // State for tracking date input requirements
   const [dateInputs, setDateInputs] = useState<Map<string, { useCustomData: boolean, data: string }>>(new Map());
   
+  // State for tracking Other option free text per question
+  const [otherOptionInputs, setOtherOptionInputs] = useState<Map<string, string>>(new Map());
+  
   // State for balance errors
   const [balanceErrors, setBalanceErrors] = useState<Map<string, string>>(new Map());
   
@@ -205,6 +208,7 @@ export default function TabFillExpectedRatio() {
         setCustomData(newCustomData);
         setDateInputs(newDateInputs);
         setGridValues(newGridValues);
+        setOtherOptionInputs(new Map());
         setIsEditing(false);
         validatePercentages(newQuestionOptions);
       } catch (err: any) {
@@ -264,6 +268,7 @@ export default function TabFillExpectedRatio() {
     setBalanceErrors(new Map());
     setIsEditing(false);
     setIsEditingFillRequest(false);
+    setOtherOptionInputs(new Map());
     setPageIndex(0);
   };
   
@@ -405,7 +410,8 @@ export default function TabFillExpectedRatio() {
         // Use existing questionId and optionId
         const questionMap = newQuestionOptions.get(dist.questionId);
         if (questionMap) {
-          questionMap.set(dist.optionId, dist.percentage);
+          const prev = questionMap.get(dist.optionId) || 0;
+          questionMap.set(dist.optionId, prev + dist.percentage);
           newQuestionOptions.set(dist.questionId, questionMap);
         }
       } 
@@ -417,7 +423,8 @@ export default function TabFillExpectedRatio() {
           if (foundOption) {
             const questionMap = newQuestionOptions.get(question.id);
             if (questionMap) {
-              questionMap.set(foundOption.id, dist.percentage);
+              const prev = questionMap.get(foundOption.id) || 0;
+              questionMap.set(foundOption.id, prev + dist.percentage);
               newQuestionOptions.set(question.id, questionMap);
             }
           }
@@ -427,6 +434,29 @@ export default function TabFillExpectedRatio() {
     
     setQuestionOptions(newQuestionOptions);
     setCustomData(newCustomData);
+    
+    // Prefill Other inputs from previous fill request if present (aggregate multiple lines)
+    const otherLinesMap = new Map<string, string[]>();
+    fillRequest.answerDistributions.forEach((dist) => {
+      let qId: string | undefined = dist.questionId;
+      if (!qId && dist.option?.id) {
+        const qFound = selectedForm.questions.find((q) => q.options.some((op) => op.id === dist.option!.id));
+        if (qFound) qId = qFound.id;
+      }
+      if (!qId) return;
+      const question = selectedForm.questions.find((q) => q.id === qId);
+      if (!question) return;
+      const optId = dist.optionId || dist.option?.id;
+      const opt = question.options.find((o) => o.id === optId);
+      if (opt && opt.value === '__other_option__' && typeof dist.valueString === 'string') {
+        const arr = otherLinesMap.get(qId) || [];
+        arr.push(dist.valueString);
+        otherLinesMap.set(qId, arr);
+      }
+    });
+    const newOtherInputs = new Map<string, string>();
+    otherLinesMap.forEach((lines, qid) => newOtherInputs.set(qid, lines.join('\n')));
+    setOtherOptionInputs(newOtherInputs);
     
     // Validate the percentages
     validatePercentages(newQuestionOptions);
@@ -440,6 +470,16 @@ export default function TabFillExpectedRatio() {
     // Implementation for saving changes
     console.log('Saving changes...');
     setIsEditing(false);
+  };
+  
+  // Handle Other option text change
+  const handleOtherInputChange = (questionId: string, value: string) => {
+    setIsEditing(true);
+    setOtherOptionInputs((prev) => {
+      const next = new Map(prev);
+      next.set(questionId, value);
+      return next;
+    });
   };
   
   // Handle cancel
@@ -477,6 +517,7 @@ export default function TabFillExpectedRatio() {
           setQuestionOptions(newQuestionOptions);
           setCustomData(newCustomData);
           setDateInputs(newDateInputs);
+          setOtherOptionInputs(new Map());
           setIsEditing(false);
           setIsEditingFillRequest(false);
           validatePercentages(newQuestionOptions);
@@ -518,13 +559,36 @@ export default function TabFillExpectedRatio() {
         if (question && question.type !== 'text' && question.type !== 'date') {
           optionMap.forEach((percentage, optionId) => {
             if (percentage > 0) {
-              answerDistributions.push({
-                questionId,
-                optionId,
-                percentage,
-                count: 0,
-                option: null
-              });
+              const optMeta = question.options.find((o) => o.id === optionId);
+              if (optMeta && optMeta.value === '__other_option__') {
+                const raw = otherOptionInputs.get(questionId) || '';
+                const lines = raw
+                  .split('\n')
+                  .map((l) => l.trim())
+                  .filter((l) => l.length > 0);
+                if (lines.length > 0) {
+                  const per = percentage / lines.length;
+                  lines.forEach((line) => {
+                  const payload: any = {
+                    questionId,
+                    optionId,
+                    percentage: per,
+                    valueString: line,
+                    count: 0,
+                    option: null
+                  };
+                    answerDistributions.push(payload);
+                  });
+                } else {
+                  // No user-provided lines; let BE generate a text for the total percentage
+                const payload: any = { questionId, optionId, percentage, count: 0, option: null };
+                  answerDistributions.push(payload);
+                }
+              } else {
+                // Normal non-other option
+              const payload: any = { questionId, optionId, percentage, count: 0, option: null };
+                answerDistributions.push(payload);
+              }
             }
           });
         }
@@ -552,14 +616,15 @@ export default function TabFillExpectedRatio() {
             
             // Create a separate entry for each line
             lines.forEach(line => {
-              answerDistributions.push({
+              const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length, // Distribute percentage evenly
+                percentage: 100 / lines.length,
+                valueString: line,
                 count: 0,
-                option: null,
-                valueString: line
-              });
+                option: null
+              };
+              answerDistributions.push(payload);
             });
           }
           // Không thêm answer distribution nếu không có custom data
@@ -580,14 +645,15 @@ export default function TabFillExpectedRatio() {
             
             // Create a separate entry for each date
             lines.forEach(line => {
-              answerDistributions.push({
+              const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length, // Distribute percentage evenly
+                percentage: 100 / lines.length,
+                valueString: line,
                 count: 0,
-                option: null,
-                valueString: line
-              });
+                option: null
+              };
+              answerDistributions.push(payload);
             });
           }
           // Không thêm answer distribution nếu không có custom data
@@ -608,14 +674,15 @@ export default function TabFillExpectedRatio() {
                 const colOption = question.options.find(opt => opt.value === colValue && !opt.value.startsWith('row'));
                 if (!colOption) return;
                 if (percentage > 0) {
-                  answerDistributions.push({
+                  const payload: any = {
                     questionId: question.id,
-                    rowId: rowOption.id, // UUID
-                    optionId: colOption.id, // UUID
+                    rowId: rowOption.id,
+                    optionId: colOption.id,
                     percentage,
                     count: 0,
                     option: null
-                  });
+                  };
+                  answerDistributions.push(payload);
                 }
               });
             });
@@ -626,14 +693,15 @@ export default function TabFillExpectedRatio() {
             gridMap.forEach((colMap, rowId) => {
               colMap.forEach((percentage, optionId) => {
                 if (percentage > 0) {
-                  answerDistributions.push({
+                  const payload: any = {
                     questionId: question.id,
-                    rowId, // UUID
-                    optionId, // UUID
+                    rowId,
+                    optionId,
                     percentage,
                     count: 0,
                     option: null
-                  });
+                  };
+                  answerDistributions.push(payload);
                 }
               });
             });
@@ -654,24 +722,24 @@ export default function TabFillExpectedRatio() {
             }
             // Create a separate entry for each line
             lines.forEach(line => {
-              answerDistributions.push({
+              const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length, // Distribute percentage evenly
-                count: 0,
-                option: null,
+                percentage: 100 / lines.length,
                 valueString: line
-              });
+              };
+              answerDistributions.push(payload);
             });
           } else {
             // Default entry with no valueString
-            answerDistributions.push({
+            const payload: any = {
               questionId: question.id,
               optionId: null,
               percentage: 0,
               count: 0,
               option: null
-            });
+            };
+            answerDistributions.push(payload);
           }
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);
@@ -687,24 +755,24 @@ export default function TabFillExpectedRatio() {
             }
             // Create a separate entry for each date
             lines.forEach(line => {
-              answerDistributions.push({
+              const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length, // Distribute percentage evenly
-                count: 0,
-                option: null,
+                percentage: 100 / lines.length,
                 valueString: line
-              });
+              };
+              answerDistributions.push(payload);
             });
           } else {
             // Default entry with no valueString
-            answerDistributions.push({
+            const payload: any = {
               questionId: question.id,
               optionId: null,
               percentage: 0,
               count: 0,
               option: null
-            });
+            };
+            answerDistributions.push(payload);
           }
         }
       });
@@ -1133,6 +1201,25 @@ export default function TabFillExpectedRatio() {
                         })}
                       </Grid>
                     )}
+                    {/* Other option free text input */}
+                    {(() => {
+                      const otherOpt = question.options.find((opt) => opt.value === '__other_option__');
+                      const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+                      if (otherOpt && otherPercent > 0) {
+                        return (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={3}
+                            value={otherOptionInputs.get(question.id) || ''}
+                            onChange={(e) => handleOtherInputChange(question.id, e.target.value)}
+                            placeholder="Nhập dữ liệu của bạn (dùng cho đáp án 'Khác')"
+                            sx={{ mt: 2 }}
+                          />
+                        );
+                      }
+                      return null;
+                    })()}
                     {balanceErrors.has(question.id) && question.type !== 'date' &&
                       question.type !== 'multiple_choice_grid' &&
                       question.type !== 'checkbox_grid' &&
