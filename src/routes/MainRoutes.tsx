@@ -754,10 +754,6 @@ const MainRoutes = {
         {
           path: 'coming-soon',
           element: <MaintenanceComingSoon />
-        },
-        {
-          path: 'coming-soon2',
-          element: <MaintenanceComingSoon2 />
         }
       ]
     },
