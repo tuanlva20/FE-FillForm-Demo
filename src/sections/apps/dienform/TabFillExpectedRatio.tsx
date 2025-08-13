@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -22,6 +22,7 @@ import Typography from '@mui/material/Typography';
 // project-imports
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
+import DebouncedMultilineTextField from 'components/form/DebouncedMultilineTextField';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
@@ -254,6 +255,15 @@ export default function TabFillExpectedRatio() {
     setBalanceErrors(newErrors);
     return newErrors.size === 0;
   };
+
+  // Debounced validator to avoid running on every keystroke while typing numbers
+  const validatePercentagesDebounced = useMemo(() => {
+    let timer: number | null = null;
+    return (opts: Map<string, Map<string, number>>) => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => validatePercentages(opts), 200);
+    };
+  }, [selectedForm]);
   
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
@@ -286,8 +296,8 @@ export default function TabFillExpectedRatio() {
       newQuestionOptions.set(questionId, optionMap);
       setQuestionOptions(newQuestionOptions);
       
-      // Validate percentages
-      validatePercentages(newQuestionOptions);
+      // Validate percentages (debounced for better UX while typing)
+      validatePercentagesDebounced(newQuestionOptions);
     }
   };
   
@@ -1039,12 +1049,10 @@ export default function TabFillExpectedRatio() {
                           label="Điền theo data của bạn"
                         />
                         {customData.get(question.id)?.useCustomData && (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
+                          <DebouncedMultilineTextField
                             value={customData.get(question.id)?.data || ''}
-                            onChange={(e) => handleCustomDataChange(question.id, e.target.value)}
+                            onChange={(v) => handleCustomDataChange(question.id, v)}
+                            rows={4}
                             placeholder="Nhập dữ liệu của bạn"
                             sx={{ mt: 2 }}
                           />
@@ -1062,12 +1070,10 @@ export default function TabFillExpectedRatio() {
                           label="Điền theo data của bạn"
                         />
                         {dateInputs.get(question.id)?.useCustomData && (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={4}
+                          <DebouncedMultilineTextField
                             value={dateInputs.get(question.id)?.data || ''}
-                            onChange={(e) => handleDateInputChange(question.id, e.target.value)}
+                            onChange={(v) => handleDateInputChange(question.id, v)}
+                            rows={4}
                             placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
                             sx={{ mt: 2 }}
                             helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
@@ -1207,12 +1213,10 @@ export default function TabFillExpectedRatio() {
                       const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
                       if (otherOpt && otherPercent > 0) {
                         return (
-                          <TextField
-                            fullWidth
-                            multiline
-                            rows={3}
+                          <DebouncedMultilineTextField
                             value={otherOptionInputs.get(question.id) || ''}
-                            onChange={(e) => handleOtherInputChange(question.id, e.target.value)}
+                            onChange={(v) => handleOtherInputChange(question.id, v)}
+                            rows={3}
                             placeholder="Nhập dữ liệu của bạn (dùng cho đáp án 'Khác')"
                             sx={{ mt: 2 }}
                           />

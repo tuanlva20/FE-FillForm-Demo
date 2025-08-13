@@ -161,7 +161,7 @@ export default function MaHoaDataPage() {
                 <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
                 <Select
                   id="ten-form"
-                  size="small"
+                  size="medium"
                   value={selectedFormId}
                   onChange={(e) => setSelectedFormId(String(e.target.value))}
                   displayEmpty
@@ -184,6 +184,7 @@ export default function MaHoaDataPage() {
                 <LinkInput
                 id="form-link"
                 value={formLink}
+                  size="medium"
                   onChange={setFormLink}
                   placeholder="https://docs.google.com/forms/.../viewform"
                   disabled={false}
@@ -199,6 +200,7 @@ export default function MaHoaDataPage() {
                 <LinkInput
                 id="data-link"
                 value={dataLink}
+                  size="medium"
                   onChange={setDataLink}
                   placeholder="https://docs.google.com/spreadsheets/d/.../edit"
               />

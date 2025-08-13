@@ -228,7 +228,7 @@ export default function ExpectedRatioFormList({
             {getPaginatedForms().length > 0 ? (
               getPaginatedForms().map((request, index) => (
                 <TableRow hover key={request.id || index}>
-                  <TableCell align="center">{index + 1}</TableCell>
+                  <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>{formName}</TableCell>
                   <TableCell align="center">
                     <IconButton 
