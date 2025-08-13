@@ -229,14 +229,13 @@ export default function TabFillExpectedRatio() {
     
     options.forEach((optionMap, questionId) => {
       const qType = selectedForm?.questions.find(q => q.id === questionId)?.type;
-      // Bỏ validate cho các loại không phải grid, không phải text/date/time/select
+      // Bỏ validate cho các loại không phải grid, không phải text/date/time
       if (
         qType === 'text' ||
         qType === 'date' ||
         qType === 'time' ||
         qType === 'multiple_choice_grid' ||
-        qType === 'checkbox_grid' ||
-        qType === 'select'
+        qType === 'checkbox_grid'
       ) {
         return;
       }
@@ -256,12 +255,10 @@ export default function TabFillExpectedRatio() {
     return newErrors.size === 0;
   };
 
-  // Debounced validator to avoid running on every keystroke while typing numbers
+  // NOTE: We validate immediately for realtime feedback in alert
   const validatePercentagesDebounced = useMemo(() => {
-    let timer: number | null = null;
     return (opts: Map<string, Map<string, number>>) => {
-      if (timer) window.clearTimeout(timer);
-      timer = window.setTimeout(() => validatePercentages(opts), 200);
+      validatePercentages(opts);
     };
   }, [selectedForm]);
   
@@ -296,7 +293,7 @@ export default function TabFillExpectedRatio() {
       newQuestionOptions.set(questionId, optionMap);
       setQuestionOptions(newQuestionOptions);
       
-      // Validate percentages (debounced for better UX while typing)
+      // Validate percentages immediately for realtime alert updates
       validatePercentagesDebounced(newQuestionOptions);
     }
   };
