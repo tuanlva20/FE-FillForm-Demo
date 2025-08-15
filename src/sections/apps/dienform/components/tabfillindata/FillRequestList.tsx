@@ -21,7 +21,7 @@ import MainCard from 'components/MainCard';
 
 // assets
 import StatusChip from 'components/StatusChip';
-import { Clock, CloseCircle, Edit2, Eye, SearchNormal1 } from 'iconsax-react';
+import { Clock, CloseCircle, Eye, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
@@ -149,7 +149,7 @@ export default function FillRequestList({
             <TableRow>
               <TableCell align="center">No.</TableCell>
               <TableCell align="center">Yêu cầu</TableCell>
-              <TableCell align="center">Hẹn giờ điền</TableCell>
+              {/* <TableCell align="center">Hẹn giờ điền</TableCell> */}
               <TableCell align="center">Ngày tạo</TableCell>
               <TableCell align="center">Số lượng</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
@@ -159,7 +159,7 @@ export default function FillRequestList({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body1" color="textSecondary">
                     Đang tải...
                   </Typography>
@@ -170,28 +170,19 @@ export default function FillRequestList({
                 <TableRow hover key={request.id}>
                   <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>Yêu cầu điền form #{request.id?.slice(-6) || 'N/A'}</TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     <IconButton 
                       color="primary" 
                       onClick={() => handleSchedule(request.id || '')}
                     >
                       {getScheduleIcon(!!request.scheduledTime)}
                     </IconButton>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell align="center">{formatDate(request.createdAt || null)}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
                   <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                      <Tooltip title="Chỉnh sửa">
-                        <IconButton 
-                          color="primary" 
-                          size="small" 
-                          onClick={() => handleEdit(request.id || '')}
-                        >
-                          <Edit2 size={18} />
-                        </IconButton>
-                      </Tooltip>
                       <Tooltip title="Xem chi tiết">
                         <IconButton 
                           color="info" 

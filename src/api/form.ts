@@ -69,6 +69,7 @@ export interface AnswerDistribution {
   option: Option | null;
   valueString?: string;
   rowId?: string; // Thêm trường này để hỗ trợ grid
+  positionIndex?: number; // Thêm trường này để đảm bảo thứ tự như user nhập
 }
 
 export interface FillRequestDTO {

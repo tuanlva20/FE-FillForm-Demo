@@ -1,5 +1,5 @@
 import { Alert, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import CustomPercentTextField from './CustomPercentTextField';
 
 interface Option {
@@ -7,11 +7,12 @@ interface Option {
   title: string;
   value: string;
 }
+
 interface Question {
   id: string;
   title: string;
-  options: Option[];
   type: string;
+  options: Option[];
 }
 
 interface Props {
@@ -20,13 +21,15 @@ interface Props {
   value?: Record<string, Record<string, number>>;
 }
 
-const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }) => {
-  // Rows: options with value starting with 'row'
-  const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
-  // Columns: unique options with value not starting with 'row'
-  const seen = new Set();
-  const columns = (question.options || [])
-    .filter(opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value));
+const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChange, value }) => {
+  // Rows & Columns - memoized để tránh recalculate
+  const { rows, columns } = useMemo(() => {
+    const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
+    const seen = new Set();
+    const columns = (question.options || [])
+      .filter(opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value));
+    return { rows, columns };
+  }, [question.options]);
 
   // State lưu giá trị: {rowId: {colId: percent}}
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
@@ -34,57 +37,93 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
 
   // Đồng bộ state khi prop value thay đổi
-  React.useEffect(() => {
+  useEffect(() => {
     if (value) setValues(value);
   }, [value]);
 
+  // Memoized validation function
+  const validateRow = useCallback((rowId: string, rowVals: Record<string, number>) => {
+    const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
+    return total !== 100;
+  }, [columns]);
+
+  // Optimized validation effect
   useEffect(() => {
-    // Validate tổng phần trăm mỗi row
     const errors: Record<string, boolean> = {};
-    let changed = false;
+    let hasChanges = false;
+
     rows.forEach(row => {
       const rowVals = values[row.id] || {};
-      const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
-      const error = total !== 100;
-      if (rowErrors[row.id] !== error) changed = true;
+      const error = validateRow(row.id, rowVals);
+      if (rowErrors[row.id] !== error) {
+        hasChanges = true;
+      }
       errors[row.id] = error;
     });
-    if (changed) setRowErrors(errors);
-    // eslint-disable-next-line
-  }, [values, rows, columns]);
 
-  const handleInput = (rowId: string, colId: string, percent: number) => {
+    if (hasChanges) {
+      setRowErrors(errors);
+    }
+  }, [values, rows, rowErrors, validateRow]);
+
+  // Optimized input handler with debouncing
+  const handleInput = useCallback((rowId: string, colId: string, percent: number) => {
     setValues(prev => {
-      const next = { ...prev, [rowId]: { ...prev[rowId], [colId]: percent } };
-      onChange?.(next);
+      const next = { 
+        ...prev, 
+        [rowId]: { 
+          ...prev[rowId], 
+          [colId]: percent 
+        } 
+      };
+      
+      // Debounce the onChange callback to avoid excessive calls
+      setTimeout(() => {
+        onChange?.(next);
+      }, 100);
+      
       return next;
     });
-  };
+  }, [onChange]);
+
+  // Memoized row totals calculation
+  const rowTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    rows.forEach(row => {
+      const rowVals = values[row.id] || {};
+      totals[row.id] = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
+    });
+    return totals;
+  }, [values, rows, columns]);
 
   if (question.type !== 'checkbox_grid') return null;
 
   return (
     <Box>
-      <TableContainer component={Paper} sx={{ maxWidth: '100%', overflowX: 'auto' }}>
+      <TableContainer component={Paper}>
         <Table size="small">
           <TableHead>
             <TableRow>
               <TableCell />
               {columns.map(col => (
-                <TableCell key={col.id} align="center">{col.title}</TableCell>
+                <TableCell key={col.id} align="center">
+                  {col.title}
+                </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
             {rows.map(row => {
-              const total = columns.reduce((sum, col) => sum + (Number(values[row.id]?.[col.id]) || 0), 0);
+              const total = rowTotals[row.id];
+              const hasError = rowErrors[row.id];
+              
               return (
                 <TableRow key={row.id}>
                   <TableCell>
                     {row.title}
-                    {rowErrors[row.id] && (
+                    {hasError && (
                       <Typography color="error" variant="caption" display="block">
-                        Tổng hiện tại: {columns.reduce((sum, col) => sum + (Number(values[row.id]?.[col.id]) || 0), 0)}%
+                        Tổng hiện tại: {total}%
                       </Typography>
                     )}
                   </TableCell>
@@ -93,7 +132,8 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }
                       <CustomPercentTextField
                         value={values[row.id]?.[col.id] ?? ''}
                         onChange={val => handleInput(row.id, col.id, val)}
-                        error={rowErrors[row.id]}
+                        error={hasError}
+                        onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                       />
                     </TableCell>
                   ))}
@@ -104,10 +144,14 @@ const CheckboxGridPercentInput: React.FC<Props> = ({ question, onChange, value }
         </Table>
       </TableContainer>
       {Object.values(rowErrors).some(Boolean) && (
-        <Alert severity="error" sx={{ mt: 2 }}>Tổng tỉ lệ nên = 100%</Alert>
+        <Alert severity="error" sx={{ mt: 2 }}>
+          Tổng tỉ lệ nên = 100%
+        </Alert>
       )}
     </Box>
   );
-};
+});
+
+CheckboxGridPercentInput.displayName = 'CheckboxGridPercentInput';
 
 export default CheckboxGridPercentInput; 

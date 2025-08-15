@@ -36,13 +36,13 @@ import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/el
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  AnswerDistribution,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // iconsax-react
@@ -141,6 +141,26 @@ export default function TabFillExpectedRatio() {
     grouping: []
   } as any);
   
+  // Check if there are any grid validation errors
+  const hasGridErrors = useMemo(() => {
+    if (!selectedForm) return false;
+    
+    return selectedForm.questions.some(question => {
+      if (question.type !== 'multiple_choice_grid' && question.type !== 'checkbox_grid') {
+        return false;
+      }
+      
+      const grid = gridValues.get(question.id);
+      if (!grid) return false;
+      
+      // Check if any row has total != 100%
+      return Array.from(grid.values()).some(colMap => {
+        const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
+        return total !== 100;
+      });
+    });
+  }, [selectedForm, gridValues]);
+
   // Load form list on component mount
   useEffect(() => {
     const fetchForms = async () => {
@@ -381,6 +401,11 @@ export default function TabFillExpectedRatio() {
   // Handle edit fill request - loads answer distributions back into the form
   const handleEditFillRequest = (formId: string) => {
     console.log('handleEditFillRequest called with ID:', formId);
+    console.log('Available fillRequests:', selectedForm?.fillRequests?.map(req => ({
+      id: req.id,
+      hasAnswerDistributions: !!req.answerDistributions,
+      answerDistributionsLength: req.answerDistributions?.length || 0
+    })));
     
     if (!selectedForm) return;
     
@@ -388,8 +413,13 @@ export default function TabFillExpectedRatio() {
     const fillRequest = selectedForm.fillRequests.find(req => req.id === formId);
     
     console.log('Found fillRequest:', fillRequest);
+    console.log('answerDistributions:', fillRequest?.answerDistributions);
+    console.log('answerDistributions length:', fillRequest?.answerDistributions?.length);
     
-    if (!fillRequest || !fillRequest.answerDistributions) return;
+    if (!fillRequest || !fillRequest.answerDistributions || fillRequest.answerDistributions.length === 0) {
+      console.log('Early return: no fillRequest or no answerDistributions or empty answerDistributions');
+      return;
+    }
     
     // Set to editing mode
     setIsEditing(true);
@@ -398,6 +428,8 @@ export default function TabFillExpectedRatio() {
     // Create new question options map with values from the fill request
     const newQuestionOptions = new Map<string, Map<string, number>>();
     const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
+    const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
+    const newGridValues = new Map<string, Map<string, Map<string, number>>>();
     
     // First initialize all options to 0
     selectedForm.questions.forEach(question => {
@@ -412,39 +444,137 @@ export default function TabFillExpectedRatio() {
       if (question.type === 'text') {
         newCustomData.set(question.id, { useCustomData: false, data: '' });
       }
+      
+      if (question.type === 'date') {
+        newDateInputs.set(question.id, { useCustomData: false, data: '' });
+      }
+      
+      if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+        newGridValues.set(question.id, new Map());
+      }
     });
     
-    // Then set the percentages from the fill request
+    // Group distributions by question and sort by positionIndex
+    const distributionsByQuestion = new Map<string, any[]>();
     fillRequest.answerDistributions.forEach(dist => {
-      // Check if dist has questionId and optionId directly
-      if (dist.questionId && dist.optionId) {
-        // Use existing questionId and optionId
-        const questionMap = newQuestionOptions.get(dist.questionId);
-        if (questionMap) {
-          const prev = questionMap.get(dist.optionId) || 0;
-          questionMap.set(dist.optionId, prev + dist.percentage);
-          newQuestionOptions.set(dist.questionId, questionMap);
+      if (!distributionsByQuestion.has(dist.questionId)) {
+        distributionsByQuestion.set(dist.questionId, []);
+      }
+      distributionsByQuestion.get(dist.questionId)!.push(dist);
+    });
+    
+    // Sort each question's distributions by positionIndex
+    distributionsByQuestion.forEach((dists, questionId) => {
+      dists.sort((a, b) => (a.positionIndex || 0) - (b.positionIndex || 0));
+    });
+    
+    // Process each question's distributions
+    distributionsByQuestion.forEach((dists, questionId) => {
+      const question = selectedForm.questions.find(q => q.id === questionId);
+      if (!question) return;
+      
+      console.log(`Processing question ${questionId} (${question.type}):`, dists);
+      
+      if (question.type === 'text') {
+        // For text questions, collect all valueStrings and join them
+        const textLines = dists
+          .filter(dist => dist.valueString)
+          .map(dist => dist.valueString)
+          .filter(Boolean);
+        
+        if (textLines.length > 0) {
+          newCustomData.set(questionId, { 
+            useCustomData: true, 
+            data: textLines.join('\n') 
+          });
         }
-      } 
-      // If no direct questionId/optionId, but has option with id
-      else if (dist.option && dist.option.id) {
-        // Find the question that contains this option
-        selectedForm.questions.forEach(question => {
-          const foundOption = question.options.find(opt => opt.id === dist.option?.id);
-          if (foundOption) {
-            const questionMap = newQuestionOptions.get(question.id);
+      } else if (question.type === 'date') {
+        // For date questions, collect all valueStrings and join them
+        const dateLines = dists
+          .filter(dist => dist.valueString)
+          .map(dist => dist.valueString)
+          .filter(Boolean);
+        
+        if (dateLines.length > 0) {
+          newDateInputs.set(questionId, { 
+            useCustomData: true, 
+            data: dateLines.join('\n') 
+          });
+        }
+      } else if (question.type === 'multiple_choice_grid') {
+        // For multiple choice grid questions, use option.value as keys
+        const gridMap = new Map<string, Map<string, number>>();
+        
+        dists.forEach(dist => {
+          if (dist.rowId && dist.optionId) {
+            // Find row and column option by ID
+            const rowOption = question.options.find(opt => opt.id === dist.rowId);
+            const colOption = question.options.find(opt => opt.id === dist.optionId);
+            
+            if (rowOption && colOption) {
+              const rowKey = rowOption.value; // Use value for multiple choice grid
+              const colKey = colOption.value; // Use value for multiple choice grid
+              
+              if (!gridMap.has(rowKey)) {
+                gridMap.set(rowKey, new Map());
+              }
+              const colMap = gridMap.get(rowKey)!;
+              colMap.set(colKey, dist.percentage);
+            }
+          }
+        });
+        
+        console.log(`Multiple choice grid map for ${questionId}:`, Array.from(gridMap.entries()));
+        newGridValues.set(questionId, gridMap);
+      } else if (question.type === 'checkbox_grid') {
+        // For checkbox grid questions, use option.id as keys
+        const gridMap = new Map<string, Map<string, number>>();
+        
+        dists.forEach(dist => {
+          if (dist.rowId && dist.optionId) {
+            // Find row and column option by ID
+            const rowOption = question.options.find(opt => opt.id === dist.rowId);
+            const colOption = question.options.find(opt => opt.id === dist.optionId);
+            
+            if (rowOption && colOption) {
+              const rowKey = rowOption.id; // Use id for checkbox grid
+              const colKey = colOption.id; // Use id for checkbox grid
+              
+              if (!gridMap.has(rowKey)) {
+                gridMap.set(rowKey, new Map());
+              }
+              const colMap = gridMap.get(rowKey)!;
+              colMap.set(colKey, dist.percentage);
+            }
+          }
+        });
+        
+        console.log(`Checkbox grid map for ${questionId}:`, Array.from(gridMap.entries()));
+        newGridValues.set(questionId, gridMap);
+      } else {
+        // For regular multiple choice questions
+        dists.forEach(dist => {
+          if (dist.optionId) {
+            const questionMap = newQuestionOptions.get(questionId);
             if (questionMap) {
-              const prev = questionMap.get(foundOption.id) || 0;
-              questionMap.set(foundOption.id, prev + dist.percentage);
-              newQuestionOptions.set(question.id, questionMap);
+              const prev = questionMap.get(dist.optionId) || 0;
+              questionMap.set(dist.optionId, prev + dist.percentage);
+              newQuestionOptions.set(questionId, questionMap);
             }
           }
         });
       }
     });
     
+    console.log('Setting grid values:', Array.from(newGridValues.entries()));
+    console.log('Setting question options:', Array.from(newQuestionOptions.entries()));
+    console.log('Setting custom data:', Array.from(newCustomData.entries()));
+    console.log('Setting date inputs:', Array.from(newDateInputs.entries()));
+    
     setQuestionOptions(newQuestionOptions);
     setCustomData(newCustomData);
+    setDateInputs(newDateInputs);
+    setGridValues(newGridValues);
     
     // Prefill Other inputs from previous fill request if present (aggregate multiple lines)
     const otherLinesMap = new Map<string, string[]>();
@@ -506,6 +636,7 @@ export default function TabFillExpectedRatio() {
           const newQuestionOptions = new Map<string, Map<string, number>>();
           const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
           const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
+          const newGridValues = new Map<string, Map<string, Map<string, number>>>();
           
           formDetails.questions.forEach(question => {
             const optionsMap = new Map<string, number>();
@@ -523,11 +654,16 @@ export default function TabFillExpectedRatio() {
             if (question.type === 'date') {
               newDateInputs.set(question.id, { useCustomData: false, data: '' });
             }
+            
+            if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+              newGridValues.set(question.id, new Map());
+            }
           });
           
           setQuestionOptions(newQuestionOptions);
           setCustomData(newCustomData);
           setDateInputs(newDateInputs);
+          setGridValues(newGridValues);
           setOtherOptionInputs(new Map());
           setIsEditing(false);
           setIsEditingFillRequest(false);
@@ -579,25 +715,24 @@ export default function TabFillExpectedRatio() {
                   .filter((l) => l.length > 0);
                 if (lines.length > 0) {
                   const per = percentage / lines.length;
-                  lines.forEach((line) => {
+                  lines.forEach((line, index) => {
                   const payload: any = {
                     questionId,
                     optionId,
                     percentage: per,
                     valueString: line,
-                    count: 0,
-                    option: null
+                    positionIndex: index
                   };
                     answerDistributions.push(payload);
                   });
                 } else {
                   // No user-provided lines; let BE generate a text for the total percentage
-                const payload: any = { questionId, optionId, percentage, count: 0, option: null };
+                const payload: any = { questionId, optionId, percentage };
                   answerDistributions.push(payload);
                 }
               } else {
                 // Normal non-other option
-              const payload: any = { questionId, optionId, percentage, count: 0, option: null };
+              const payload: any = { questionId, optionId, percentage };
                 answerDistributions.push(payload);
               }
             }
@@ -626,14 +761,13 @@ export default function TabFillExpectedRatio() {
             }
             
             // Create a separate entry for each line
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
               const payload: any = {
                 questionId: question.id,
                 optionId: null,
                 percentage: 100 / lines.length,
                 valueString: line,
-                count: 0,
-                option: null
+                positionIndex: index
               };
               answerDistributions.push(payload);
             });
@@ -655,14 +789,13 @@ export default function TabFillExpectedRatio() {
             }
             
             // Create a separate entry for each date
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
               const payload: any = {
                 questionId: question.id,
                 optionId: null,
                 percentage: 100 / lines.length,
                 valueString: line,
-                count: 0,
-                option: null
+                positionIndex: index
               };
               answerDistributions.push(payload);
             });
@@ -676,6 +809,15 @@ export default function TabFillExpectedRatio() {
         if (question.type === 'multiple_choice_grid') {
           const gridMap = gridValues.get(question.id);
           if (gridMap) {
+            // Validate that each row totals to 100%
+            gridMap.forEach((colMap, rowValue) => {
+              const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
+              if (total !== 100) {
+                const rowOption = question.options.find(opt => opt.value === rowValue);
+                validationErrors.push(`Câu hỏi "${question.title}" - "${rowOption?.text}" có tổng tỉ lệ = ${total}% (cần = 100%)`);
+              }
+            });
+            
             gridMap.forEach((colMap, rowValue) => {
               // Map rowValue (option.value) sang rowOption.id
               const rowOption = question.options.find(opt => opt.value === rowValue && opt.value.startsWith('row'));
@@ -689,9 +831,7 @@ export default function TabFillExpectedRatio() {
                     questionId: question.id,
                     rowId: rowOption.id,
                     optionId: colOption.id,
-                    percentage,
-                    count: 0,
-                    option: null
+                    percentage
                   };
                   answerDistributions.push(payload);
                 }
@@ -701,6 +841,15 @@ export default function TabFillExpectedRatio() {
         } else if (question.type === 'checkbox_grid') {
           const gridMap = gridValues.get(question.id);
           if (gridMap) {
+            // Validate that each row totals to 100%
+            gridMap.forEach((colMap, rowId) => {
+              const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
+              if (total !== 100) {
+                const rowOption = question.options.find(opt => opt.id === rowId);
+                validationErrors.push(`Câu hỏi "${question.title}" - "${rowOption?.text}" có tổng tỉ lệ = ${total}% (cần = 100%)`);
+              }
+            });
+            
             gridMap.forEach((colMap, rowId) => {
               colMap.forEach((percentage, optionId) => {
                 if (percentage > 0) {
@@ -708,9 +857,7 @@ export default function TabFillExpectedRatio() {
                     questionId: question.id,
                     rowId,
                     optionId,
-                    percentage,
-                    count: 0,
-                    option: null
+                    percentage
                   };
                   answerDistributions.push(payload);
                 }
@@ -732,12 +879,13 @@ export default function TabFillExpectedRatio() {
               }
             }
             // Create a separate entry for each line
-            lines.forEach(line => {
+            lines.forEach((line, index) => {
               const payload: any = {
                 questionId: question.id,
                 optionId: null,
                 percentage: 100 / lines.length,
-                valueString: line
+                valueString: line,
+                positionIndex: index
               };
               answerDistributions.push(payload);
             });
@@ -746,9 +894,7 @@ export default function TabFillExpectedRatio() {
             const payload: any = {
               questionId: question.id,
               optionId: null,
-              percentage: 0,
-              count: 0,
-              option: null
+              percentage: 0
             };
             answerDistributions.push(payload);
           }
@@ -779,9 +925,7 @@ export default function TabFillExpectedRatio() {
             const payload: any = {
               questionId: question.id,
               optionId: null,
-              percentage: 0,
-              count: 0,
-              option: null
+              percentage: 0
             };
             answerDistributions.push(payload);
           }
@@ -1103,6 +1247,7 @@ export default function TabFillExpectedRatio() {
                           return obj;
                         })()}
                         onChange={(value) => {
+                          setIsEditing(true);
                           setGridValues(prev => {
                             const newMap = new Map(prev);
                             const rowMap = new Map<string, Map<string, number>>();
@@ -1140,6 +1285,7 @@ export default function TabFillExpectedRatio() {
                           return obj;
                         })()}
                         onChange={(value) => {
+                          setIsEditing(true);
                           setGridValues(prev => {
                             const newMap = new Map(prev);
                             const rowMap = new Map<string, Map<string, number>>();
@@ -1260,7 +1406,7 @@ export default function TabFillExpectedRatio() {
                     variant="contained"
                     color="primary"
                     onClick={handleOpenAutoFillModal}
-                    disabled={loading || selectedForm == null || balanceErrors.size > 0 || isAiLoading}
+                    disabled={loading || selectedForm == null || balanceErrors.size > 0 || hasGridErrors || isAiLoading}
                   >
                     Tạo yêu cầu điền Form
                   </Button>
