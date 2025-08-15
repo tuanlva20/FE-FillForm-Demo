@@ -21,7 +21,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 const statusMap: Record<string, { label: string; color: 'success' | 'error' | 'warning' | 'default' }> = {
   success: { label: 'Thành công', color: 'success' },
-  error: { label: 'Thất bại', color: 'error' },
+  error: { label: 'Không thành công', color: 'error' },
   processing: { label: 'Đang mã hóa', color: 'warning' },
   pending: { label: 'Chờ xử lý', color: 'default' }
 };

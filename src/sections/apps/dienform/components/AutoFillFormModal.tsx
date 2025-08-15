@@ -1,6 +1,5 @@
-import { openSnackbar } from 'api/snackbar';
 import { isValid } from 'date-fns';
-import { ChangeEvent, useState } from 'react';
+import { ChangeEvent, useEffect, useState } from 'react';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -24,8 +23,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 // assets
-import { Add, Calendar, CloseCircle, DocumentText, Money, Send2, Timer1 } from 'iconsax-react';
 import { AddIcon } from 'assets/images/svg/icon';
+import { Calendar, CloseCircle, DocumentText, Money, Send2, Timer1 } from 'iconsax-react';
 
 // Interface
 interface AutoFillFormModalProps {
@@ -47,7 +46,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     pricePerSurvey: 450,
     isHumanLike: true,
     startDate: new Date() as Date | null,
-    endDate: null as Date | null,
+    endDate: new Date() as Date | null,
   });
 
   const [errors, setErrors] = useState<{
@@ -55,6 +54,37 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     endDate?: string;
     startDate?: string;
   }>({});
+
+  // Ensure endDate is always set when component mounts or startDate changes
+  useEffect(() => {
+    if (!formValues.endDate && formValues.startDate) {
+      setFormValues(prev => ({
+        ...prev,
+        endDate: formValues.startDate
+      }));
+    }
+  }, [formValues.startDate, formValues.endDate]);
+
+  // Ensure endDate is always set to startDate if not set
+  useEffect(() => {
+    if (formValues.startDate && !formValues.endDate) {
+      console.log('AutoFillFormModal - Setting endDate to startDate:', formValues.startDate);
+      setFormValues(prev => ({
+        ...prev,
+        endDate: formValues.startDate
+      }));
+    }
+  }, [formValues.startDate, formValues.endDate]);
+
+  // Debug logging for formValues
+  useEffect(() => {
+    console.log('AutoFillFormModal - formValues changed:', {
+      startDate: formValues.startDate,
+      endDate: formValues.endDate,
+      startDateType: typeof formValues.startDate,
+      endDateType: typeof formValues.endDate
+    });
+  }, [formValues.startDate, formValues.endDate]);
 
   // Handle submission count change directly through input field
   const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -100,24 +130,24 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       return;
     }
     
+    // Clear start date error if validation passes
+    const newErrors = { ...errors, startDate: undefined };
+    
+    // Re-validate end date if it exists and new start date is after it
+    if (newValue && formValues.endDate && newValue > formValues.endDate) {
+      newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
+    } else if (formValues.endDate) {
+      // Clear end date error if it becomes valid
+      newErrors.endDate = undefined;
+    }
+    
+    setErrors(newErrors);
     setFormValues({
       ...formValues,
-      startDate: newValue
+      startDate: newValue,
+      // Auto-set endDate to startDate if endDate is null or before startDate
+      endDate: newValue && (!formValues.endDate || newValue > formValues.endDate) ? newValue : formValues.endDate
     });
-    
-    // Check if end date is before start date
-    if (newValue && formValues.endDate && newValue > formValues.endDate) {
-      setErrors({
-        ...errors,
-        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
-      });
-    } else {
-      setErrors({
-        ...errors,
-        startDate: undefined,
-        endDate: undefined
-      });
-    }
   };
 
   // Handle end date change
@@ -131,23 +161,25 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       return;
     }
     
-    setFormValues({
-      ...formValues,
-      endDate: newValue
-    });
-    
-    // Check if end date is before start date
-    if (formValues.startDate && newValue && formValues.startDate > newValue) {
+    // Validate end date must be after start date
+    if (newValue && formValues.startDate && newValue < formValues.startDate) {
       setErrors({
         ...errors,
         endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
       });
-    } else {
-      setErrors({
-        ...errors,
-        endDate: undefined
-      });
+      return;
     }
+    
+    // Clear error if validation passes
+    setErrors({
+      ...errors,
+      endDate: undefined
+    });
+    
+    setFormValues({
+      ...formValues,
+      endDate: newValue
+    });
   };
 
   // Close with confirmation message
@@ -155,15 +187,6 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     // Validate form before submitting
     if (formValues.submissionCount <= 0) {
       setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
-      return;
-    }
-
-    // Validate end date is after start date
-    if (formValues.startDate && formValues.endDate && formValues.startDate > formValues.endDate) {
-      setErrors({
-        ...errors,
-        endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
-      });
       return;
     }
 
@@ -178,33 +201,37 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       
       // Set time to end of day for end date (23:59:59)
       let endDate = formValues.endDate;
+      console.log('handleSubmit - formValues.endDate:', formValues.endDate);
       if (endDate) {
         endDate = new Date(endDate);
         endDate.setHours(23, 59, 59, 999);
+        console.log('handleSubmit - processed endDate:', endDate);
+      } else {
+        console.log('handleSubmit - endDate is null/undefined');
       }
+      
+      // Ensure endDate is always provided if startDate exists
+      const finalEndDate = endDate || startDate;
+      
+      // Debug logging
+      console.log('AutoFillFormModal - Submitting with values:', {
+        submissionCount: formValues.submissionCount,
+        pricePerSurvey: formValues.pricePerSurvey,
+        isHumanLike: formValues.isHumanLike,
+        startDate: startDate,
+        endDate: endDate,
+        finalEndDate: finalEndDate,
+        startDateISO: startDate?.toISOString(),
+        endDateISO: endDate?.toISOString(),
+        finalEndDateISO: finalEndDate?.toISOString()
+      });
       
       onSubmit({
         submissionCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
         isHumanLike: formValues.isHumanLike,
         startDate: startDate || undefined,
-        endDate: endDate || undefined
-      });
-      // Hiện snackbar thành công góc trên phải
-      openSnackbar({
-        open: true,
-        message: 'Tạo yêu cầu điền form thành công!',
-        variant: 'alert',
-        alert: { color: 'success' },
-        anchorOrigin: { vertical: 'top', horizontal: 'right' },
-        duration: 3000,
-        action: false,
-        transition: 'Fade',
-        close: true,
-        actionButton: false,
-        dense: false,
-        maxStack: 3,
-        iconVariant: 'usedefault'
+        endDate: finalEndDate || undefined
       });
     }
     
@@ -337,7 +364,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DatePicker
                       value={formValues.startDate}
-                      onChange={handleStartDateChange}
+                      onChange={(newValue) => {
+                        console.log('DatePicker startDate onChange:', newValue);
+                        handleStartDateChange(newValue);
+                      }}
                       format="dd-MM-yyyy"
                       minDate={new Date()}
                       slotProps={{
@@ -365,7 +395,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <DatePicker
                       value={formValues.endDate}
-                      onChange={handleEndDateChange}
+                      onChange={(newValue) => {
+                        console.log('DatePicker endDate onChange:', newValue);
+                        handleEndDateChange(newValue);
+                      }}
                       format="dd-MM-yyyy"
                       minDate={formValues.startDate || new Date()}
                       slotProps={{

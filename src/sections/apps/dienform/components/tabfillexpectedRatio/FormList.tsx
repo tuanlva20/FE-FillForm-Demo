@@ -5,7 +5,6 @@ import { formatDate, formatFullDateTime } from 'utils/DateUtil';
 
 // material-ui
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
@@ -23,7 +22,7 @@ import Typography from '@mui/material/Typography';
 import MainCard from 'components/MainCard';
 
 // assets
-import { InProcessIcon, PendingIcon, SuccessIcon } from 'assets/images/svg/icon';
+import StatusChip from 'components/StatusChip';
 import { Clock, CloseCircle, Edit2, Eye, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
@@ -95,46 +94,7 @@ export default function ExpectedRatioFormList({
     return filteredForms.slice(startIndex, endIndex);
   };
   
-  const getStatusChip = (status: string) => {
-    switch (status) {
-      case 'COMPLETED':
-        return (
-          <Chip 
-            color="success" 
-            icon={<SuccessIcon />}
-            label="Hoàn thành" 
-            sx={{ borderRadius: '16px', fontWeight: 500 , pl: 1 }}
-          />
-        );
-      case 'IN_PROGRESS':
-        return (
-          <Chip 
-            label="Đang thực thi" 
-            color="info" 
-            icon={<InProcessIcon />}
-            sx={{ borderRadius: '16px', fontWeight: 500, pl: 1 }}
-          />
-        );
-      case 'PENDING':
-        return (
-          <Chip 
-            label="Chưa bắt đầu" 
-            color="secondary" 
-            icon={<PendingIcon />}
-            sx={{ borderRadius: '16px', fontWeight: 500, pl: 1 }}
-          />
-        );
-      default:
-        return (
-          <Chip 
-            label="Chưa bắt đầu" 
-            color="secondary" 
-            icon={<PendingIcon />}
-            sx={{ borderRadius: '16px', fontWeight: 500, pl: 1 }}
-          />
-        );
-    }
-  };
+  const getStatusChip = (status: string) => <StatusChip status={status} />;
 
   const getScheduleIcon = (isScheduled: boolean) => {
     if (isScheduled) {

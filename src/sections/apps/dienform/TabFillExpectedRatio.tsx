@@ -36,18 +36,19 @@ import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/el
 
 // API
 import {
-  AnswerDistribution,
-  createFillRequest,
-  FillRequestDTO,
-  FormData,
-  FormDetailResponse,
-  getFormDetail,
-  getFormList
+    AnswerDistribution,
+    createFillRequest,
+    FillRequestDTO,
+    FormData,
+    FormDetailResponse,
+    getFormDetail,
+    getFormList
 } from 'api/form';
 
 // iconsax-react
 import StarIcon from '@mui/icons-material/Star';
 import { ErrorIcon } from 'assets/images/svg/icon';
+import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 import { InfoCircle } from 'iconsax-react';
 
 // styles & constant
@@ -222,6 +223,9 @@ export default function TabFillExpectedRatio() {
     
     fetchFormDetails();
   }, [selectedFormId]);
+
+  // Realtime updates for fill requests of selected form
+  useFillRequestRealtime(selectedFormId, setSelectedForm);
   
   // Validate that percentages for each question add up to exactly 100%
   const validatePercentages = (options: Map<string, Map<string, number>>) => {

@@ -47,6 +47,7 @@ import { ErrorIcon } from 'assets/images/svg/icon';
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import { ArrowRight2, Clock, Data, InfoCircle, Warning2 } from 'iconsax-react';
 import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
+import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
@@ -127,6 +128,9 @@ export default function TabFillInData() {
     
     fetchFormDetails();
   }, [selectedFormId]);
+
+  // Realtime updates for fill requests of selected form
+  useFillRequestRealtime(selectedFormId, setSelectedForm);
   
   // Helper: build alert from data-mapping error (check)
   const buildAlertForCheckDataError = (err: any): { title: string; description: string } => {

@@ -2,7 +2,7 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import LinearProgress from '@mui/material/LinearProgress';
 import MuiSnackbar from '@mui/material/Snackbar';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface AlertSnackbarWithProgressProps {
   open: boolean;
@@ -13,33 +13,51 @@ interface AlertSnackbarWithProgressProps {
 
 export default function AlertSnackbarWithProgress({ open, message, onClose, severity = 'error' }: AlertSnackbarWithProgressProps) {
   const [progress, setProgress] = useState(100);
+  const rafIdRef = useRef<number | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  // keep latest onClose without restarting the animation
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+
     setProgress(100);
-    const start = Date.now();
-    const duration = 5000; // Thay đổi từ 1000 thành 5000 (5 giây)
-    const step = () => {
-      const elapsed = Date.now() - start;
+    const duration = 5000; // 5s
+    const start = performance.now();
+
+    const step = (now: number) => {
+      const elapsed = now - start;
       const value = Math.max(100 - (elapsed / duration) * 100, 0);
       setProgress(value);
       if (elapsed < duration) {
-        requestAnimationFrame(step);
+        rafIdRef.current = requestAnimationFrame(step);
+      } else {
+        onCloseRef.current?.();
       }
     };
-    requestAnimationFrame(step);
-    const timer = setTimeout(onClose, duration);
+
+    rafIdRef.current = requestAnimationFrame(step);
     return () => {
-      clearTimeout(timer);
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
     };
-  }, [open, onClose]);
+  }, [open]);
 
   return (
     <MuiSnackbar
       anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       open={open}
       onClose={onClose}
-      autoHideDuration={6000} // Thay đổi từ 1000 thành 5000 (5 giây)
+      // autoHideDuration={null}
       sx={{
         '& .MuiPaper-root': { minWidth: 320 },
         zIndex: 1400
