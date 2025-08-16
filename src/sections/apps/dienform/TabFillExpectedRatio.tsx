@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -27,6 +27,8 @@ import { TablePagination as ReactTablePagination } from 'components/third-party/
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleFormError, testErrorStructure } from 'utils/errorHandler';
+import AILoadingDialog from './components/AILoadingDialog';
+import AISuggestionModal from './components/AISuggestionModal';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import FormDetailModal from './components/FormDetailModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
@@ -47,9 +49,12 @@ import {
 
 // iconsax-react
 import StarIcon from '@mui/icons-material/Star';
-import { ErrorIcon } from 'assets/images/svg/icon';
+import { ErrorIcon, AISuggestionIcon } from 'assets/images/svg/icon';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 import { InfoCircle } from 'iconsax-react';
+
+// types
+import { AISuggestionRequest } from 'types/ai-suggestion';
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -114,6 +119,12 @@ export default function TabFillExpectedRatio() {
   
   // Thêm state lưu trạng thái loading cho AI gợi ý
   const [isAiLoading, setIsAiLoading] = useState(false);
+  
+  // State cho AI Suggestion Modal
+  const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
+  
+  // State for AI data filling loading dialog
+  const [isAiDataFillingLoading, setIsAiDataFillingLoading] = useState(false);
   
   // Pagination state
   const [pageIndex, setPageIndex] = useState<number>(0);
@@ -1003,83 +1014,205 @@ export default function TabFillExpectedRatio() {
   }
 
   // Handle AI gợi ý
-  const handleAiSuggest = async () => {
-    setIsAiLoading(true);
-    await new Promise(res => setTimeout(res, 1200));
-    const newQuestionOptions = new Map(questionOptions);
-    const newGridValues = new Map(gridValues);
-    selectedForm?.questions.forEach(question => {
-      if (
-        question.type === 'radio' ||
-        question.type === 'combobox' ||
-        question.type === 'select'
-      ) {
-        const options = question.options;
-        if (options.length > 0) {
-          const percents = randomPercentages(options.length);
-          const optionMap = new Map<string, number>();
-          options.forEach((opt, idx) => {
-            optionMap.set(opt.id, percents[idx]);
-          });
-          newQuestionOptions.set(question.id, optionMap);
-        }
-      } else if (question.type === 'checkbox') {
-        const options = question.options;
-        if (options.length > 0) {
-          const percents = randomPercentages(options.length);
-          const optionMap = new Map<string, number>();
-          options.forEach((opt, idx) => {
-            optionMap.set(opt.id, percents[idx]);
-          });
-          newQuestionOptions.set(question.id, optionMap);
-        }
-      } else if (
-        question.type === 'multiple_choice_grid'
-      ) {
-        const rows = question.options.filter(opt => opt.value && opt.value.startsWith('row'));
-        const seen = new Set();
-        const columns = question.options.filter(
-          opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
-        );
-        const rowMap = new Map<string, Map<string, number>>();
-        rows.forEach(row => {
-          if (columns.length > 0) {
-            const percents = randomPercentages(columns.length);
-            const colMap = new Map<string, number>();
-            columns.forEach((col, idx) => {
-              colMap.set(col.value, percents[idx]); // Use col.value
-            });
-            rowMap.set(row.value, colMap); // Use row.value
-          }
-        });
-        newGridValues.set(question.id, rowMap);
-        // Đảm bảo không giữ lại state cũ ở questionOptions cho grid
-        newQuestionOptions.delete(question.id);
-      } else if (question.type === 'checkbox_grid') {
-        const rows = question.options.filter(opt => opt.value && opt.value.startsWith('row'));
-        const seen = new Set();
-        const columns = question.options.filter(
-          opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
-        );
-        const rowMap = new Map<string, Map<string, number>>();
-        rows.forEach(row => {
-          if (columns.length > 0) {
-            const percents = randomPercentages(columns.length);
-            const colMap = new Map<string, number>();
-            columns.forEach((col, idx) => {
-              colMap.set(col.id, percents[idx]);
-            });
-            rowMap.set(row.id, colMap);
-          }
-        });
-        newGridValues.set(question.id, rowMap);
-        newQuestionOptions.delete(question.id);
+  const handleAiSuggest = () => {
+    // 🎯 Ẩn validation errors khi mở AI modal
+    setError(null);
+    setErrorSnackOpen(false);
+    setBalanceErrors(new Map());
+    
+    setIsAISuggestionModalOpen(true);
+  };
+
+  // Handle AI suggestion result
+  const handleAISuggestionSubmit = async (request: AISuggestionRequest) => {
+    try {
+      setIsAiLoading(true);
+      setIsAISuggestionModalOpen(false); // Đóng modal AI suggestion
+      
+      // 🎯 Hiện loading dialog ngay sau khi đóng AI modal
+      setIsAiDataFillingLoading(true);
+      
+      if (!selectedForm) {
+        throw new Error('Không có form được chọn');
       }
-    });
-    setQuestionOptions(newQuestionOptions);
-    setGridValues(newGridValues);
-    validatePercentages(newQuestionOptions);
-    setIsAiLoading(false);
+
+      // Call the AI suggestion API with the new structure
+      const { getAnswerAttributesWithNewStructure } = await import('api/ai-suggestion');
+      const response = await getAnswerAttributesWithNewStructure(
+        selectedForm.id,
+        request.sampleCount,
+        request.requirements
+      );
+
+      if (response.status !== 'OK' || !response.content) {
+        throw new Error('Phản hồi không hợp lệ từ AI service');
+      }
+
+      const { questionAnswerAttributes } = response.content;
+
+      // Apply the AI suggestion results to the form states
+      const newQuestionOptions = new Map(questionOptions);
+      const newCustomData = new Map(customData);
+      const newOtherOptionInputs = new Map(otherOptionInputs);
+      const newGridValues = new Map(gridValues);
+
+      // 🚀 PERFORMANCE OPTIMIZATION: Pre-build lookup maps for O(1) access
+      const startTime = performance.now();
+      
+      // Build question lookup map once - O(n) -> O(1)
+      const questionLookup = new Map(selectedForm.questions.map(q => [q.id, q]));
+      
+      // Build option lookup maps for each question - O(n*m) -> O(1)
+      const optionLookupByQuestion = new Map<string, Map<string, any>>();
+      selectedForm.questions.forEach(question => {
+        const optionMap = new Map(question.options.map(opt => [opt.id, opt]));
+        optionLookupByQuestion.set(question.id, optionMap);
+      });
+
+      questionAnswerAttributes.forEach((qaAttr: any) => {
+        const { questionId, questionType, optionDistributions, sampleAnswers, gridRowDistributions } = qaAttr;
+        
+        // 🚀 O(1) lookup instead of O(n) .find()
+        const question = questionLookup.get(questionId);
+        if (!question) return;
+
+        if (questionType === 'text') {
+          // Handle text questions - update custom data with sample answers
+          // 🚀 Early return with optional chaining for better performance
+          if (!sampleAnswers?.length) return;
+          
+          newCustomData.set(questionId, {
+            useCustomData: true,
+            data: sampleAnswers.join('\n')
+          });
+        } else if (questionType === 'multiple_choice_grid') {
+          // Handle multiple choice grid questions
+          // MultipleChoiceGridPercentInput uses row.value and col.value as keys
+          // 🚀 Early return with optional chaining
+          if (!gridRowDistributions?.length) return;
+          
+          const questionGridMap = new Map<string, Map<string, number>>();
+          // 🚀 Get pre-built option lookup for O(1) access
+          const optionLookup = optionLookupByQuestion.get(questionId)!;
+          
+          gridRowDistributions.forEach((rowDist: any) => {
+            const { rowId, columnDistributions } = rowDist;
+            const rowMap = new Map<string, number>();
+            
+            // 🚀 O(1) lookup instead of O(n) .find()
+            const rowOption = optionLookup.get(rowId);
+            const rowKey = rowOption?.value || rowId;
+            
+            columnDistributions.forEach((colDist: any) => {
+              const { optionId, percentage } = colDist;
+              
+              // 🚀 O(1) lookup instead of O(n) .find()
+              const colOption = optionLookup.get(optionId);
+              const colKey = colOption?.value || optionId;
+              
+              rowMap.set(colKey, percentage);
+            });
+            
+            questionGridMap.set(rowKey, rowMap);
+          });
+          
+          newGridValues.set(questionId, questionGridMap);
+        } else if (questionType === 'checkbox_grid') {
+          // Handle checkbox grid questions
+          // CheckboxGridPercentInput uses row.id and col.id as keys
+          // 🚀 Early return with optional chaining
+          if (!gridRowDistributions?.length) return;
+          
+          const questionGridMap = new Map<string, Map<string, number>>();
+          
+          gridRowDistributions.forEach((rowDist: any) => {
+            const { rowId, columnDistributions } = rowDist;
+            const rowMap = new Map<string, number>();
+            
+            // CheckboxGridPercentInput uses row.id as key directly
+            const rowKey = rowId;
+            
+            columnDistributions.forEach((colDist: any) => {
+              const { optionId, percentage } = colDist;
+              
+              // CheckboxGridPercentInput uses col.id as key directly
+              const colKey = optionId;
+              
+              rowMap.set(colKey, percentage);
+            });
+            
+            questionGridMap.set(rowKey, rowMap);
+          });
+          
+          newGridValues.set(questionId, questionGridMap);
+        } else {
+          // Handle radio, checkbox, select questions
+          // 🚀 Early return with optional chaining
+          if (!optionDistributions?.length) return;
+          
+          const optionMap = new Map<string, number>();
+          let otherOptionSamples: string[] = [];
+          
+          optionDistributions.forEach((optDist: any) => {
+            const { optionId, percentage, optionValue, sampleValues } = optDist;
+            
+            // Set percentage for the option
+            optionMap.set(optionId, percentage);
+            
+            // 🚀 Optimized "other" option check with optional chaining
+            if (optionValue === '__other_option__' && sampleValues?.length > 0) {
+              otherOptionSamples = sampleValues;
+            }
+          });
+          
+          newQuestionOptions.set(questionId, optionMap);
+          
+          // Set other option sample values if available
+          if (otherOptionSamples.length > 0) {
+            newOtherOptionInputs.set(questionId, otherOptionSamples.join('\n'));
+          }
+        }
+      });
+
+                  // 🚀 Performance monitoring
+      const processingTime = performance.now() - startTime;
+      console.log(`🚀 AI data processing completed in ${processingTime.toFixed(2)}ms`);
+
+      // 🚀 Batch state updates with startTransition for better performance
+      startTransition(() => {
+        setQuestionOptions(newQuestionOptions);
+        setCustomData(newCustomData);
+        setOtherOptionInputs(newOtherOptionInputs);
+        setGridValues(newGridValues);
+        setIsEditing(true);
+
+        // Validate percentages
+        validatePercentages(newQuestionOptions);
+        
+        // 🎯 Ẩn loading dialog sau khi điền xong với minimum display time
+        const minimumLoadingTime = 1500; // 1.5 giây để user thấy được loading
+        const elapsedTime = performance.now() - startTime;
+        const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
+        
+        setTimeout(() => {
+          setIsAiDataFillingLoading(false);
+          setErrorSnackMessage(`AI gợi ý đã được áp dụng thành công! (${processingTime.toFixed(0)}ms)`);
+      setErrorSnackOpen(true);
+        }, remainingTime);
+      });
+      
+    } catch (error) {
+      console.error('Error processing AI suggestion:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi xử lý AI gợi ý';
+      
+      // 🎯 Ẩn loading dialog nếu có lỗi
+      setIsAiDataFillingLoading(false);
+      setErrorSnackMessage(errorMessage);
+      setErrorSnackOpen(true);
+    } finally {
+      setIsAiLoading(false);
+      setIsAISuggestionModalOpen(false);
+    }
   };
   
   // Check if there are any balance errors
@@ -1395,7 +1528,7 @@ export default function TabFillExpectedRatio() {
                   <Button
                     variant="contained"
                     color="info"
-                    startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <StarIcon />}
+                    startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <AISuggestionIcon />}
                     onClick={handleAiSuggest}
                     disabled={isAiLoading}
                     sx={{ minWidth: 160, fontWeight: 600 }}
@@ -1466,6 +1599,22 @@ export default function TabFillExpectedRatio() {
           onClose={() => setIsDetailModalOpen(false)}
           fillRequest={selectedFillRequest}
           formName={selectedForm?.name || ''}
+        />
+
+        {selectedForm && (
+          <AISuggestionModal
+            open={isAISuggestionModalOpen}
+            onClose={() => setIsAISuggestionModalOpen(false)}
+            formData={selectedForm}
+            onSubmit={handleAISuggestionSubmit}
+          />
+        )}
+
+        {/* 🎯 AI Data Filling Loading Dialog */}
+        <AILoadingDialog 
+          open={isAiDataFillingLoading}
+          title="AI đang xử lý và điền dữ liệu"
+          subtitle="Đang phân tích form và tạo dữ liệu mẫu..."
         />
       </Grid>
     </>
