@@ -10,6 +10,7 @@ import Divider from '@mui/material/Divider';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
+import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
@@ -59,7 +60,7 @@ export default function TabFillInData() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedForm, setSelectedForm] = useState<FormDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [errorAlert, setErrorAlert] = useState<{ title: string; description: string } | null>(null);
+  const [errorAlert, setErrorAlert] = useState<{ title: string; description: string; showEncryption?: boolean } | null>(null);
   
   // State for payment modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
@@ -151,6 +152,24 @@ export default function TabFillInData() {
     }
     const message = handleDataMappingError(err, 'check');
     return { title: 'Lỗi kiểm tra dữ liệu', description: message };
+  };
+
+  // Helper: build alert from create fill request error
+  const buildAlertForCreateFillRequestError = (err: any): { title: string; description: string; showEncryption?: boolean } => {
+    const data = err?.response?.data ?? err;
+    
+    // Check if this is a validation error from backend
+    if (data?.errorMessage) {
+      return { 
+        title: 'Lỗi tạo yêu cầu điền form', 
+        description: data.errorMessage,
+        showEncryption: true // Show encryption suggestion for validation errors
+      };
+    }
+    
+    // Fallback to generic error handling
+    const message = handleDataMappingError(err, 'create');
+    return { title: 'Lỗi tạo yêu cầu điền form', description: message };
   };
 
   // Helper: score for grid column matching (prefer explicit containment of question + row)
@@ -350,10 +369,10 @@ export default function TabFillInData() {
       
     } catch (err: any) {
       console.error('Error creating fill request:', err);
-      const msg = handleDataMappingError(err, 'create');
-      setError(msg);
-      setErrorAlert({ title: 'Lỗi tạo yêu cầu điền form', description: msg });
-      setErrorSnackMessage(msg);
+      const errorDetails = buildAlertForCreateFillRequestError(err);
+      setError(errorDetails.description);
+      setErrorAlert(errorDetails);
+      setErrorSnackMessage(errorDetails.description);
       setErrorSnackOpen(true);
     } finally {
       setLoading(false);
@@ -435,7 +454,36 @@ export default function TabFillInData() {
           {errorAlert && (
             <Alert color="error" variant="border" icon={<ErrorIcon />} sx={{ mb: 2 }}>
               <AlertTitle>{errorAlert.title}</AlertTitle>
-              <Typography variant="h6">{errorAlert.description}</Typography>
+              <Typography variant="h6" sx={{ mb: errorAlert.showEncryption ? 2 : 0 }}>
+                {errorAlert.description}
+              </Typography>
+              {errorAlert.showEncryption && (
+                <Box sx={{ mt: 1, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1, border: '1px solid', borderColor: 'primary.light' }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="body2" color="primary.main" fontWeight="600">
+                      💡 Gợi ý:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Bạn có thể sử dụng
+                    </Typography>
+                    <Link 
+                      href="http://localhost:3000/ma-hoa-data" 
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ 
+                        fontWeight: 600, 
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
+                      Data mã hóa
+                    </Link>
+                    <Typography variant="body2" color="text.secondary">
+                      để chuẩn hóa dữ liệu và tránh lỗi validation.
+                    </Typography>
+                  </Stack>
+                </Box>
+              )}
             </Alert>
           )}
           

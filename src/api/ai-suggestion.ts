@@ -2,9 +2,9 @@
 // Endpoint cho việc gọi AI service để tạo dữ liệu mẫu
 
 import {
-    AISuggestionRequest,
-    AISuggestionResponse,
-    AISuggestionValidationResponse
+  AISuggestionRequest,
+  AISuggestionResponse,
+  AISuggestionValidationResponse
 } from 'types/ai-suggestion';
 import axiosServices from 'utils/axios';
 
@@ -119,19 +119,6 @@ export const getAnswerAttributesWithNewStructure = async (
       }>;
       sampleAnswers: string[];
       description: string | null;
-      gridRowDistributions: Array<{
-        rowId: string;
-        rowLabel: string;
-        columnDistributions: Array<{
-          optionId: string;
-          optionText: string;
-          optionValue: string;
-          percentage: number;
-          sampleValues: string[];
-          description: string | null;
-        }>;
-        description: string | null;
-      }> | null;
     }>;
     generatedAt: string;
     requestId: string;
