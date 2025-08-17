@@ -792,6 +792,18 @@ export default function AISuggestionModal({
                                     target.optionId, 
                                     Number(e.target.value)
                                   )}
+                                  onFocus={(e) => {
+                                    // UX improvement: Clear value when focusing if it's 0
+                                    if (e.target.value === '0') {
+                                      e.target.value = '';
+                                    }
+                                  }}
+                                  onBlur={(e) => {
+                                    // UX improvement: Set to 0 if input is empty when losing focus
+                                    if (e.target.value === '' || isNaN(Number(e.target.value))) {
+                                      updateDistributionPercentage(dist.questionId, target.optionId, 0);
+                                    }
+                                  }}
                                   inputProps={{ min: 0, max: 100 }}
                                   sx={{ width: 80 }}
                                   error={distributionErrors.has(dist.questionId)}

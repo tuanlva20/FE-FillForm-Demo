@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -8,14 +8,12 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
-import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
-import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
@@ -23,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
 import DebouncedMultilineTextField from 'components/form/DebouncedMultilineTextField';
+import PercentInput from 'components/form/PercentInput';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
@@ -48,8 +47,7 @@ import {
 } from 'api/form';
 
 // iconsax-react
-import StarIcon from '@mui/icons-material/Star';
-import { ErrorIcon, AISuggestionIcon } from 'assets/images/svg/icon';
+import { AISuggestionIcon, ErrorIcon } from 'assets/images/svg/icon';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 import { InfoCircle } from 'iconsax-react';
 
@@ -345,17 +343,21 @@ export default function TabFillExpectedRatio() {
     }
   };
   
-  // Handle custom data text change
-  const handleCustomDataChange = (questionId: string, value: string) => {
+  // Handle custom data text change - optimized to prevent unnecessary re-renders
+  const handleCustomDataChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    const newCustomData = new Map(customData);
-    
-    if (newCustomData.has(questionId)) {
-      const currentData = newCustomData.get(questionId)!;
+    setCustomData(prev => {
+      const currentData = prev.get(questionId);
+      if (!currentData) return prev;
+      
+      // Only update if value actually changed
+      if (currentData.data === value) return prev;
+      
+      const newCustomData = new Map(prev);
       newCustomData.set(questionId, { ...currentData, data: value });
-      setCustomData(newCustomData);
-    }
-  };
+      return newCustomData;
+    });
+  }, []);
 
   // Handle date input toggle
   const handleDateInputToggle = (questionId: string, checked: boolean) => {
@@ -369,17 +371,21 @@ export default function TabFillExpectedRatio() {
     }
   };
   
-  // Handle date input data change
-  const handleDateInputChange = (questionId: string, value: string) => {
+  // Handle date input data change - optimized to prevent unnecessary re-renders
+  const handleDateInputChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    const newDateInputs = new Map(dateInputs);
-    
-    if (newDateInputs.has(questionId)) {
-      const currentData = newDateInputs.get(questionId)!;
+    setDateInputs(prev => {
+      const currentData = prev.get(questionId);
+      if (!currentData) return prev;
+      
+      // Only update if value actually changed
+      if (currentData.data === value) return prev;
+      
+      const newDateInputs = new Map(prev);
       newDateInputs.set(questionId, { ...currentData, data: value });
-      setDateInputs(newDateInputs);
-    }
-  };
+      return newDateInputs;
+    });
+  }, []);
   
   // Open the auto fill form modal
   const handleOpenAutoFillModal = () => {
@@ -624,15 +630,18 @@ export default function TabFillExpectedRatio() {
     setIsEditing(false);
   };
   
-  // Handle Other option text change
-  const handleOtherInputChange = (questionId: string, value: string) => {
+  // Handle Other option text change - optimized to prevent unnecessary re-renders
+  const handleOtherInputChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    setOtherOptionInputs((prev) => {
+    setOtherOptionInputs(prev => {
+      // Only update if value actually changed
+      if (prev.get(questionId) === value) return prev;
+      
       const next = new Map(prev);
       next.set(questionId, value);
       return next;
     });
-  };
+  }, []);
   
   // Handle cancel
   const handleCancel = () => {
@@ -1196,7 +1205,7 @@ export default function TabFillExpectedRatio() {
         
         setTimeout(() => {
           setIsAiDataFillingLoading(false);
-          setErrorSnackMessage(`AI gợi ý đã được áp dụng thành công! (${processingTime.toFixed(0)}ms)`);
+          setErrorSnackMessage(`AI tạo dữ liệu mẫu và điền câu trả lời lên form thành công!`);
       setErrorSnackOpen(true);
         }, remainingTime);
       });
@@ -1333,6 +1342,7 @@ export default function TabFillExpectedRatio() {
                             rows={4}
                             placeholder="Nhập dữ liệu của bạn"
                             sx={{ mt: 2 }}
+                            debounceMs={150}
                           />
                         )}
                       </>
@@ -1355,6 +1365,7 @@ export default function TabFillExpectedRatio() {
                             placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
                             sx={{ mt: 2 }}
                             helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
+                            debounceMs={150}
                           />
                         )}
                       </>
@@ -1438,8 +1449,13 @@ export default function TabFillExpectedRatio() {
                       <Grid container spacing={2}>
                         {question.options.map((option) => {
                           const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
+                          const isOtherOption = option.value === '__other_option__';
+                          const otherOpt = question.options.find((opt) => opt.value === '__other_option__');
+                          const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+                          const showOtherTextarea = isOtherOption && otherPercent > 0;
+                          
                           return (
-                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={1.5}>
+                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
                               <Tooltip 
                                 title={option.text} 
                                 arrow 
@@ -1460,26 +1476,26 @@ export default function TabFillExpectedRatio() {
                                     whiteSpace: 'nowrap', 
                                     overflow: 'hidden', 
                                     textOverflow: 'ellipsis', 
-                                    cursor: 'pointer' 
+                                    cursor: 'pointer',
+                                    ...(isOtherOption && {
+                                      fontStyle: 'italic',
+                                      fontWeight: 600,
+                                      ...(showOtherTextarea && {
+                                        color: 'primary.main'
+                                      })
+                                    })
                                   }}
                                 >
                                   {option.text}
                                 </Typography>
                               </Tooltip>
-                              <TextField
-                                fullWidth
-                                type="number"
+                              <PercentInput
                                 value={percentage}
-                                onChange={(e) => handlePercentageChange(
+                                onChange={(value) => handlePercentageChange(
                                   question.id, 
                                   option.id, 
-                                  parseInt(e.target.value) || 0
+                                  value
                                 )}
-                                onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
-                                InputProps={{
-                                  inputProps: { min: 0 },
-                                  endAdornment: <InputAdornment position="end">%</InputAdornment>
-                                }}
                                 error={balanceErrors.has(question.id)}
                               />
                             </Grid>
@@ -1491,17 +1507,43 @@ export default function TabFillExpectedRatio() {
                     {(() => {
                       const otherOpt = question.options.find((opt) => opt.value === '__other_option__');
                       const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
-                      if (otherOpt && otherPercent > 0) {
-                        return (
-                          <DebouncedMultilineTextField
-                            value={otherOptionInputs.get(question.id) || ''}
-                            onChange={(v) => handleOtherInputChange(question.id, v)}
-                            rows={3}
-                            placeholder="Nhập dữ liệu của bạn (dùng cho đáp án 'Khác')"
-                            sx={{ mt: 2 }}
-                          />
-                        );
-                      }
+                                              if (otherOpt && otherPercent > 0) {
+                          return (
+                            <Box sx={{ mt: 2, p: 2, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2, backgroundColor: 'primary.50' }}>
+                              <Typography 
+                                variant="body1" 
+                                sx={{ 
+                                  mb: 1, 
+                                  fontWeight: 600, 
+                                  color: 'primary.main',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 1
+                                }}
+                              >
+                                ✏️ Dữ liệu cho đáp án "Khác"
+                              </Typography>
+                              <DebouncedMultilineTextField
+                                value={otherOptionInputs.get(question.id) || ''}
+                                onChange={(v) => handleOtherInputChange(question.id, v)}
+                                rows={3}
+                                placeholder="Nhập dữ liệu của bạn"
+                                sx={{ 
+                                  '& .MuiOutlinedInput-root': {
+                                    borderColor: 'primary.main',
+                                    '&:hover': {
+                                      borderColor: 'primary.dark'
+                                    },
+                                    '&.Mui-focused': {
+                                      borderColor: 'primary.main'
+                                    }
+                                  }
+                                }}
+                                debounceMs={150}
+                              />
+                            </Box>
+                          );
+                        }
                       return null;
                     })()}
                     {balanceErrors.has(question.id) && question.type !== 'date' &&

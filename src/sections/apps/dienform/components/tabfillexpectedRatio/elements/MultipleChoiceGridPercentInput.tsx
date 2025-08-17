@@ -1,5 +1,5 @@
 import { Alert, Box, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from '@mui/material';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomPercentTextField from './CustomPercentTextField';
 
 interface Option {
@@ -35,19 +35,30 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
   // State lưu lỗi tổng phần trăm
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
+  
+  // Refs for optimization
+  const onChangeRef = useRef(onChange);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // Đồng bộ state khi prop value thay đổi
+  // Update onChange ref without triggering re-renders
   useEffect(() => {
-    if (value) setValues(value);
-  }, [value]);
+    onChangeRef.current = onChange;
+  }, [onChange]);
 
-  // Memoized validation function
+  // Optimized state sync - only update if values actually changed
+  useEffect(() => {
+    if (value && JSON.stringify(value) !== JSON.stringify(values)) {
+      setValues(value);
+    }
+  }, [value]); // Removed values dependency to prevent infinite loops
+
+  // Memoized validation function with stable reference
   const validateRow = useCallback((rowValue: string, rowVals: Record<string, number>) => {
     const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.value]) || 0), 0);
-    return total !== 100;
+    return Math.abs(total - 100) > 0.01; // Use small epsilon for floating point comparison
   }, [columns]);
 
-  // Optimized validation effect
+  // Optimized validation effect with reduced re-renders
   useEffect(() => {
     const errors: Record<string, boolean> = {};
     let hasChanges = false;
@@ -64,9 +75,9 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
     if (hasChanges) {
       setRowErrors(errors);
     }
-  }, [values, rows, rowErrors, validateRow]);
+  }, [values, rows, validateRow]); // Removed rowErrors dependency
 
-  // Optimized input handler with debouncing
+  // Optimized input handler without additional debouncing
   const handleInput = useCallback((rowValue: string, colValue: string, percent: number) => {
     setValues(prev => {
       const next = { 
@@ -77,14 +88,28 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
         } 
       };
       
-      // Debounce the onChange callback to avoid excessive calls
-      setTimeout(() => {
-        onChange?.(next);
-      }, 100);
+      // Clear previous timeout
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      
+      // Single debounce at grid level (CustomPercentTextField already handles input debouncing)
+      debounceTimeoutRef.current = setTimeout(() => {
+        onChangeRef.current?.(next);
+      }, 50); // Reduced timeout since CustomPercentTextField already debounces
       
       return next;
     });
-  }, [onChange]);
+  }, []); // Empty dependency array since we use refs
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Memoized row totals calculation
   const rowTotals = useMemo(() => {
@@ -133,7 +158,6 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
                         value={values[row.value]?.[col.value] ?? ''}
                         onChange={val => handleInput(row.value, col.value, val)}
                         error={hasError}
-                        onFocus={e => { if (e.target.value === '0') e.target.value = ''; }}
                       />
                     </TableCell>
                   ))}

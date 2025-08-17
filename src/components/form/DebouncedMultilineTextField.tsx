@@ -1,5 +1,5 @@
 import { TextField } from '@mui/material';
-import React from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 type DebouncedMultilineTextFieldProps = {
   value: string;
@@ -10,28 +10,91 @@ type DebouncedMultilineTextFieldProps = {
   debounceMs?: number;
   disabled?: boolean;
   helperText?: React.ReactNode;
+  onFocus?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+  onBlur?: React.FocusEventHandler<HTMLInputElement | HTMLTextAreaElement>;
 };
 
 const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = React.memo(
-  ({ value, onChange, rows = 3, placeholder, sx, debounceMs = 200, disabled, helperText }) => {
-    const [localValue, setLocalValue] = React.useState<string>(value || '');
-    const timerRef = React.useRef<number | null>(null);
+  ({ 
+    value, 
+    onChange, 
+    rows = 3, 
+    placeholder, 
+    sx, 
+    debounceMs = 200, 
+    disabled, 
+    helperText,
+    onFocus,
+    onBlur
+  }) => {
+    const [localValue, setLocalValue] = useState<string>(value || '');
+    const [isTyping, setIsTyping] = useState(false);
+    const timerRef = useRef<number | null>(null);
+    const onChangeRef = useRef(onChange);
+    const lastValueRef = useRef<string>('');
 
-    // Sync from parent when value prop changes (e.g., reset, load data)
-    React.useEffect(() => {
-      setLocalValue(value || '');
-    }, [value]);
+    // Update onChange ref without triggering re-renders
+    useEffect(() => {
+      onChangeRef.current = onChange;
+    }, [onChange]);
 
-    // Debounce pushing changes upward to avoid re-render storms while typing
-    React.useEffect(() => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-      timerRef.current = window.setTimeout(() => {
-        onChange(localValue);
-      }, debounceMs);
+    // Optimized sync from parent when value prop changes
+    useEffect(() => {
+      if (!isTyping && value !== lastValueRef.current) {
+        setLocalValue(value || '');
+        lastValueRef.current = value || '';
+      }
+    }, [value, isTyping]);
+
+    // Optimized debounced onChange with better performance
+    const debouncedOnChange = useCallback((newValue: string) => {
+      if (timerRef.current) {
+        window.clearTimeout(timerRef.current);
+      }
+      
+      // Only trigger onChange if value actually changed
+      if (lastValueRef.current !== newValue) {
+        timerRef.current = window.setTimeout(() => {
+          lastValueRef.current = newValue;
+          onChangeRef.current(newValue);
+          setIsTyping(false);
+        }, debounceMs);
+      }
+    }, [debounceMs]);
+
+    // Optimized change handler
+    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const newValue = e.target.value;
+      setLocalValue(newValue);
+      setIsTyping(true);
+      debouncedOnChange(newValue);
+    }, [debouncedOnChange]);
+
+    // Optimized focus handler
+    const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      onFocus?.(e);
+    }, [onFocus]);
+
+    // Optimized blur handler
+    const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      setIsTyping(false);
+      // Ensure final value is synced immediately on blur
+      const finalValue = e.target.value;
+      if (lastValueRef.current !== finalValue) {
+        lastValueRef.current = finalValue;
+        onChangeRef.current(finalValue);
+      }
+      onBlur?.(e);
+    }, [onBlur]);
+
+    // Cleanup on unmount
+    useEffect(() => {
       return () => {
-        if (timerRef.current) window.clearTimeout(timerRef.current);
+        if (timerRef.current) {
+          window.clearTimeout(timerRef.current);
+        }
       };
-    }, [localValue, onChange, debounceMs]);
+    }, []);
 
     return (
       <TextField
@@ -39,7 +102,9 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
         multiline
         rows={rows}
         value={localValue}
-        onChange={(e) => setLocalValue(e.target.value)}
+        onChange={handleChange}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
         placeholder={placeholder}
         sx={sx}
         disabled={disabled}
@@ -48,6 +113,8 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
     );
   }
 );
+
+DebouncedMultilineTextField.displayName = 'DebouncedMultilineTextField';
 
 export default DebouncedMultilineTextField;
 
