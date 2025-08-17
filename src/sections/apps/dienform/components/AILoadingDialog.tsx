@@ -36,8 +36,8 @@ interface AILoadingDialogProps {
 
 export default function AILoadingDialog({
   open,
-  title = "AI đang xử lý và điền dữ liệu",
-  subtitle = "Đang phân tích form và tạo dữ liệu mẫu...",
+  title = "Đang xử lý điền dữ liệu",
+  subtitle = "Vui lòng chờ trong giây lát...",
   disableEscapeKeyDown = true
 }: AILoadingDialogProps) {
   return (

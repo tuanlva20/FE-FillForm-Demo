@@ -1655,8 +1655,8 @@ export default function TabFillExpectedRatio() {
         {/* 🎯 AI Data Filling Loading Dialog */}
         <AILoadingDialog 
           open={isAiDataFillingLoading}
-          title="AI đang xử lý và điền dữ liệu"
-          subtitle="Đang phân tích form và tạo dữ liệu mẫu..."
+          title="Đang xử lý điền dữ liệu mẫu vào form"
+          subtitle="Vui lòng chờ trong giây lát..."
         />
       </Grid>
     </>

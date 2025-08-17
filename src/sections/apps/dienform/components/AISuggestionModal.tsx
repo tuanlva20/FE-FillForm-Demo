@@ -35,7 +35,7 @@ import {
 } from '@mui/material';
 import { getAnswerAttributesWithNewStructure, validateAISuggestionRequest } from 'api/ai-suggestion';
 import { FormDetailResponse } from 'api/form';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AISuggestionRequest } from 'types/ai-suggestion';
 import { validateDistributionPercentages } from 'utils/ai-error-handler';
 
@@ -74,6 +74,19 @@ export default function AISuggestionModal({
   // State để track các step của quá trình
   const [validationStep, setValidationStep] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
   const [processingStep, setProcessingStep] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+
+  // Reset states khi modal mở lại
+  useEffect(() => {
+    if (open) {
+      setValidationResult(null);
+      setValidationStep('idle');
+      setProcessingStep('idle');
+      setDistributionErrors(new Map());
+      setIsValidating(false);
+      setIsGettingAnswerAttributes(false);
+      setAnswerAttributes(new Map());
+    }
+  }, [open]);
 
   // Bỏ auto validation - chỉ validate khi user submit
 
@@ -733,8 +746,8 @@ export default function AISuggestionModal({
             </Accordion>
           )}
 
-          {/* Yêu cầu phân bố */}
-          {choiceQuestions.length > 0 && (
+          {/* Yêu cầu phân bố - Tạm thời ẩn */}
+          {false && (
             <Accordion>
               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                 <Typography variant="subtitle1">Yêu cầu phân bố (Tùy chọn)</Typography>
@@ -842,8 +855,32 @@ export default function AISuggestionModal({
                   <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
                 )}
                 {validationStep === 'error' && (
-                  <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#F44336', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>!</Typography>
+                  <Box sx={{ 
+                    width: 24, 
+                    height: 24, 
+                    borderRadius: '50%', 
+                    backgroundColor: '#F44336', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    overflow: 'hidden'
+                  }}>
+                    <Typography 
+                      variant="caption" 
+                      sx={{ 
+                        color: 'white', 
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        lineHeight: 1,
+                        textAlign: 'center',
+                        margin: 0,
+                        padding: 0,
+                        display: 'block'
+                      }}
+                    >
+                      !
+                    </Typography>
                   </Box>
                 )}
                 
@@ -869,8 +906,32 @@ export default function AISuggestionModal({
                     <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
                   )}
                   {processingStep === 'error' && (
-                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#F44336', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>!</Typography>
+                    <Box sx={{ 
+                      width: 24, 
+                      height: 24, 
+                      borderRadius: '50%', 
+                      backgroundColor: '#F44336', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      overflow: 'hidden'
+                    }}>
+                      <Typography 
+                        variant="caption" 
+                        sx={{ 
+                          color: 'white', 
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                          lineHeight: 1,
+                          textAlign: 'center',
+                          margin: 0,
+                          padding: 0,
+                          display: 'block'
+                        }}
+                      >
+                        !
+                      </Typography>
                     </Box>
                   )}
                   
@@ -880,7 +941,7 @@ export default function AISuggestionModal({
                            processingStep === 'processing' ? '#673AB7' : '#757575',
                     fontWeight: processingStep === 'processing' || processingStep === 'success' ? 600 : 400
                   }}>
-                    {processingStep === 'processing' && 'Đang xử lý câu trả lời cho toàn bộ form...'}
+                    {processingStep === 'processing' && 'AI đang xử lý câu trả lời cho toàn bộ form...'}
                     {processingStep === 'success' && 'Xử lý câu trả lời thành công'}
                     {processingStep === 'error' && 'Xử lý câu trả lời thất bại'}
                   </Typography>
@@ -902,10 +963,10 @@ export default function AISuggestionModal({
           {validationResult && validationResult.isValid && processingStep === 'success' && (
             <Alert severity="success" sx={{ mt: 2 }}>
               <Typography variant="h6">
-                Tạo dữ liệu mẫu thành công!
+                Tạo thành công!
               </Typography>
               <Typography variant="body2">
-                Đã tạo dữ liệu mẫu cho các câu hỏi thành công! Ước tính: {validationResult.estimatedTokens.toLocaleString()} tokens
+                Dữ liệu mẫu cho các câu hỏi được tạo thành công!
               </Typography>
             </Alert>
           )}
