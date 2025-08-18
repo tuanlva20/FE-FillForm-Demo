@@ -46,6 +46,36 @@ const LoginRoutes = {
           element: <AuthCodeVerification />
         }
       ]
+    },
+    {
+      path: '/auth',
+      element: <AuthLayout />,
+      children: [
+        {
+          path: 'login',
+          element: <AuthLogin />
+        },
+        {
+          path: 'register',
+          element: <AuthRegister />
+        },
+        {
+          path: 'forgot-password',
+          element: <AuthForgotPassword />
+        },
+        {
+          path: 'check-mail',
+          element: <AuthCheckMail />
+        },
+        {
+          path: 'reset-password',
+          element: <AuthResetPassword />
+        },
+        {
+          path: 'code-verification',
+          element: <AuthCodeVerification />
+        }
+      ]
     }
   ]
 };

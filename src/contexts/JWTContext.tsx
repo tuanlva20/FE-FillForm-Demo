@@ -6,7 +6,6 @@ import authReducer from 'contexts/auth-reducer/auth';
 
 // project-imports
 import { authAPI } from 'api/auth';
-import Loader from 'components/Loader';
 import { clearTokens, setAccessExpiry } from 'utils/authToken';
 
 // types
@@ -28,13 +27,8 @@ const JWTContext = createContext<JWTContextType | null>(null);
 
 export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const getIsAppsPath = () => {
-    if (typeof window === 'undefined') return false;
-    return (window.location.pathname || '').startsWith('/apps/');
-  };
 
   useEffect(() => {
-    const isAppsPath = getIsAppsPath();
     const initAuth = async () => {
       try {
         const response = await authAPI.getCurrentUser();
@@ -49,33 +43,137 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
           });
         } else {
           dispatch({ type: LOGOUT });
+          // If we are on a protected route, force redirect to login (handles cases where guard hasn't mounted yet)
+          try {
+            const pathname = window.location.pathname || '/';
+            const PUBLIC_ROUTES = [
+              '/',
+              '/login',
+              '/register',
+              '/forgot-password',
+              '/reset-password',
+              '/check-mail',
+              '/code-verification',
+              '/auth/login',
+              '/auth/register',
+              '/auth/forgot-password',
+              '/auth/reset-password',
+              '/auth/check-mail',
+              '/auth/code-verification',
+              '/maintenance',
+              '/404',
+              '/500'
+            ];
+            const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? pathname === '/' : pathname.startsWith(r)));
+            if (!isPublic) {
+              const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
+              const ts = Date.now();
+              const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
+              window.location.assign(loginUrl);
+            }
+          } catch {}
         }
       } catch (err) {
         dispatch({ type: LOGOUT });
+        // If we are on a protected route, force redirect to login (handles cases where guard hasn't mounted yet)
+        try {
+          const pathname = window.location.pathname || '/';
+          const PUBLIC_ROUTES = [
+            '/',
+            '/login',
+            '/register',
+            '/forgot-password',
+            '/reset-password',
+            '/check-mail',
+            '/code-verification',
+            '/auth/login',
+            '/auth/register',
+            '/auth/forgot-password',
+            '/auth/reset-password',
+            '/auth/check-mail',
+            '/auth/code-verification',
+            '/maintenance',
+            '/404',
+            '/500'
+          ];
+          const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? pathname === '/' : pathname.startsWith(r)));
+          if (!isPublic) {
+            const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
+            const ts = Date.now();
+            const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
+            window.location.assign(loginUrl);
+          }
+        } catch {}
       }
     };
 
-    if (isAppsPath) {
-      // On protected routes, ensure auth is hydrated
-      if (!state.isLoggedIn || state.user == null) {
-        void initAuth();
-      }
-    } else {
-      // On public routes, avoid background refresh and mark initialized without network
-      setAccessExpiry(null);
-      if (state.isInitialized === false) {
+    // Helper function to check if we should skip auth initialization
+    const shouldSkipAuthInit = () => {
+      if (typeof window === 'undefined') return false;
+      const pathname = window.location.pathname || '';
+      
+      // Skip auth initialization for these specific routes
+      const skipRoutes = [
+        '/',           // Landing page
+        '/login',      
+        '/register',   
+        '/forgot-password',
+        '/reset-password',
+        '/check-mail',
+        '/code-verification',
+        '/auth/login',
+        '/auth/register',
+        '/auth/forgot-password',
+        '/auth/reset-password', 
+        '/auth/check-mail',
+        '/auth/code-verification'
+      ];
+      
+      return skipRoutes.some(route => {
+        if (route === '/') {
+          return pathname === '/';
+        }
+        return pathname.startsWith(route);
+      });
+    };
+
+    // Only initialize auth if needed
+    if (!state.isInitialized) {
+      const pathname = window.location.pathname || '/';
+      const isProtected = !shouldSkipAuthInit();
+      console.log('🔐 JWTContext: Auth not initialized, checking route...', {
+        pathname,
+        shouldSkip: !isProtected
+      });
+
+      if (isProtected) {
+        // Immediate redirect to login to avoid being stuck on protected page while BE returns 401
+        console.log('🔐 JWTContext: Protected route detected, redirecting to /login first...');
+        dispatch({ type: LOGOUT });
+        const ts = Date.now();
+        const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}&ts=${ts}`;
+        try {
+          window.location.replace(loginUrl);
+        } catch {
+          window.location.assign(loginUrl);
+        }
+      } else {
+        console.log('🔐 JWTContext: Public route detected, skipping auth init');
         dispatch({ type: LOGOUT });
       }
     }
-    // Also re-run when browser back/forward occurs
-    const onPopState = () => {
-      const nowApps = getIsAppsPath();
-      if (nowApps && (!state.isLoggedIn || state.user == null)) {
+
+    // Listen for route changes and conditionally initialize auth
+    const handleRouteChange = () => {
+      // If we're now on a protected route and auth is not properly initialized
+      if (!shouldSkipAuthInit() && (!state.isLoggedIn || state.user == null)) {
         void initAuth();
       }
     };
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
+
+    // Listen for browser navigation (back/forward)
+    window.addEventListener('popstate', handleRouteChange);
+    return () => window.removeEventListener('popstate', handleRouteChange);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -162,13 +260,38 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
 
   const updateProfile = () => {};
 
-  const isAppsPathRender = getIsAppsPath();
-  if (isAppsPathRender && state.isInitialized !== undefined && !state.isInitialized) {
-    return <Loader />;
-  }
-
   return (
-    <JWTContext.Provider value={{ ...state, login, googleLogin, logout, register, resetPassword, updateProfile }}>
+    <JWTContext.Provider
+      value={{
+        ...state,
+        login,
+        googleLogin,
+        logout,
+        register,
+        resetPassword,
+        // Rehydrate method used on login pages to auto-continue if session exists
+        rehydrate: async (): Promise<boolean> => {
+          try {
+            const me = await authAPI.getCurrentUser();
+            if (me?.success) {
+              if (typeof me.exp === 'number') setAccessExpiry(me.exp);
+              dispatch({
+                type: LOGIN,
+                payload: {
+                  isLoggedIn: true,
+                  user: me.data
+                }
+              });
+              return true;
+            }
+            return false;
+          } catch {
+            return false;
+          }
+        },
+        updateProfile
+      }}
+    >
       {children}
     </JWTContext.Provider>
   );

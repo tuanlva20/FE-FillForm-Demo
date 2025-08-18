@@ -47,17 +47,12 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
     event.preventDefault();
   };
 
-  // Use hardcoded credentials when not in development mode
-  // const BYPASS_AUTH = import.meta.env.VITE_APP_IS_DEVELOPER === 'true';
-  const initialEmail = 'dienform@gmail.com';
-  const initialPassword = '123456';
-
   return (
     <>
       <Formik
         initialValues={{
-          email: initialEmail,
-          password: initialPassword,
+          email: "",
+          password: "",
           submit: null
         }}
         validationSchema={Yup.object().shape({

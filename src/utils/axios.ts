@@ -1,6 +1,6 @@
 import { openSnackbar } from 'api/snackbar';
 import axios, { AxiosRequestConfig } from 'axios';
-import { ensureFreshToken } from './authToken';
+import { clearTokens, ensureFreshToken } from './authToken';
 
 // Create axios instance with cookie-based auth and CSRF protection
 const axiosServices = axios.create({
@@ -16,6 +16,9 @@ axiosServices.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 const BYPASS_AUTH = false; // Set to true to bypass authentication for all requests
 const BYPASS_ENDPOINTS: string[] = []; // Add endpoints to bypass here, e.g., ['/api/users']
 const MOCK_RESPONSES: { [key: string]: any } = {}; // Add mock responses here, e.g., {'/api/users': [{id: 1, name: 'Mock User'}]}
+
+// Prevent multiple redirects storm on repeated 401s
+let isRedirectingToLogin = false;
 
 // ==============================|| AXIOS INTERCEPTORS ||============================== //
 
@@ -58,8 +61,27 @@ axiosServices.interceptors.response.use(
           alert: { color: 'error' }
         } as any);
       } catch {}
-      if (!window.location.pathname.includes('/auth/login')) {
-        window.location.pathname = '/auth/login';
+      // Luôn redirect về /login nếu đang ở route cần authenticate (kể cả khi fail /me hoặc /refresh)
+      const currentPath = window.location.pathname || '/';
+      const PUBLIC_ROUTES = [
+        '/', '/login', '/register', '/forgot-password', '/reset-password',
+        '/check-mail', '/code-verification',
+        '/auth/login', '/auth/register', '/auth/forgot-password',
+        '/auth/reset-password', '/auth/check-mail', '/auth/code-verification',
+        '/maintenance', '/404', '/500'
+      ];
+      const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? currentPath === '/' : currentPath.startsWith(r)));
+
+      if (!isPublic && !isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        try { clearTokens(); } catch {}
+
+        // Bypass cache và tránh loop
+        const redirectPath = currentPath !== '/' ? currentPath : '/dashboard/default';
+        const ts = Date.now();
+        const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
+        setTimeout(() => window.location.replace(loginUrl), 0);
+        return Promise.reject(error);
       }
     }
     return Promise.reject((error.response && error.response.data) || 'Wrong Services');
