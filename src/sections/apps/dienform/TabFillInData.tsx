@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -53,6 +53,8 @@ import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
 
 export default function TabFillInData() {
+  // Ref for scrolling to top
+  const topRef = useRef<HTMLDivElement>(null);
   
   // States for API interactions
   const [loading, setLoading] = useState<boolean>(false);
@@ -132,6 +134,16 @@ export default function TabFillInData() {
 
   // Realtime updates for fill requests of selected form
   useFillRequestRealtime(selectedFormId, setSelectedForm);
+
+  // Helper: scroll to top of component
+  const scrollToTop = () => {
+    if (topRef.current) {
+      topRef.current.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+    }
+  };
   
   // Helper: build alert from data-mapping error (check)
   const buildAlertForCheckDataError = (err: any): { title: string; description: string } => {
@@ -196,6 +208,7 @@ export default function TabFillInData() {
       const msg = 'Vui lòng chọn form và nhập link sheet';
       setError(msg);
       setErrorAlert({ title: 'Thiếu thông tin', description: msg });
+      setTimeout(() => scrollToTop(), 100);
       return;
     }
     
@@ -206,6 +219,7 @@ export default function TabFillInData() {
       const msg = 'Link Google Sheet không hợp lệ. Vui lòng nhập link Google Sheets (không phải Google Forms). Ví dụ: https://docs.google.com/spreadsheets/d/1ABC123.../edit';
       setError(msg);
       setErrorAlert({ title: 'Link Google Sheet không hợp lệ', description: msg });
+      setTimeout(() => scrollToTop(), 100);
       return;
     }
     
@@ -290,6 +304,7 @@ export default function TabFillInData() {
       const msg = handleDataMappingError(err, 'check');
       setError(msg);
       setErrorAlert(buildAlertForCheckDataError(err));
+      setTimeout(() => scrollToTop(), 100);
     } finally {
       setIsCheckingData(false);
     }
@@ -374,6 +389,11 @@ export default function TabFillInData() {
       setErrorAlert(errorDetails);
       setErrorSnackMessage(errorDetails.description);
       setErrorSnackOpen(true);
+      
+      // Scroll to top to show error alert
+      setTimeout(() => {
+        scrollToTop();
+      }, 100);
     } finally {
       setLoading(false);
     }
@@ -392,6 +412,7 @@ export default function TabFillInData() {
       setErrorAlert({ title: 'Thiếu thông tin', description: msg });
       setErrorSnackMessage(msg);
       setErrorSnackOpen(true);
+      setTimeout(() => scrollToTop(), 100);
       return;
     }
     setIsAutoFillModalOpen(true);
@@ -447,7 +468,7 @@ export default function TabFillInData() {
   };
 
   return (
-    <Grid container spacing={GRID_COMMON_SPACING}>
+    <Grid container spacing={GRID_COMMON_SPACING} ref={topRef}>
       {/* Form and Sheet Link Inputs */}
       <Grid size={12}>
         <MainCard title="Điền theo data có trước" sx={MAINCARD_STYLE}>
