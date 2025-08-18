@@ -143,7 +143,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
 
               <Grid sx={{ mt: -1 }} size={12}>
                 <Stack direction="row" sx={{ gap: 2, justifyContent: 'space-between', alignItems: 'center' }}>
-                  <FormControlLabel
+                  {/* <FormControlLabel
                     control={
                       <Checkbox
                         checked={checked}
@@ -154,11 +154,11 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
                       />
                     }
                     label={<Typography variant="h6">Duy trì đăng nhập</Typography>}
-                  />
+                  /> */}
 
-                  <Link variant="h6" component={RouterLink} to={isLoggedIn && forgot ? forgot : '/forgot-password'} color="text.primary">
+                  {/* <Link variant="h6" component={RouterLink} to={isLoggedIn && forgot ? forgot : '/forgot-password'} color="text.primary">
                     Quên mật khẩu?
-                  </Link>
+                  </Link> */}
                 </Stack>
               </Grid>
               {errors.submit && (

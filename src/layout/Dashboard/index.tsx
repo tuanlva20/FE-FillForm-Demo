@@ -10,7 +10,6 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 // project-imports
 import { handlerDrawerOpen, useGetMenuMaster } from 'api/menu';
 import Breadcrumbs from 'components/@extended/Breadcrumbs';
-import AuthDebugger from 'components/AuthDebugger';
 import Loader from 'components/Loader';
 import { DRAWER_WIDTH, MenuOrientation, MINI_DRAWER_WIDTH } from 'config';
 import useConfig from 'hooks/useConfig';
@@ -82,8 +81,6 @@ export default function MainLayout() {
             </Container>
           </Box>
 
-          {/* Auth debugger for development */}
-          {import.meta.env.DEV && <AuthDebugger />}
         </Box>
       )}
     </AuthGuard>
