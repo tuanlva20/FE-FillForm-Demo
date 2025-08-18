@@ -1,14 +1,19 @@
 import { MouseEvent, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 // material-ui
 import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import IconButton, { IconButtonProps } from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
+import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import { styled } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
 
 // project-imports
 import { useGetMenuMaster } from 'api/menu';
@@ -16,9 +21,8 @@ import Avatar from 'components/@extended/Avatar';
 import useAuth from 'hooks/useAuth';
 
 // assets
-import { Tooltip } from '@mui/material';
 import avatar1 from 'assets/images/users/avatar-6.png';
-import { Logout, More } from 'iconsax-react';
+import { Logout, More, Profile, Setting2 } from 'iconsax-react';
 
 interface ExpandMoreProps extends IconButtonProps {
   expand: boolean;
@@ -62,8 +66,8 @@ export default function UserList() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
 
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
+  const handleClick = (event: MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget as HTMLElement);
   };
   const handleClose = () => {
     setAnchorEl(null);
@@ -90,23 +94,16 @@ export default function UserList() {
               <ExpandMore
                 expand={open}
                 drawerOpen={drawerOpen}
-                id="basic-button"
-                aria-controls={open ? 'basic-menu' : undefined}
+                id="user-menu-button"
+                aria-controls={open ? 'user-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
                 onClick={handleClick}
-                aria-label="show more"
-                sx={{ display: 'none' }} // Hide the expand button, we'll use menu icon instead
+                aria-label="more options"
               >
                 <More />
               </ExpandMore>
-            ) : (
-              <Tooltip title="Đăng xuất">
-                <IconButton size="small" color="error" sx={{ p: 0.5 }} onClick={handleLogout}>
-                  <Logout variant="Bulk" size={20} />
-                </IconButton>
-              </Tooltip>
-            )
+            ) : undefined
           }
           sx={{
             ...(!drawerOpen && { 
@@ -121,6 +118,7 @@ export default function UserList() {
               transform: !drawerOpen ? 'none' : 'translateY(-50%)'
             }
           }}
+          onClick={!drawerOpen ? handleClick : undefined}
         >
           <ListItemAvatar sx={{ minWidth: !drawerOpen ? 'auto' : 56 }}>
             <Avatar
@@ -141,34 +139,51 @@ export default function UserList() {
                 secondary={user?.role || 'User'}
                 sx={{ ml: 1 }}
               />
-              <Tooltip title="Đăng xuất">
-                <IconButton size="large" color="error" sx={{ ml: 0.5, p: 1 }} onClick={handleLogout}>
-                  <Logout variant="Bulk" size={20} />
-                </IconButton>
-              </Tooltip>
             </>
           )}
         </ListItem>
       </List>
-      
-      {/* {drawerOpen && (
-        <Menu
-          id="basic-menu"
-          anchorEl={anchorEl}
-          open={open}
-          onClose={handleClose}
-          MenuListProps={{ 'aria-labelledby': 'basic-button' }}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+
+      <Menu
+        id="user-menu"
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        MenuListProps={{ 'aria-labelledby': 'user-menu-button' }}
+      >
+        <Box sx={{ px: 1.5, py: 1 }}>
+          <Typography variant="subtitle1">{user?.name || 'User'}</Typography>
+          <Typography variant="caption" color="text.secondary">{user?.role || 'User'}</Typography>
+        </Box>
+        <Divider />
+        {/* <MenuItem component={Link} to="/apps/profiles/user/personal" onClick={handleClose}>
+          <ListItemIcon>
+            <Profile size={18} />
+          </ListItemIcon>
+          Hồ sơ
+        </MenuItem>
+        <MenuItem component={Link} to="/apps/profiles/account/my-account" onClick={handleClose}>
+          <ListItemIcon>
+            <Setting2 size={18} />
+          </ListItemIcon>
+          Tài khoản của tôi
+        </MenuItem> */}
+        {/* <Divider /> */}
+        <MenuItem
+          onClick={() => {
+            handleClose();
+            void handleLogout();
+          }}
+          sx={{ color: 'error.main' }}
         >
-          <MenuItem component={Link} to="/apps/profiles/user/personal" onClick={handleClose}>
-            Hồ sơ
-          </MenuItem>
-          <MenuItem component={Link} to="/apps/profiles/account/my-account" onClick={handleClose}>
-            Tài khoản của tôi
-          </MenuItem>
-        </Menu>
-      )} */}
+          <ListItemIcon>
+            <Logout size={18} color="currentColor" />
+          </ListItemIcon>
+          Đăng xuất
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }
