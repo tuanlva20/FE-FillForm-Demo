@@ -26,6 +26,7 @@ import { TablePagination as ReactTablePagination } from 'components/third-party/
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleFormError, testErrorStructure } from 'utils/errorHandler';
+import { deduplicateAnswerDistributions, validateTextQuestionDistributions } from 'utils/formUtils';
 import AILoadingDialog from './components/AILoadingDialog';
 import AISuggestionModal from './components/AISuggestionModal';
 import AutoFillFormModal from './components/AutoFillFormModal';
@@ -38,13 +39,13 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-  AnswerDistribution,
-  createFillRequest,
-  FillRequestDTO,
-  FormData,
-  FormDetailResponse,
-  getFormDetail,
-  getFormList
+    AnswerDistribution,
+    createFillRequest,
+    FillRequestDTO,
+    FormData,
+    FormDetailResponse,
+    getFormDetail,
+    getFormList
 } from 'api/form';
 
 // iconsax-react
@@ -738,21 +739,25 @@ export default function TabFillExpectedRatio() {
                   .split('\n')
                   .map((l) => l.trim())
                   .filter((l) => l.length > 0);
-                if (lines.length > 0) {
-                  const per = percentage / lines.length;
-                  lines.forEach((line, index) => {
-                  const payload: any = {
-                    questionId,
-                    optionId,
-                    percentage: per,
-                    valueString: line,
-                    positionIndex: index
-                  };
+                
+                // Remove duplicates from lines to prevent duplicate entries
+                const uniqueLines = Array.from(new Set(lines));
+                
+                if (uniqueLines.length > 0) {
+                  const per = percentage / uniqueLines.length;
+                  uniqueLines.forEach((line, index) => {
+                    const payload: any = {
+                      questionId,
+                      optionId,
+                      percentage: per,
+                      valueString: line,
+                      positionIndex: index
+                    };
                     answerDistributions.push(payload);
                   });
                 } else {
                   // No user-provided lines; let BE generate a text for the total percentage
-                const payload: any = { questionId, optionId, percentage };
+                  const payload: any = { questionId, optionId, percentage };
                   answerDistributions.push(payload);
                 }
               } else {
@@ -765,69 +770,7 @@ export default function TabFillExpectedRatio() {
         }
       });
       
-      // Add text questions with their custom data
-      selectedForm.questions.forEach(question => {
-        if (question.type === 'text') {
-          const customDataEntry = customData.get(question.id);
-          
-          if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
-            const lines = customDataEntry.data
-              .split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0);
-            
-            // For email fields, validate each line is a valid email
-            if (question.title.toLowerCase().includes('email')) {
-              const invalidEmails = lines.filter(line => !emailRegex.test(line));
-              
-              if (invalidEmails.length > 0) {
-                validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
-              }
-            }
-            
-            // Create a separate entry for each line
-            lines.forEach((line, index) => {
-              const payload: any = {
-                questionId: question.id,
-                optionId: null,
-                percentage: 100 / lines.length,
-                valueString: line,
-                positionIndex: index
-              };
-              answerDistributions.push(payload);
-            });
-          }
-          // Không thêm answer distribution nếu không có custom data
-        } else if (question.type === 'date') {
-          const dateInputEntry = dateInputs.get(question.id);
-          
-          if (dateInputEntry && dateInputEntry.useCustomData && dateInputEntry.data.trim()) {
-            const lines = dateInputEntry.data
-              .split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0);
-            
-            // Validate date format
-            const invalidDates = lines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
-            if (invalidDates.length > 0) {
-              validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
-            }
-            
-            // Create a separate entry for each date
-            lines.forEach((line, index) => {
-              const payload: any = {
-                questionId: question.id,
-                optionId: null,
-                percentage: 100 / lines.length,
-                valueString: line,
-                positionIndex: index
-              };
-              answerDistributions.push(payload);
-            });
-          }
-          // Không thêm answer distribution nếu không có custom data
-        }
-      });
+
       
       // Trong handleCreateFillRequest, bổ sung logic cho grid
       selectedForm.questions.forEach(question => {
@@ -896,32 +839,43 @@ export default function TabFillExpectedRatio() {
               .split('\n')
               .map(line => line.trim())
               .filter(line => line.length > 0);
+            
+            // Remove duplicates from lines to prevent duplicate entries
+            const uniqueLines = Array.from(new Set(lines));
+            
             // For email fields, validate each line is a valid email
             if (question.title.toLowerCase().includes('email')) {
-              const invalidEmails = lines.filter(line => !emailRegex.test(line));
+              const invalidEmails = uniqueLines.filter(line => !emailRegex.test(line));
               if (invalidEmails.length > 0) {
                 validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
               }
             }
-            // Create a separate entry for each line
-            lines.forEach((line, index) => {
+            
+            // Create a separate entry for each unique line with proper positionIndex
+            uniqueLines.forEach((line, index) => {
               const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length,
+                percentage: 100 / uniqueLines.length,
                 valueString: line,
                 positionIndex: index
               };
               answerDistributions.push(payload);
             });
           } else {
-            // Default entry with no valueString
-            const payload: any = {
-              questionId: question.id,
-              optionId: null,
-              percentage: 0
-            };
-            answerDistributions.push(payload);
+            // Default entry with no valueString - only add if no text entries exist for this question
+            const hasTextEntries = answerDistributions.some(dist => 
+              dist.questionId === question.id && dist.optionId === null && dist.valueString
+            );
+            
+            if (!hasTextEntries) {
+              const payload: any = {
+                questionId: question.id,
+                optionId: null,
+                percentage: 0
+              };
+              answerDistributions.push(payload);
+            }
           }
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);
@@ -930,29 +884,41 @@ export default function TabFillExpectedRatio() {
               .split('\n')
               .map(line => line.trim())
               .filter(line => line.length > 0);
+            
+            // Remove duplicates from lines to prevent duplicate entries
+            const uniqueLines = Array.from(new Set(lines));
+            
             // Validate date format
-            const invalidDates = lines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
+            const invalidDates = uniqueLines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
             if (invalidDates.length > 0) {
               validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
             }
-            // Create a separate entry for each date
-            lines.forEach(line => {
+            
+            // Create a separate entry for each unique date
+            uniqueLines.forEach((line, index) => {
               const payload: any = {
                 questionId: question.id,
                 optionId: null,
-                percentage: 100 / lines.length,
-                valueString: line
+                percentage: 100 / uniqueLines.length,
+                valueString: line,
+                positionIndex: index
               };
               answerDistributions.push(payload);
             });
           } else {
-            // Default entry with no valueString
-            const payload: any = {
-              questionId: question.id,
-              optionId: null,
-              percentage: 0
-            };
-            answerDistributions.push(payload);
+            // Default entry with no valueString - only add if no date entries exist for this question
+            const hasDateEntries = answerDistributions.some(dist => 
+              dist.questionId === question.id && dist.optionId === null && dist.valueString
+            );
+            
+            if (!hasDateEntries) {
+              const payload: any = {
+                questionId: question.id,
+                optionId: null,
+                percentage: 0
+              };
+              answerDistributions.push(payload);
+            }
           }
         }
       });
@@ -963,12 +929,33 @@ export default function TabFillExpectedRatio() {
         return;
       }
       
+      // Deduplicate and validate answer distributions to prevent duplicate text questions
+      const cleanedAnswerDistributions = validateTextQuestionDistributions(answerDistributions);
+      const finalAnswerDistributions = deduplicateAnswerDistributions(cleanedAnswerDistributions);
+      
+      console.log('🔍 Deduplicate Debug Info:');
+      console.log('Original answerDistributions count:', answerDistributions.length);
+      console.log('Cleaned answerDistributions count:', cleanedAnswerDistributions.length);
+      console.log('Final answerDistributions count:', finalAnswerDistributions.length);
+      
+      // Log details about text questions to help debug
+      const textQuestions = answerDistributions.filter(d => d.optionId === null && d.valueString);
+      const finalTextQuestions = finalAnswerDistributions.filter(d => d.optionId === null && d.valueString);
+      console.log('Text questions before deduplicate:', textQuestions.length);
+      console.log('Text questions after deduplicate:', finalTextQuestions.length);
+      
+      if (textQuestions.length !== finalTextQuestions.length) {
+        console.log('⚠️ Duplicates found and removed!');
+        console.log('Original text questions:', textQuestions);
+        console.log('Final text questions:', finalTextQuestions);
+      }
+      
       // Create request DTO
       const fillRequest: FillRequestDTO = {
         surveyCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
         isHumanLike: formValues.isHumanLike,
-        answerDistributions,
+        answerDistributions: finalAnswerDistributions,
         startDate: formValues.startDate?.toISOString(),
         endDate: formValues.endDate?.toISOString()
       };
