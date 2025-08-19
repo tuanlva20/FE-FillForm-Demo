@@ -52,7 +52,7 @@ export default function AISuggestionModal({
   formData,
   onSubmit
 }: AISuggestionModalProps) {
-  const [sampleCount, setSampleCount] = useState<number>(10);
+  const [sampleCount, setSampleCount] = useState<number>(2);
   const [requirements, setRequirements] = useState<AISuggestionRequest['requirements']>({
     distributionRequirements: []
   });

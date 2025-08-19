@@ -34,6 +34,7 @@ import ScheduleFormModal from './components/ScheduleFormModal';
 import ExpectedRatioFormList from './components/tabfillexpectedRatio/FormList';
 import CheckboxGridPercentInput from './components/tabfillexpectedRatio/elements/CheckboxGridPercentInput';
 import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/elements/MultipleChoiceGridPercentInput';
+import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGroup';
 
 // API
 import {
@@ -123,6 +124,10 @@ export default function TabFillExpectedRatio() {
   
   // State for AI data filling loading dialog
   const [isAiDataFillingLoading, setIsAiDataFillingLoading] = useState(false);
+  
+  // State for testing section feature
+  const [showSectionTest, setShowSectionTest] = useState(false);
+  const [showSimpleTest, setShowSimpleTest] = useState(false);
   
   // Pagination state
   const [pageIndex, setPageIndex] = useState<number>(0);
@@ -1224,6 +1229,247 @@ export default function TabFillExpectedRatio() {
     }
   };
   
+  // Function to render individual question
+  const renderQuestion = useCallback((question: any) => {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+          {question.title}
+        </Typography>
+        {question.type === 'text' ? (
+          <>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={customData.get(question.id)?.useCustomData || false} 
+                  onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
+                />
+              }
+              label="Điền theo data của bạn"
+            />
+            {customData.get(question.id)?.useCustomData && (
+              <DebouncedMultilineTextField
+                value={customData.get(question.id)?.data || ''}
+                onChange={(v) => handleCustomDataChange(question.id, v)}
+                rows={4}
+                placeholder="Nhập dữ liệu của bạn"
+                sx={{ mt: 2 }}
+                debounceMs={150}
+              />
+            )}
+          </>
+        ) : question.type === 'date' ? (
+          <>
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={dateInputs.get(question.id)?.useCustomData || false} 
+                  onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+                />
+              }
+              label="Điền theo data của bạn"
+            />
+            {dateInputs.get(question.id)?.useCustomData && (
+              <DebouncedMultilineTextField
+                value={dateInputs.get(question.id)?.data || ''}
+                onChange={(v) => handleDateInputChange(question.id, v)}
+                rows={4}
+                placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
+                sx={{ mt: 2 }}
+                helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
+                debounceMs={150}
+              />
+            )}
+          </>
+        ) : question.type === 'multiple_choice_grid' ? (
+          <MultipleChoiceGridPercentInput
+            question={{
+              ...question,
+              options: question.options.map((opt: any) => ({
+                ...opt,
+                title: opt.text ?? '',
+              })),
+            }}
+            value={(() => {
+              const grid = gridValues.get(question.id);
+              if (!grid) return {};
+              const obj: Record<string, Record<string, number>> = {};
+              grid.forEach((colMap, rowId) => {
+                obj[rowId] = {};
+                colMap.forEach((percent, colId) => {
+                  obj[rowId][colId] = percent;
+                });
+              });
+              return obj;
+            })()}
+            onChange={(value) => {
+              setIsEditing(true);
+              setGridValues(prev => {
+                const newMap = new Map(prev);
+                const rowMap = new Map<string, Map<string, number>>();
+                Object.entries(value).forEach(([rowId, colObj]) => {
+                  const colMap = new Map<string, number>();
+                  Object.entries(colObj).forEach(([optionId, percent]) => {
+                    colMap.set(optionId, percent);
+                  });
+                  rowMap.set(rowId, colMap);
+                });
+                newMap.set(question.id, rowMap);
+                return newMap;
+              });
+            }}
+          />
+        ) : question.type === 'checkbox_grid' ? (
+          <CheckboxGridPercentInput
+            question={{
+              ...question,
+              options: question.options.map((opt: any) => ({
+                ...opt,
+                title: opt.text ?? '',
+              })),
+            }}
+            value={(() => {
+              const grid = gridValues.get(question.id);
+              if (!grid) return {};
+              const obj: Record<string, Record<string, number>> = {};
+              grid.forEach((colMap, rowId) => {
+                obj[rowId] = {};
+                colMap.forEach((percent, colId) => {
+                  obj[rowId][colId] = percent;
+                });
+              });
+              return obj;
+            })()}
+            onChange={(value) => {
+              setIsEditing(true);
+              setGridValues(prev => {
+                const newMap = new Map(prev);
+                const rowMap = new Map<string, Map<string, number>>();
+                Object.entries(value).forEach(([rowId, colObj]) => {
+                  const colMap = new Map<string, number>();
+                  Object.entries(colObj).forEach(([optionId, percent]) => {
+                    colMap.set(optionId, percent);
+                  });
+                  rowMap.set(rowId, colMap);
+                });
+                newMap.set(question.id, rowMap);
+                return newMap;
+              });
+            }}
+          />
+        ) : (
+          <Grid container spacing={2}>
+            {question.options.map((option: any) => {
+              const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
+              const isOtherOption = option.value === '__other_option__';
+              const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+              const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+              const showOtherTextarea = isOtherOption && otherPercent > 0;
+              
+              return (
+                <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
+                  <Tooltip 
+                    title={option.text} 
+                    arrow 
+                    placement="top" 
+                    slotProps={{
+                      tooltip: {
+                        sx: {
+                          backgroundColor: 'gray',
+                          color: 'white'
+                        }
+                      }
+                    }}
+                  >
+                    <Typography 
+                      variant="body1" 
+                      sx={{ 
+                        mb: 1, 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        cursor: 'pointer',
+                        ...(isOtherOption && {
+                          fontStyle: 'italic',
+                          fontWeight: 600,
+                          ...(showOtherTextarea && {
+                            color: 'primary.main'
+                          })
+                        })
+                      }}
+                    >
+                      {option.text}
+                    </Typography>
+                  </Tooltip>
+                  <PercentInput
+                    value={percentage}
+                    onChange={(value) => handlePercentageChange(
+                      question.id, 
+                      option.id, 
+                      value
+                    )}
+                    error={balanceErrors.has(question.id)}
+                  />
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+        {/* Other option free text input */}
+        {(() => {
+          const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+          const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+          if (otherOpt && otherPercent > 0) {
+            return (
+              <Box sx={{ mt: 2, p: 2, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2, backgroundColor: 'primary.50' }}>
+                <Typography 
+                  variant="body1" 
+                  sx={{ 
+                    mb: 1, 
+                    fontWeight: 600, 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1
+                  }}
+                >
+                  ✏️ Dữ liệu cho đáp án "Khác"
+                </Typography>
+                <DebouncedMultilineTextField
+                  value={otherOptionInputs.get(question.id) || ''}
+                  onChange={(v) => handleOtherInputChange(question.id, v)}
+                  rows={3}
+                  placeholder="Nhập dữ liệu của bạn"
+                  sx={{ 
+                    '& .MuiOutlinedInput-root': {
+                      borderColor: 'primary.main',
+                      '&:hover': {
+                        borderColor: 'primary.dark'
+                      },
+                      '&.Mui-focused': {
+                        borderColor: 'primary.main'
+                      }
+                    }
+                  }}
+                  debounceMs={150}
+                />
+              </Box>
+            );
+          }
+          return null;
+        })()}
+        {balanceErrors.has(question.id) && question.type !== 'date' &&
+          question.type !== 'multiple_choice_grid' &&
+          question.type !== 'checkbox_grid' &&
+          question.type !== 'text' && (
+          <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
+            {balanceErrors.get(question.id)}
+          </Alert>
+                 )}
+       </Box>
+    );
+  }, [customData, dateInputs, gridValues, questionOptions, otherOptionInputs, balanceErrors, handleCustomDataToggle, handleCustomDataChange, handleDateInputToggle, handleDateInputChange, handlePercentageChange, handleOtherInputChange]);
+  
   // Check if there are any balance errors
   const hasBalanceErrors = balanceErrors.size > 0;
   
@@ -1319,244 +1565,12 @@ export default function TabFillExpectedRatio() {
                   </Alert>
                 )}
                 
-                {selectedForm.questions.map((question) => (
-                  <Box key={question.id} sx={{ mb: 4 }}>
-                    <Typography variant="h5" sx={{ mb: 2 }}>
-                      {question.title}
-                    </Typography>
-                    {question.type === 'text' ? (
-                      <>
-                        <FormControlLabel
-                          control={
-                            <Switch 
-                              checked={customData.get(question.id)?.useCustomData || false} 
-                              onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
-                            />
-                          }
-                          label="Điền theo data của bạn"
-                        />
-                        {customData.get(question.id)?.useCustomData && (
-                          <DebouncedMultilineTextField
-                            value={customData.get(question.id)?.data || ''}
-                            onChange={(v) => handleCustomDataChange(question.id, v)}
-                            rows={4}
-                            placeholder="Nhập dữ liệu của bạn"
-                            sx={{ mt: 2 }}
-                            debounceMs={150}
-                          />
-                        )}
-                      </>
-                    ) : question.type === 'date' ? (
-                      <>
-                        <FormControlLabel
-                          control={
-                            <Switch 
-                              checked={dateInputs.get(question.id)?.useCustomData || false} 
-                              onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
-                            />
-                          }
-                          label="Điền theo data của bạn"
-                        />
-                        {dateInputs.get(question.id)?.useCustomData && (
-                          <DebouncedMultilineTextField
-                            value={dateInputs.get(question.id)?.data || ''}
-                            onChange={(v) => handleDateInputChange(question.id, v)}
-                            rows={4}
-                            placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
-                            sx={{ mt: 2 }}
-                            helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
-                            debounceMs={150}
-                          />
-                        )}
-                      </>
-                    ) : question.type === 'multiple_choice_grid' ? (
-                      <MultipleChoiceGridPercentInput
-                        question={{
-                          ...question,
-                          options: question.options.map(opt => ({
-                            ...opt,
-                            title: opt.text ?? '',
-                          })),
-                        }}
-                        value={(() => {
-                          const grid = gridValues.get(question.id);
-                          if (!grid) return {};
-                          const obj: Record<string, Record<string, number>> = {};
-                          grid.forEach((colMap, rowId) => {
-                            obj[rowId] = {};
-                            colMap.forEach((percent, colId) => {
-                              obj[rowId][colId] = percent;
-                            });
-                          });
-                          return obj;
-                        })()}
-                        onChange={(value) => {
-                          setIsEditing(true);
-                          setGridValues(prev => {
-                            const newMap = new Map(prev);
-                            const rowMap = new Map<string, Map<string, number>>();
-                            Object.entries(value).forEach(([rowId, colObj]) => {
-                              const colMap = new Map<string, number>();
-                              Object.entries(colObj).forEach(([optionId, percent]) => {
-                                colMap.set(optionId, percent);
-                              });
-                              rowMap.set(rowId, colMap);
-                            });
-                            newMap.set(question.id, rowMap);
-                            return newMap;
-                          });
-                        }}
-                      />
-                    ) : question.type === 'checkbox_grid' ? (
-                      <CheckboxGridPercentInput
-                        question={{
-                          ...question,
-                          options: question.options.map(opt => ({
-                            ...opt,
-                            title: opt.text ?? '',
-                          })),
-                        }}
-                        value={(() => {
-                          const grid = gridValues.get(question.id);
-                          if (!grid) return {};
-                          const obj: Record<string, Record<string, number>> = {};
-                          grid.forEach((colMap, rowId) => {
-                            obj[rowId] = {};
-                            colMap.forEach((percent, colId) => {
-                              obj[rowId][colId] = percent;
-                            });
-                          });
-                          return obj;
-                        })()}
-                        onChange={(value) => {
-                          setIsEditing(true);
-                          setGridValues(prev => {
-                            const newMap = new Map(prev);
-                            const rowMap = new Map<string, Map<string, number>>();
-                            Object.entries(value).forEach(([rowId, colObj]) => {
-                              const colMap = new Map<string, number>();
-                              Object.entries(colObj).forEach(([optionId, percent]) => {
-                                colMap.set(optionId, percent);
-                              });
-                              rowMap.set(rowId, colMap);
-                            });
-                            newMap.set(question.id, rowMap);
-                            return newMap;
-                          });
-                        }}
-                      />
-                    ) : (
-                      <Grid container spacing={2}>
-                        {question.options.map((option) => {
-                          const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
-                          const isOtherOption = option.value === '__other_option__';
-                          const otherOpt = question.options.find((opt) => opt.value === '__other_option__');
-                          const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
-                          const showOtherTextarea = isOtherOption && otherPercent > 0;
-                          
-                          return (
-                            <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
-                              <Tooltip 
-                                title={option.text} 
-                                arrow 
-                                placement="top" 
-                                slotProps={{
-                                  tooltip: {
-                                    sx: {
-                                      backgroundColor: 'gray',
-                                      color: 'white'
-                                    }
-                                  }
-                                }}
-                              >
-                                <Typography 
-                                  variant="body1" 
-                                  sx={{ 
-                                    mb: 1, 
-                                    whiteSpace: 'nowrap', 
-                                    overflow: 'hidden', 
-                                    textOverflow: 'ellipsis', 
-                                    cursor: 'pointer',
-                                    ...(isOtherOption && {
-                                      fontStyle: 'italic',
-                                      fontWeight: 600,
-                                      ...(showOtherTextarea && {
-                                        color: 'primary.main'
-                                      })
-                                    })
-                                  }}
-                                >
-                                  {option.text}
-                                </Typography>
-                              </Tooltip>
-                              <PercentInput
-                                value={percentage}
-                                onChange={(value) => handlePercentageChange(
-                                  question.id, 
-                                  option.id, 
-                                  value
-                                )}
-                                error={balanceErrors.has(question.id)}
-                              />
-                            </Grid>
-                          );
-                        })}
-                      </Grid>
-                    )}
-                    {/* Other option free text input */}
-                    {(() => {
-                      const otherOpt = question.options.find((opt) => opt.value === '__other_option__');
-                      const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
-                                              if (otherOpt && otherPercent > 0) {
-                          return (
-                            <Box sx={{ mt: 2, p: 2, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2, backgroundColor: 'primary.50' }}>
-                              <Typography 
-                                variant="body1" 
-                                sx={{ 
-                                  mb: 1, 
-                                  fontWeight: 600, 
-                                  color: 'primary.main',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 1
-                                }}
-                              >
-                                ✏️ Dữ liệu cho đáp án "Khác"
-                              </Typography>
-                              <DebouncedMultilineTextField
-                                value={otherOptionInputs.get(question.id) || ''}
-                                onChange={(v) => handleOtherInputChange(question.id, v)}
-                                rows={3}
-                                placeholder="Nhập dữ liệu của bạn"
-                                sx={{ 
-                                  '& .MuiOutlinedInput-root': {
-                                    borderColor: 'primary.main',
-                                    '&:hover': {
-                                      borderColor: 'primary.dark'
-                                    },
-                                    '&.Mui-focused': {
-                                      borderColor: 'primary.main'
-                                    }
-                                  }
-                                }}
-                                debounceMs={150}
-                              />
-                            </Box>
-                          );
-                        }
-                      return null;
-                    })()}
-                    {balanceErrors.has(question.id) && question.type !== 'date' &&
-                      question.type !== 'multiple_choice_grid' &&
-                      question.type !== 'checkbox_grid' &&
-                      question.type !== 'text' && (
-                      <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
-                        {balanceErrors.get(question.id)}
-                      </Alert>
-                    )}
-                    <Divider sx={{ mt: 3, mb: 1 }} />
-                  </Box>
-                ))}
+
+                
+                <QuestionGroup 
+                  questions={selectedForm.questions}
+                  renderQuestion={renderQuestion}
+                />
                 
                 <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
                   <Button 

@@ -31,6 +31,15 @@ export interface Option {
   position: number;
 }
 
+export interface SectionData {
+  liIndex: string;
+  section_index: string;
+  section_title: string;
+  containerXPath: string;
+  headingNormalized: string;
+  section_description: string;
+}
+
 export interface Question {
   id: string;
   title: string;
@@ -39,6 +48,9 @@ export interface Question {
   required: boolean;
   position: number;
   options: Option[];
+  additionalData?: {
+    sectionData?: SectionData;
+  };
 }
 
 export interface FormStatistic {
