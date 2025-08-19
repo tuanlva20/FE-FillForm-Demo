@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // project-imports
+import Loader from 'components/Loader';
 import useAuth from 'hooks/useAuth';
 
 // types
@@ -84,8 +85,8 @@ export default function AuthGuard({ children }: GuardProps) {
   // Always allow public routes
   if (isPublicRoute) return children;
 
-  // On protected routes: block content until auth is initialized
-  if (!isInitialized) return null;
+  // On protected routes: show loader until auth is initialized to avoid blank page
+  if (!isInitialized) return <Loader />;
 
   // If initialized but not logged in, block content while navigation happens in effect
   if (!isLoggedIn) return null;

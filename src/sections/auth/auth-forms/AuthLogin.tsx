@@ -1,19 +1,15 @@
 import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { } from 'react-router-dom';
 
 // material-ui
 import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid2';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
-import Link from '@mui/material/Link';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 
 // third-party
 import { Formik } from 'formik';
@@ -23,6 +19,7 @@ import * as Yup from 'yup';
 import AnimateButton from 'components/@extended/AnimateButton';
 import IconButton from 'components/@extended/IconButton';
 import useAuth from 'hooks/useAuth';
+import useRedirectAfterLogin from 'hooks/useRedirectAfterLogin';
 import useScriptRef from 'hooks/useScriptRef';
 
 // assets
@@ -35,8 +32,8 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
 
   const { isLoggedIn, login } = useAuth();
   const scriptedRef = useScriptRef();
-  const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { handleRedirectAfterLogin } = useRedirectAfterLogin();
 
   const [showPassword, setShowPassword] = useState(false);
   const handleClickShowPassword = () => {
@@ -69,7 +66,7 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               setStatus({ success: true });
               setSubmitting(false);
               enqueueSnackbar('Đăng nhập thành công!', { variant: 'success' });
-              navigate('/dashboard/default');
+              handleRedirectAfterLogin();
             }
           } catch (err: any) {
             console.error(err);

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 // material-ui
 import CardMedia from '@mui/material/CardMedia';
@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 
 // project-imports
 import useAuth from 'hooks/useAuth';
+import useRedirectAfterLogin from 'hooks/useRedirectAfterLogin';
 import AuthLogin from 'sections/auth/auth-forms/AuthLogin';
 import AuthDivider from 'sections/auth/AuthDivider';
 import AuthSocButton from 'sections/auth/AuthSocButton';
@@ -21,7 +22,7 @@ import imgFacebook from 'assets/images/auth/facebook.svg';
 
 export default function Login() {
   const { isLoggedIn } = useAuth();
-  const navigate = useNavigate();
+  const { handleRedirectAfterLogin } = useRedirectAfterLogin();
 
   return (
     <AuthWrapper>
@@ -42,7 +43,7 @@ export default function Login() {
               </AuthSocButton>
             </Grid> */}
             <Grid size={12}>
-              <GoogleOAuthButton mode="login" onSuccess={() => navigate('/dashboard/default')} />
+              <GoogleOAuthButton mode="login" onSuccess={handleRedirectAfterLogin} />
             </Grid>
           </Grid>
         </Grid>
