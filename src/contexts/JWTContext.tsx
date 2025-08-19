@@ -147,16 +147,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
       });
 
       if (isProtected) {
-        // Immediate redirect to login to avoid being stuck on protected page while BE returns 401
-        console.log('🔐 JWTContext: Protected route detected, redirecting to /login first...');
-        dispatch({ type: LOGOUT });
-        const ts = Date.now();
-        const loginUrl = `/login?redirect=${encodeURIComponent(pathname)}&ts=${ts}`;
-        try {
-          window.location.replace(loginUrl);
-        } catch {
-          window.location.assign(loginUrl);
-        }
+        // Try to initialize auth first on protected routes to preserve current URL for logged-in users
+        void initAuth();
       } else {
         console.log('🔐 JWTContext: Public route detected, skipping auth init');
         dispatch({ type: LOGOUT });
