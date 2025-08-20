@@ -17,6 +17,7 @@ import LinkInput from 'components/form/LinkInput';
 import MainCard from 'components/MainCard';
 import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleApiError } from 'utils/errorHandler';
+import HuongDanMaHoa from './HuongDanMaHoa';
 
 // Main entry for Mã hóa Data section
 export default function MaHoaDataPage() {
@@ -205,6 +206,11 @@ export default function MaHoaDataPage() {
                   placeholder="https://docs.google.com/spreadsheets/d/.../edit"
               />
             </Stack>
+            </Grid>
+
+            {/* Hướng dẫn mã hóa */}
+            <Grid item xs={12}>
+              <HuongDanMaHoa />
             </Grid>
 
             {/* Row 3: Action */}
