@@ -11,6 +11,12 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
   
   console.log('SectionHeader - sectionData:', sectionData);
 
+  // Display index is +1 from backend-provided section_index (only for UI)
+  const displaySectionIndex = (() => {
+    const n = Number.parseInt(String(sectionData.section_index), 10);
+    return Number.isFinite(n) ? n + 1 : sectionData.section_index;
+  })();
+
   return (
     <Box
       sx={{
@@ -37,7 +43,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
       <Stack spacing={2}>
         <Stack direction="row" alignItems="center" spacing={2}>
           <Chip
-            label={`Phần ${sectionData.section_index}`}
+            label={`Phần ${displaySectionIndex}`}
             size="medium"
             color="primary"
             variant="filled"

@@ -54,7 +54,9 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
       
       // Only trigger onChange if value actually changed
       if (lastValueRef.current !== newValue) {
+        console.log('🔍 DebouncedMultilineTextField: Setting timer for new value:', newValue, 'length:', newValue.length);
         timerRef.current = window.setTimeout(() => {
+          console.log('🔍 DebouncedMultilineTextField: Timer fired, calling onChange with:', newValue);
           lastValueRef.current = newValue;
           onChangeRef.current(newValue);
           setIsTyping(false);
@@ -80,7 +82,9 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
       setIsTyping(false);
       // Ensure final value is synced immediately on blur
       const finalValue = e.target.value;
+      console.log('🔍 DebouncedMultilineTextField: Blur event, finalValue:', finalValue, 'length:', finalValue.length);
       if (lastValueRef.current !== finalValue) {
+        console.log('🔍 DebouncedMultilineTextField: Syncing final value on blur:', finalValue);
         lastValueRef.current = finalValue;
         onChangeRef.current(finalValue);
       }

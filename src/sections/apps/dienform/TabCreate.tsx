@@ -46,10 +46,46 @@ export default function TabCreate() {
   const [loading, setLoading] = useState(false);
   const [refreshList, setRefreshList] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [linkError, setLinkError] = useState<string | null>(null);
+
+  // Validate Google Form link
+  const validateGoogleFormLink = (link: string): boolean => {
+    if (!link.trim()) return true; // Allow empty for initial state
+    
+    try {
+      const url = new URL(link);
+      const isGoogleForms = url.hostname === 'docs.google.com' && url.pathname.includes('/forms/');
+      const isViewForm = url.pathname.includes('/viewform') || url.searchParams.has('usp');
+      
+      return isGoogleForms && isViewForm;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleFormLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setFormLink(value);
+    
+    // Clear previous errors
+    setError(null);
+    
+    // Validate link format
+    if (value.trim() && !validateGoogleFormLink(value)) {
+      setLinkError('Link không hợp lệ. Vui lòng sử dụng link trả lời của Google Form (dạng /viewform)');
+    } else {
+      setLinkError(null);
+    }
+  };
 
   const handleCreateForm = async () => {
     if (!formLink) {
       setError('Vui lòng điền link trả lời của form');
+      return;
+    }
+
+    if (!validateGoogleFormLink(formLink)) {
+      setError('Link không hợp lệ. Vui lòng sử dụng link trả lời của Google Form (dạng /viewform)');
       return;
     }
 
@@ -65,6 +101,7 @@ export default function TabCreate() {
       // Reset form fields after successful submission
       setFormName('');
       setFormLink('');
+      setLinkError(null);
       
       // Trigger refresh for form list
       setRefreshList(prev => !prev);
@@ -118,12 +155,13 @@ export default function TabCreate() {
                   id="link-edit-form" 
                   placeholder="Điền link trả lời của form (hướng dẫn bên dưới)..." 
                   value={formLink}
-                  onChange={(e) => setFormLink(e.target.value)}
-                  error={!!error && !formLink}
+                  onChange={handleFormLinkChange}
+                  error={!!linkError || (!!error && !formLink)}
+                  helperText={linkError}
                 />
               </Stack>
             </Grid>
-            {error && (
+            {error && !linkError && (
               <Grid size={{ xs: 24, sm: 24 }}>
                 <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 1 }}>
                   {error}
@@ -136,7 +174,7 @@ export default function TabCreate() {
                   variant="contained" 
                   color="primary" 
                   onClick={handleCreateForm}
-                  disabled={loading}
+                  disabled={loading || !!linkError}
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
                 >
                   {loading ? 'Đang tạo...' : 'Tạo Form'}

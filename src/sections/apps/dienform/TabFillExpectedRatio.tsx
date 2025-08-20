@@ -39,19 +39,19 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  AnswerDistribution,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getFormDetail,
+  getFormList
 } from 'api/form';
 
 // iconsax-react
-import { AISuggestionIcon, ErrorIcon } from 'assets/images/svg/icon';
+import { AISuggestionIcon, ErrorIcon, FormIcon } from 'assets/images/svg/icon';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
-import { InfoCircle } from 'iconsax-react';
+import { InfoCircle, Refresh } from 'iconsax-react';
 
 // types
 import { AISuggestionRequest } from 'types/ai-suggestion';
@@ -649,7 +649,7 @@ export default function TabFillExpectedRatio() {
     });
   }, []);
   
-  // Handle cancel
+  // Handle reset form
   const handleCancel = () => {
     // Reset form to original state
     if (selectedFormId) {
@@ -704,6 +704,17 @@ export default function TabFillExpectedRatio() {
     }
   };
   
+  // Force sync all textarea values before submitting
+  const forceSyncTextareas = () => {
+    console.log('🔍 Force syncing all textareas...');
+    // Trigger blur events on all textareas to ensure they sync their values
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+      textarea.dispatchEvent(new Event('blur', { bubbles: true }));
+    });
+    console.log('🔍 Force sync completed');
+  };
+
   // Handle creating fill request
   const handleCreateFillRequest = async (formValues: {
     submissionCount: number;
@@ -714,12 +725,22 @@ export default function TabFillExpectedRatio() {
   }) => {
     if (!selectedFormId || !selectedForm) return;
     
+    // Force sync all textareas before processing
+    forceSyncTextareas();
+    
     // Email validation regex
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     
     try {
       // Prepare answer distributions
       const answerDistributions: AnswerDistribution[] = [];
+      
+      // Debug: Log otherOptionInputs state
+      console.log('🔍 otherOptionInputs state at API call:', otherOptionInputs);
+      console.log('🔍 otherOptionInputs size:', otherOptionInputs.size);
+      otherOptionInputs.forEach((value, key) => {
+        console.log('🔍 otherOptionInputs entry:', key, 'value:', value, 'length:', value.length);
+      });
       
       // Track validation errors
       let validationErrors: string[] = [];
@@ -929,7 +950,9 @@ export default function TabFillExpectedRatio() {
         return;
       }
       
-      // Deduplicate and validate answer distributions to prevent duplicate text questions
+      // Deduplicate answer distributions to prevent duplicates
+      // Note: validateTextQuestionDistributions only affects text questions (optionId === null)
+      // Other options (like "other" option) are handled by deduplicateAnswerDistributions
       const cleanedAnswerDistributions = validateTextQuestionDistributions(answerDistributions);
       const finalAnswerDistributions = deduplicateAnswerDistributions(cleanedAnswerDistributions);
       
@@ -944,10 +967,22 @@ export default function TabFillExpectedRatio() {
       console.log('Text questions before deduplicate:', textQuestions.length);
       console.log('Text questions after deduplicate:', finalTextQuestions.length);
       
+      // Log details about "other" options to help debug
+      const otherOptions = answerDistributions.filter(d => d.optionId && d.valueString);
+      const finalOtherOptions = finalAnswerDistributions.filter(d => d.optionId && d.valueString);
+      console.log('Other options before deduplicate:', otherOptions.length);
+      console.log('Other options after deduplicate:', finalOtherOptions.length);
+      
       if (textQuestions.length !== finalTextQuestions.length) {
-        console.log('⚠️ Duplicates found and removed!');
+        console.log('⚠️ Text duplicates found and removed!');
         console.log('Original text questions:', textQuestions);
         console.log('Final text questions:', finalTextQuestions);
+      }
+      
+      if (otherOptions.length !== finalOtherOptions.length) {
+        console.log('⚠️ Other option duplicates found and removed!');
+        console.log('Original other options:', otherOptions);
+        console.log('Final other options:', finalOtherOptions);
       }
       
       // Create request DTO
@@ -1016,10 +1051,9 @@ export default function TabFillExpectedRatio() {
 
   // Handle AI gợi ý
   const handleAiSuggest = () => {
-    // 🎯 Ẩn validation errors khi mở AI modal
+    // Giữ nguyên trạng thái validate; chỉ ẩn snackbar thông báo nếu đang mở
     setError(null);
     setErrorSnackOpen(false);
-    setBalanceErrors(new Map());
     
     setIsAISuggestionModalOpen(true);
   };
@@ -1563,10 +1597,12 @@ export default function TabFillExpectedRatio() {
                   <Button 
                     variant="outlined" 
                     color="secondary"
+                    startIcon={<Refresh size={20} />}
                     onClick={handleCancel}
                     disabled={!isEditing || isAiLoading}
+                    sx={{ minWidth: 140, fontWeight: 600 }}
                   >
-                    Hủy
+                    Reset Form
                   </Button>
                   <Button
                     variant="contained"
@@ -1581,8 +1617,10 @@ export default function TabFillExpectedRatio() {
                   <Button
                     variant="contained"
                     color="primary"
+                    startIcon={<FormIcon />}
                     onClick={handleOpenAutoFillModal}
                     disabled={loading || selectedForm == null || balanceErrors.size > 0 || hasGridErrors || isAiLoading}
+                    sx={{ minWidth: 200, fontWeight: 600 }}
                   >
                     Tạo yêu cầu điền Form
                   </Button>

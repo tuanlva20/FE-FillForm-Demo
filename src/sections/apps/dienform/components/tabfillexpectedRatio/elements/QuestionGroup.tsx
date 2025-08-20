@@ -31,18 +31,17 @@ function normalizeSectionData(rawAdditionalData: unknown): SectionData | undefin
 
   if (!candidate) return undefined;
 
-  const hasSectionFields =
-    typeof candidate.section_index !== 'undefined' ||
-    typeof candidate.section_title !== 'undefined' ||
-    typeof candidate.liIndex !== 'undefined';
+  // REQUIRE explicit section_index to consider this a section.
+  // If section_index is missing, treat the question as non-section to avoid showing "Phần 1" incorrectly.
+  if (typeof candidate.section_index === 'undefined' || candidate.section_index === null) {
+    return undefined;
+  }
 
-  if (!hasSectionFields) return undefined;
+  const sectionIndex = String(candidate.section_index ?? '').trim();
+  if (!sectionIndex) return undefined;
 
-  const sectionIndex = String(candidate.section_index ?? candidate.liIndex ?? '');
   const sectionTitle = String(candidate.section_title ?? candidate.headingNormalized ?? '').trim();
   const sectionDescription = String(candidate.section_description ?? '').trim();
-
-  if (!sectionIndex && !sectionTitle) return undefined;
 
   const normalized: SectionData = {
     liIndex: String(candidate.liIndex ?? ''),
@@ -62,7 +61,7 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
     const sectionData = normalizeSectionData((question as any).additionalData);
 
     if (sectionData) {
-      const key = sectionData.section_index || sectionData.liIndex || '99999';
+      const key = sectionData.section_index;
       // Skip section with index 0
       if (key === '0' || key === '0') {
         acc.noSectionQuestions.push(question);
@@ -93,7 +92,8 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
     <Stack spacing={4}>
       {/* Non-section questions FIRST, keep original UI (no extra wrapper) */}
       {groupedQuestions.noSectionQuestions.length > 0 && (
-        <Stack spacing={4}>
+        // Tighter spacing for questions without section header
+        <Stack spacing={0}>
           {groupedQuestions.noSectionQuestions.map((question) => (
             <Box key={question.id}>{renderQuestion(question)}</Box>
           ))}

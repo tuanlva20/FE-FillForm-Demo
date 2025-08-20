@@ -44,10 +44,10 @@ import {
 } from 'api/form';
 
 // assets
-import { ErrorIcon } from 'assets/images/svg/icon';
+import { ErrorIcon, FormIcon } from 'assets/images/svg/icon';
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
-import { ArrowRight2, Clock, Data, InfoCircle, Warning2 } from 'iconsax-react';
+import { ArrowRight2, Data, InfoCircle, Warning2 } from 'iconsax-react';
 import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
 
 // ==============================|| DIENFORM - FILL IN DATA ||============================== //
@@ -691,7 +691,7 @@ export default function TabFillInData() {
                 <Button
                   variant="contained"
                   color="primary"
-                  startIcon={<Clock />}
+                  startIcon={<Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FormIcon /></Box>}
                   onClick={handleOpenAutoFillModal}
                   disabled={loading}
                 >
