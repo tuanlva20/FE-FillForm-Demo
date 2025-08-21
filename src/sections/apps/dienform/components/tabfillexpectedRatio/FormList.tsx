@@ -23,7 +23,7 @@ import MainCard from 'components/MainCard';
 
 // assets
 import StatusChip from 'components/StatusChip';
-import { Clock, CloseCircle, Eye, SearchNormal1 } from 'iconsax-react';
+import { Clock, Eye, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
@@ -96,16 +96,9 @@ export default function ExpectedRatioFormList({
   
   const getStatusChip = (status: string) => <StatusChip status={status} />;
 
-  const getScheduleIcon = (isScheduled: boolean) => {
-    if (isScheduled) {
-      return (
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <Clock variant="Bold" size={18} color="#4096ff" />
-          <CloseCircle size={16} color="#ff4d4f" />
-        </Stack>
-      );
-    }
-    return <Clock size={18} color="#d9d9d9" />;
+  const getScheduleIcon = (isHumanLike: boolean | undefined) => {
+    const color = isHumanLike ? '#ff4d4f' : '#d9d9d9';
+    return <Clock size={18} color={color} />;
   };
 
   // Calculate progress based on completed and total surveys
@@ -175,7 +168,7 @@ export default function ExpectedRatioFormList({
             <TableRow>
               <TableCell align="center">No.</TableCell>
               <TableCell align="center">Tên Form</TableCell>
-              {/* <TableCell align="center">Hẹn giờ điền</TableCell> */}
+              <TableCell align="center">Hẹn giờ điền</TableCell>
               <TableCell align="center">Ngày tạo</TableCell>
               <TableCell align="center">Ngày bắt đầu</TableCell>
               <TableCell align="center">Ngày kết thúc</TableCell>
@@ -190,14 +183,16 @@ export default function ExpectedRatioFormList({
                 <TableRow hover key={request.id || index}>
                   <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>{formName}</TableCell>
-                  {/* <TableCell align="center">
-                    <IconButton 
-                      color="primary" 
-                      onClick={() => request.id && onSchedule(request.id)}
-                    >
-                      {getScheduleIcon(request.scheduledTime !== undefined && request.scheduledTime !== null)}
-                    </IconButton>
-                  </TableCell> */}
+                  <TableCell align="center">
+                    <Tooltip title="Hẹn giờ điền">
+                      <IconButton 
+                        color="primary" 
+                        // onClick={() => onSchedule(request.id || '')}
+                      >
+                        {getScheduleIcon((request as any).isHumanLike ?? (request as any).humanLike)}
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
                   <TableCell align="center">{formatCreatedDate(request.createdAt || '')}</TableCell>
                   <TableCell align="center">{formatDate(request.startDate || '')}</TableCell>
                   <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
@@ -220,7 +215,7 @@ export default function ExpectedRatioFormList({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchText ? 'Không tìm thấy yêu cầu điền nào phù hợp' : 'Chưa có yêu cầu điền nào cho form này'}
                   </Typography>

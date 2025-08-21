@@ -1,11 +1,10 @@
 // project utils and constants
-import { formatFullDateTime } from 'utils/DateUtil';
+import { formatDate, formatFullDateTime } from 'utils/DateUtil';
 
 // material-ui
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -21,7 +20,7 @@ import MainCard from 'components/MainCard';
 
 // assets
 import StatusChip from 'components/StatusChip';
-import { Clock, CloseCircle, Eye, SearchNormal1 } from 'iconsax-react';
+import { Clock, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
@@ -78,16 +77,9 @@ export default function FillRequestList({
   
   const getStatusChip = (status: string) => <StatusChip status={status} />;
 
-  const getScheduleIcon = (isScheduled: boolean) => {
-    if (isScheduled) {
-      return (
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <Clock variant="Bold" size={18} color="#4096ff" />
-          <CloseCircle size={16} color="#ff4d4f" />
-        </Stack>
-      );
-    }
-    return <Clock size={18} color="#d9d9d9" />;
+  const getScheduleIcon = (isHumanLike: boolean | undefined) => {
+    const color = isHumanLike ? '#ff4d4f' : '#d9d9d9';
+    return <Clock size={18} color={color} />;
   };
 
   // Calculate progress based on completed surveys
@@ -97,8 +89,8 @@ export default function FillRequestList({
     return `${completed}/${total}`;
   };
 
-  // Format date string from ISO format
-  const formatDate = (dateString: string | null) => {
+  // Format createdAt as full datetime (same as Expected Ratio tab)
+  const formatDateTime = (dateString: string | null) => {
     if (!dateString) return '';
     return formatFullDateTime(dateString, '');
   };
@@ -149,17 +141,19 @@ export default function FillRequestList({
             <TableRow>
               <TableCell align="center">No.</TableCell>
               <TableCell align="center">Yêu cầu</TableCell>
-              {/* <TableCell align="center">Hẹn giờ điền</TableCell> */}
+              <TableCell align="center">Hẹn giờ điền</TableCell>
               <TableCell align="center">Ngày tạo</TableCell>
+              <TableCell align="center">Ngày bắt đầu</TableCell>
+              <TableCell align="center">Ngày kết thúc</TableCell>
               <TableCell align="center">Số lượng</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
-              <TableCell align="center">Hành động</TableCell>
+              {/* <TableCell align="center">Hành động</TableCell> */}
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography variant="body1" color="textSecondary">
                     Đang tải...
                   </Typography>
@@ -170,18 +164,22 @@ export default function FillRequestList({
                 <TableRow hover key={request.id}>
                   <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>Yêu cầu điền form #{request.id?.slice(-6) || 'N/A'}</TableCell>
-                  {/* <TableCell align="center">
-                    <IconButton 
-                      color="primary" 
-                      onClick={() => handleSchedule(request.id || '')}
-                    >
-                      {getScheduleIcon(!!request.scheduledTime)}
-                    </IconButton>
-                  </TableCell> */}
-                  <TableCell align="center">{formatDate(request.createdAt || null)}</TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Hẹn giờ điền">
+                      <IconButton 
+                        color="primary" 
+                        // onClick={() => handleSchedule(request.id || '')}
+                      >
+                        {getScheduleIcon(request.isHumanLike ?? (request as any).humanLike)}
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell align="center">{formatDateTime(request.createdAt || null)}</TableCell>
+                  <TableCell align="center">{formatDate(request.startDate || '')}</TableCell>
+                  <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
                   <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
-                  <TableCell align="center">
+                  {/* <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
                       <Tooltip title="Xem chi tiết">
                         <IconButton 
@@ -193,12 +191,12 @@ export default function FillRequestList({
                         </IconButton>
                       </Tooltip>
                     </Stack>
-                  </TableCell>
+                  </TableCell> */}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} align="center">
+                <TableCell colSpan={8} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchQuery ? 'Không tìm thấy yêu cầu nào phù hợp' : 'Chưa có yêu cầu điền form nào'}
                   </Typography>

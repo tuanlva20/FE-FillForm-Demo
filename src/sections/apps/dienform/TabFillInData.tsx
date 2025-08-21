@@ -27,6 +27,7 @@ import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import PaymentModal from './components/PaymentModal';
+import ScheduleFormModal from './components/ScheduleFormModal';
 import FillRequestList from './components/tabfillindata/FillRequestList';
 import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping';
 
@@ -67,6 +68,8 @@ export default function TabFillInData() {
   // State for payment modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState<boolean>(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
+  const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
   
   // State for form inputs
   const [formLink, setFormLink] = useState<string>('');
@@ -85,6 +88,26 @@ export default function TabFillInData() {
   // Snackbar for prominent error display
   const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
   const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
+
+  // Helpers: ensure start/end date payloads are local day markers (match ExpectedRatio behavior)
+  const toLocalDateStringAtStartOfDay = (date?: Date | null): string | undefined => {
+    if (!date) return undefined;
+    const local = new Date(date);
+    local.setHours(0, 0, 0, 0);
+    const y = local.getFullYear();
+    const m = String(local.getMonth() + 1).padStart(2, '0');
+    const d = String(local.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}T00:00:00`;
+  };
+  const toLocalDateStringAtEndOfDay = (date?: Date | null): string | undefined => {
+    if (!date) return undefined;
+    const local = new Date(date);
+    local.setHours(23, 59, 59, 999);
+    const y = local.getFullYear();
+    const m = String(local.getMonth() + 1).padStart(2, '0');
+    const d = String(local.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}T23:59:59`;
+  };
   
   // Load forms on component mount
   useEffect(() => {
@@ -352,8 +375,8 @@ export default function TabFillInData() {
         submissionCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
         isHumanLike: formValues.isHumanLike,
-        startDate: formValues.startDate?.toISOString(),
-        endDate: formValues.endDate?.toISOString()
+        startDate: toLocalDateStringAtStartOfDay(formValues.startDate),
+        endDate: toLocalDateStringAtEndOfDay(formValues.endDate || formValues.startDate)
       };
       
       await createDataFillRequest(request);
@@ -451,6 +474,12 @@ export default function TabFillInData() {
     rowPinning: { top: [], bottom: [] },
     grouping: []
   } as any);
+
+  // Enable schedule modal opening from list
+  const handleOpenScheduleModal = (requestId: string) => {
+    setSelectedDetailFormId(parseInt(requestId) || null);
+    setIsScheduleModalOpen(true);
+  };
 
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
@@ -717,6 +746,7 @@ export default function TabFillInData() {
             rowsPerPage={pageSize}
             onPageChange={handlePageChange}
             onRowsPerPageChange={handleRowsPerPageChange}
+            onSchedule={handleOpenScheduleModal}
           />
           
           <Divider />
@@ -745,6 +775,12 @@ export default function TabFillInData() {
         onClose={() => setIsAutoFillModalOpen(false)}
         formName={selectedForm?.name || 'Form điền từ data'}
         onSubmit={handleCreateFillRequest}
+      />
+
+      <ScheduleFormModal 
+        open={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        formId={selectedDetailFormId}
       />
 
       {/* Prominent error snackbar */}

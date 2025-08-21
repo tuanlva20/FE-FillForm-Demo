@@ -18,8 +18,18 @@ export const formatDate = (
   if (!dateString) return defaultValue;
 
   try {
-    // Parse ISO string to Date object
-    const date = parseISO(dateString);
+    // Handle date-only strings (yyyy-MM-dd) as LOCAL dates to avoid timezone shift to previous day
+    // Example: '2025-02-21' should render as 21/02/2025 in local time, not 20/02 due to UTC parsing
+    let date: Date;
+    const isDateOnly = /^\d{4}-\d{2}-\d{2}$/.test(dateString.trim());
+    if (isDateOnly) {
+      const [y, m, d] = dateString.split('-').map((v) => Number(v));
+      // Create local date at midnight
+      date = new Date(y, m - 1, d, 0, 0, 0, 0);
+    } else {
+      // Parse full ISO strings normally
+      date = parseISO(dateString);
+    }
     
     // Check if the date is valid
     if (!isValid(date)) return defaultValue;
