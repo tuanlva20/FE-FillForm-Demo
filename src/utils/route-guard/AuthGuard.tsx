@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 // project-imports
 import Loader from 'components/Loader';
@@ -85,11 +85,15 @@ export default function AuthGuard({ children }: GuardProps) {
   // Always allow public routes
   if (isPublicRoute) return children;
 
-  // On protected routes: show loader until auth is initialized to avoid blank page
-  if (!isInitialized) return <Loader />;
+  // If not logged in on a protected route, redirect immediately to login (no loading state)
+  if (!isLoggedIn) {
+    const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
+    const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;
+    return <Navigate to={loginUrl} state={{ from: pathname }} replace />;
+  }
 
-  // If initialized but not logged in, block content while navigation happens in effect
-  if (!isLoggedIn) return null;
+  // If logged in but auth context not yet fully initialized (rare), show loader briefly
+  if (!isInitialized) return <Loader />;
 
   return children;
 }
