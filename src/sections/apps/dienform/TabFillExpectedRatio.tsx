@@ -754,7 +754,9 @@ export default function TabFillExpectedRatio() {
           optionMap.forEach((percentage, optionId) => {
             if (percentage > 0) {
               const optMeta = question.options.find((o) => o.id === optionId);
-              if (optMeta && optMeta.value === '__other_option__') {
+              // Skip if option id does not belong to this question (avoid cross-form/cross-question ids)
+              if (!optMeta) return;
+              if (optMeta.value === '__other_option__') {
                 const raw = otherOptionInputs.get(questionId) || '';
                 const lines = raw
                   .split('\n')
@@ -1080,6 +1082,10 @@ export default function TabFillExpectedRatio() {
       }
 
       const { questionAnswerAttributes } = response.content;
+      // Guard: ensure AI response belongs to the currently selected form
+      if (response.content.formId && response.content.formId !== selectedForm.id) {
+        throw new Error('Dữ liệu AI trả về thuộc form khác. Vui lòng thử lại.');
+      }
 
       // Apply the AI suggestion results to the form states
       const newQuestionOptions = new Map(questionOptions);
@@ -1187,11 +1193,18 @@ export default function TabFillExpectedRatio() {
           optionDistributions.forEach((optDist: any) => {
             const { optionId, percentage, optionValue, sampleValues } = optDist;
             
-            // Set percentage for the option
+            // Only accept option IDs that exist in the current question of the selected form
+            const optionLookup = optionLookupByQuestion.get(questionId)!;
+            if (!optionLookup || !optionLookup.has(optionId)) {
+              return; // skip invalid/mismatched option ids
+            }
+
+            // Set percentage for the valid option
             optionMap.set(optionId, percentage);
             
-            // 🚀 Optimized "other" option check with optional chaining
-            if (optionValue === '__other_option__' && sampleValues?.length > 0) {
+            // Detect "other" option either by explicit optionValue or by lookup
+            const optMeta = optionLookup.get(optionId);
+            if ((optionValue === '__other_option__' || optMeta?.value === '__other_option__') && sampleValues?.length > 0) {
               otherOptionSamples = sampleValues;
             }
           });
