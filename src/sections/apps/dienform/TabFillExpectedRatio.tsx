@@ -1071,15 +1071,11 @@ export default function TabFillExpectedRatio() {
         throw new Error('Không có form được chọn');
       }
 
-      // Call the AI suggestion API with the new structure
-      const { getAnswerAttributesWithNewStructure } = await import('api/ai-suggestion');
-      const response = await getAnswerAttributesWithNewStructure(
-        selectedForm.id,
-        request.sampleCount,
-        request.requirements
-      );
-
-      if (response.status !== 'OK' || !response.content) {
+      // 🚀 FIX: Sử dụng response đã có sẵn từ AISuggestionModal thay vì gọi API lại
+      // Tránh gọi API trùng lặp - API đã được gọi trong AISuggestionModal
+      const response = request.answerAttributesResponse;
+      
+      if (!response || response.status !== 'OK' || !response.content) {
         throw new Error('Phản hồi không hợp lệ từ AI service');
       }
 
