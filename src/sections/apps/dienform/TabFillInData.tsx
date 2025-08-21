@@ -32,15 +32,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getFormDetail,
-    getFormList
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // assets
@@ -91,8 +91,8 @@ export default function TabFillInData() {
     const fetchForms = async () => {
       setLoading(true);
       try {
-        const response = await getFormList();
-        setForms(response.content);
+        const list = await getAllUserForms();
+        setForms(Array.isArray(list) ? list : []);
         
         // Don't select any form by default - user must choose
       } catch (err: any) {

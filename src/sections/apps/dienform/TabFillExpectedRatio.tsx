@@ -44,8 +44,8 @@ import {
   FillRequestDTO,
   FormData,
   FormDetailResponse,
-  getFormDetail,
-  getFormList
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // iconsax-react
@@ -183,8 +183,8 @@ export default function TabFillExpectedRatio() {
       setError(null);
       
       try {
-        const response = await getFormList();
-        setForms(response.content);
+        const list = await getAllUserForms();
+        setForms(Array.isArray(list) ? list : []);
       } catch (err: any) {
         console.error('Error fetching forms:', err);
         setError(handleFormError(err, 'fetch'));

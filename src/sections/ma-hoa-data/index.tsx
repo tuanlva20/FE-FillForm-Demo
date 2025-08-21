@@ -10,7 +10,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { getFormList } from 'api/form';
+import { getAllUserForms } from 'api/form';
 import { encryptAndDownload } from 'api/mahoa';
 import { ConvertToSthIcon, ErrorIcon, RefreshIcon } from 'assets/images/svg/icon';
 import LinkInput from 'components/form/LinkInput';
@@ -77,8 +77,8 @@ export default function MaHoaDataPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await getFormList();
-        setForms((res.content || []).map((f) => ({ id: f.id, name: f.name, editLink: f.editLink })));
+        const list = await getAllUserForms();
+        setForms((list || []).map((f) => ({ id: f.id, name: f.name, editLink: f.editLink })));
       } catch (err: any) {
         setErrorAlert({ title: 'Lỗi tải danh sách form', description: handleApiError(err, 'Không tải được danh sách form') });
       }

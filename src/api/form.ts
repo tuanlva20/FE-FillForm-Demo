@@ -139,6 +139,7 @@ export interface DataFillRequestDTO {
 // API endpoints
 export const API_ENDPOINTS = {
   FORM: '/api/form',
+  FORM_USER_ALL: '/api/form/user/all',
   DATA_MAPPING: '/api/data-mapping',
   DATA_FILL_REQUEST: '/api/fill-request/fill-in-data'
 };
@@ -153,6 +154,17 @@ export const getFormList = async (page: number | null = null, size: number | nul
   const params = { page, size };
   const response = await axiosServices.get(API_ENDPOINTS.FORM, { params });
   return response.data as FormListResponse;
+};
+
+// New API function to get all forms for current user (no pagination)
+export const getAllUserForms = async (): Promise<FormData[]> => {
+  const response = await axiosServices.get(API_ENDPOINTS.FORM_USER_ALL);
+  const payload = response.data as any;
+  // Support multiple shapes: array, {data: []}, or {content: []}
+  if (Array.isArray(payload)) return payload as FormData[];
+  if (Array.isArray(payload?.data)) return payload.data as FormData[];
+  if (Array.isArray(payload?.content)) return payload.content as FormData[];
+  return [] as FormData[];
 };
 
 export const getFormDetail = async (id: string) => {
