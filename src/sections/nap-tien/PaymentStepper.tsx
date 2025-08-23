@@ -1,13 +1,11 @@
 import { Box, Button, Paper, Step, StepLabel, Stepper } from '@mui/material';
 import { useState } from 'react';
 import AlertInfoBox from './components/AlertInfoBox';
-import BankTransferInfo from './components/BankTransferInfo';
-import PaymentMethodsTabs from './components/PaymentMethodsTabs';
+import PaymentTabs from './components/PaymentTabs';
 import SpecialNoticeBox from './components/SpecialNoticeBox';
 
 const steps = [
   'Chuyển khoản & QR',
-  'Phương thức thanh toán khác',
   'Lưu ý đặc biệt'
 ];
 
@@ -32,12 +30,11 @@ export default function PaymentStepper() {
           <>
             <AlertInfoBox />
             <Box mt={2}>
-              <BankTransferInfo />
+              <PaymentTabs />
             </Box>
           </>
         )}
-        {activeStep === 1 && <PaymentMethodsTabs />}
-        {activeStep === 2 && <SpecialNoticeBox />}
+        {activeStep === 1 && <SpecialNoticeBox />}
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'row', pt: 3 }}>
         <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>
