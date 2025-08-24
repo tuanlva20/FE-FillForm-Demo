@@ -39,7 +39,7 @@ export interface AISuggestionRequest {
   };
   answerAttributesResponse?: {
     status: string;
-    content: {
+    content?: {
       formId: string;
       formTitle: string;
       sampleCount: number;
@@ -61,6 +61,59 @@ export interface AISuggestionRequest {
       }>;
       generatedAt: string;
       requestId: string;
+    } | {
+      result: {
+        formId: string;
+        formTitle: string;
+        sampleCount: number;
+        questionAnswerAttributes: Array<{
+          questionId: string;
+          questionTitle: string;
+          questionType: string;
+          isRequired: boolean;
+          optionDistributions: Array<{
+            optionId: string;
+            optionText: string;
+            optionValue: string;
+            percentage: number;
+            sampleValues: string[];
+            description: string | null;
+          }>;
+          sampleAnswers: string[];
+          description: string | null;
+        }>;
+        generatedAt: string;
+        requestId: string;
+      };
+      createdAt: string;
+      queuedAt: string;
+      maxRetries: number;
+      queuePosition: number;
+      requestId: string;
+      retryCount: number;
+      errorMessage?: string;
+      priority: number;
+      processingStartedAt?: string;
+      processingCompletedAt?: string | null;
+      status: string;
+    } | {
+      requestId: string;
+      estimatedWaitTime: number;
+      message: string;
+      priority: number;
+      status: string;
+    } | {
+      createdAt: string;
+      queuedAt: string;
+      maxRetries: number;
+      queuePosition: number;
+      requestId: string;
+      retryCount: number;
+      errorMessage?: string;
+      priority: number;
+      processingStartedAt?: string;
+      processingCompletedAt?: string | null;
+      status: string;
     };
   };
 }

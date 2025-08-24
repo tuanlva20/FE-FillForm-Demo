@@ -473,7 +473,9 @@ export default function TabFillExpectedRatio() {
       }
       
       if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+        // Initialize with empty map - will be populated later
         newGridValues.set(question.id, new Map());
+        console.log(`Initialized empty grid for question ${question.id} (${question.type})`);
       }
     });
     
@@ -528,21 +530,59 @@ export default function TabFillExpectedRatio() {
         // For multiple choice grid questions, use option.value as keys
         const gridMap = new Map<string, Map<string, number>>();
         
+        console.log(`Processing multiple_choice_grid question ${questionId}:`, {
+          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          distributions: dists
+        });
+        
         dists.forEach(dist => {
           if (dist.rowId && dist.optionId) {
             // Find row and column option by ID
             const rowOption = question.options.find(opt => opt.id === dist.rowId);
             const colOption = question.options.find(opt => opt.id === dist.optionId);
             
+            console.log(`Processing distribution:`, {
+              dist,
+              rowOption: rowOption ? { id: rowOption.id, value: rowOption.value, text: rowOption.text } : null,
+              colOption: colOption ? { id: colOption.id, value: colOption.value, text: colOption.text } : null
+            });
+            
             if (rowOption && colOption) {
+              // MultipleChoiceGridPercentInput uses opt.value as keys
               const rowKey = rowOption.value; // Use value for multiple choice grid
               const colKey = colOption.value; // Use value for multiple choice grid
+              
+              console.log(`Setting grid value: rowKey=${rowKey}, colKey=${colKey}, percentage=${dist.percentage}`);
               
               if (!gridMap.has(rowKey)) {
                 gridMap.set(rowKey, new Map());
               }
               const colMap = gridMap.get(rowKey)!;
               colMap.set(colKey, dist.percentage);
+            } else {
+              console.warn(`Could not find options for distribution:`, dist);
+              // Try alternative approach - maybe the IDs are stored differently
+              console.log(`Available options for this question:`, question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })));
+              
+              // Alternative: try to find by value instead of id
+              const rowOptionByValue = question.options.find(opt => opt.value === dist.rowId);
+              const colOptionByValue = question.options.find(opt => opt.value === dist.optionId);
+              
+              if (rowOptionByValue && colOptionByValue) {
+                console.log(`Found options by value instead of id:`, {
+                  rowOption: { id: rowOptionByValue.id, value: rowOptionByValue.value, text: rowOptionByValue.text },
+                  colOption: { id: colOptionByValue.id, value: colOptionByValue.value, text: colOptionByValue.text }
+                });
+                
+                const rowKey = rowOptionByValue.value;
+                const colKey = colOptionByValue.value;
+                
+                if (!gridMap.has(rowKey)) {
+                  gridMap.set(rowKey, new Map());
+                }
+                const colMap = gridMap.get(rowKey)!;
+                colMap.set(colKey, dist.percentage);
+              }
             }
           }
         });
@@ -553,21 +593,39 @@ export default function TabFillExpectedRatio() {
         // For checkbox grid questions, use option.id as keys
         const gridMap = new Map<string, Map<string, number>>();
         
+        console.log(`Processing checkbox_grid question ${questionId}:`, {
+          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          distributions: dists
+        });
+        
         dists.forEach(dist => {
           if (dist.rowId && dist.optionId) {
             // Find row and column option by ID
             const rowOption = question.options.find(opt => opt.id === dist.rowId);
             const colOption = question.options.find(opt => opt.id === dist.optionId);
             
+            console.log(`Processing checkbox distribution:`, {
+              dist,
+              rowOption: rowOption ? { id: rowOption.id, value: rowOption.value, text: rowOption.text } : null,
+              colOption: colOption ? { id: colOption.id, value: colOption.value, text: colOption.text } : null
+            });
+            
             if (rowOption && colOption) {
+              // CheckboxGridPercentInput uses opt.id as keys
               const rowKey = rowOption.id; // Use id for checkbox grid
               const colKey = colOption.id; // Use id for checkbox grid
+              
+              console.log(`Setting checkbox grid value: rowKey=${rowKey}, colKey=${colKey}, percentage=${dist.percentage}`);
               
               if (!gridMap.has(rowKey)) {
                 gridMap.set(rowKey, new Map());
               }
               const colMap = gridMap.get(rowKey)!;
               colMap.set(colKey, dist.percentage);
+            } else {
+              console.warn(`Could not find options for checkbox distribution:`, dist);
+              // Try alternative approach - maybe the IDs are stored differently
+              console.log(`Available options for this checkbox question:`, question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })));
             }
           }
         });
@@ -576,14 +634,27 @@ export default function TabFillExpectedRatio() {
         newGridValues.set(questionId, gridMap);
       } else {
         // For regular multiple choice questions
+        console.log(`Processing regular question ${questionId} (${question.type}):`, {
+          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          distributions: dists
+        });
+        
         dists.forEach(dist => {
+          console.log(`Processing regular distribution:`, dist);
+          
           if (dist.optionId) {
             const questionMap = newQuestionOptions.get(questionId);
             if (questionMap) {
               const prev = questionMap.get(dist.optionId) || 0;
-              questionMap.set(dist.optionId, prev + dist.percentage);
+              const newValue = prev + dist.percentage;
+              questionMap.set(dist.optionId, newValue);
               newQuestionOptions.set(questionId, questionMap);
+              console.log(`Set option ${dist.optionId} to ${newValue}% for question ${questionId}`);
+            } else {
+              console.warn(`No question map found for question ${questionId}`);
             }
+          } else {
+            console.warn(`Distribution has no optionId:`, dist);
           }
         });
       }
@@ -593,6 +664,29 @@ export default function TabFillExpectedRatio() {
     console.log('Setting question options:', Array.from(newQuestionOptions.entries()));
     console.log('Setting custom data:', Array.from(newCustomData.entries()));
     console.log('Setting date inputs:', Array.from(newDateInputs.entries()));
+    
+    // Debug: Log the structure of selectedForm questions for grid types
+    selectedForm.questions.forEach(question => {
+      if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+        console.log(`Grid question ${question.id} (${question.type}):`, {
+          options: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text }))
+        });
+      }
+    });
+    
+    // Debug: Log final grid values before setting state
+    console.log('Final newGridValues before setState:', {
+      size: newGridValues.size,
+      entries: Array.from(newGridValues.entries()).map(([qId, gridMap]) => ({
+        questionId: qId,
+        gridSize: gridMap.size,
+        gridEntries: Array.from(gridMap.entries()).map(([rowKey, colMap]) => ({
+          rowKey,
+          colSize: colMap.size,
+          colEntries: Array.from(colMap.entries())
+        }))
+      }))
+    });
     
     setQuestionOptions(newQuestionOptions);
     setCustomData(newCustomData);
@@ -1081,9 +1175,21 @@ export default function TabFillExpectedRatio() {
         throw new Error('Phản hồi không hợp lệ từ AI service');
       }
 
-      const { questionAnswerAttributes } = response.content;
+      // Xử lý cấu trúc response với result nested
+      let aiContent = response.content;
+      if ('result' in response.content && response.content.result) {
+        // Nếu có result nested, sử dụng result
+        aiContent = response.content.result;
+      }
+
+      // Kiểm tra xem content có phải là AI response hay queue response
+      if (!('questionAnswerAttributes' in aiContent)) {
+        throw new Error('Response không chứa dữ liệu AI suggestion');
+      }
+
+      const { questionAnswerAttributes } = aiContent;
       // Guard: ensure AI response belongs to the currently selected form
-      if (response.content.formId && response.content.formId !== selectedForm.id) {
+      if (aiContent.formId && aiContent.formId !== selectedForm.id) {
         throw new Error('Dữ liệu AI trả về thuộc form khác. Vui lòng thử lại.');
       }
 
@@ -1322,7 +1428,10 @@ export default function TabFillExpectedRatio() {
             }}
             value={(() => {
               const grid = gridValues.get(question.id);
-              if (!grid) return {};
+              if (!grid) {
+                console.log(`No grid data found for multiple_choice_grid question ${question.id}`);
+                return {};
+              }
               const obj: Record<string, Record<string, number>> = {};
               grid.forEach((colMap, rowId) => {
                 obj[rowId] = {};
@@ -1330,6 +1439,7 @@ export default function TabFillExpectedRatio() {
                   obj[rowId][colId] = percent;
                 });
               });
+              console.log(`MultipleChoiceGrid value for question ${question.id}:`, obj);
               return obj;
             })()}
             onChange={(value) => {
@@ -1360,7 +1470,10 @@ export default function TabFillExpectedRatio() {
             }}
             value={(() => {
               const grid = gridValues.get(question.id);
-              if (!grid) return {};
+              if (!grid) {
+                console.log(`No grid data found for checkbox_grid question ${question.id}`);
+                return {};
+              }
               const obj: Record<string, Record<string, number>> = {};
               grid.forEach((colMap, rowId) => {
                 obj[rowId] = {};
@@ -1368,6 +1481,7 @@ export default function TabFillExpectedRatio() {
                   obj[rowId][colId] = percent;
                 });
               });
+              console.log(`CheckboxGrid value for question ${question.id}:`, obj);
               return obj;
             })()}
             onChange={(value) => {
@@ -1390,13 +1504,15 @@ export default function TabFillExpectedRatio() {
         ) : (
           <Grid container spacing={2}>
             {question.options.map((option: any) => {
-              const percentage = questionOptions.get(question.id)?.get(option.id) || 0;
-              const isOtherOption = option.value === '__other_option__';
-              const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
-              const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
-              const showOtherTextarea = isOtherOption && otherPercent > 0;
-              
-              return (
+              const questionMap = questionOptions.get(question.id);
+              const percentage = questionMap?.get(option.id) || 0;
+              console.log(`Rendering option ${option.id} for question ${question.id}: ${percentage}%`);
+                const isOtherOption = option.value === '__other_option__';
+                const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+                const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+                const showOtherTextarea = isOtherOption && otherPercent > 0;
+                
+                return (
                 <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
                   <Tooltip 
                     title={option.text} 

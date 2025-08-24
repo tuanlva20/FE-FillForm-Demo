@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useReducer } from 'react';
+import React, { createContext, useEffect, useReducer, useRef } from 'react';
 
 // reducer - state management
 import { LOGIN, LOGOUT } from 'contexts/auth-reducer/actions';
@@ -27,6 +27,7 @@ const JWTContext = createContext<JWTContextType | null>(null);
 
 export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
+  const hasInitializedAuth = useRef(false); // Thêm flag để track việc đã gọi getCurrentUser
 
   useEffect(() => {
     const initAuth = async () => {
@@ -41,9 +42,12 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
               user: response.data
             }
           });
+          hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo thành công
+          console.log('🔐 JWTContext: Auth initialized successfully, staying on current page');
         } else {
           dispatch({ type: LOGOUT });
-          // If we are on a protected route, force redirect to login (handles cases where guard hasn't mounted yet)
+          hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
+          // Chỉ redirect nếu đang ở protected route và không phải public route
           try {
             const pathname = window.location.pathname || '/';
             const PUBLIC_ROUTES = [
@@ -75,7 +79,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         }
       } catch (err) {
         dispatch({ type: LOGOUT });
-        // If we are on a protected route, force redirect to login (handles cases where guard hasn't mounted yet)
+        hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
+        // Chỉ redirect nếu đang ở protected route và không phải public route
         try {
           const pathname = window.location.pathname || '/';
           const PUBLIC_ROUTES = [
@@ -263,6 +268,12 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         resetPassword,
         // Rehydrate method used on login pages to auto-continue if session exists
         rehydrate: async (): Promise<boolean> => {
+          // Nếu đã khởi tạo auth rồi, không gọi lại API
+          if (hasInitializedAuth.current) {
+            console.log('🔐 JWTContext: Auth already initialized, skipping rehydrate');
+            return state.isLoggedIn;
+          }
+          
           try {
             const me = await authAPI.getCurrentUser();
             if (me?.success) {
@@ -274,10 +285,14 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
                   user: me.data
                 }
               });
+              hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo
+              console.log('🔐 JWTContext: Rehydrate successful');
               return true;
             }
+            hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
             return false;
           } catch {
+            hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
             return false;
           }
         },

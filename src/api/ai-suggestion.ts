@@ -2,9 +2,9 @@
 // Endpoint cho việc gọi AI service để tạo dữ liệu mẫu
 
 import {
-  AISuggestionRequest,
-  AISuggestionResponse,
-  AISuggestionValidationResponse
+    AISuggestionRequest,
+    AISuggestionResponse,
+    AISuggestionValidationResponse
 } from 'types/ai-suggestion';
 import axiosServices from 'utils/axios';
 
@@ -100,7 +100,7 @@ export const getAnswerAttributesWithNewStructure = async (
   requirements?: AISuggestionRequest['requirements']
 ): Promise<{
   status: string;
-  content: {
+  content?: {
     formId: string;
     formTitle: string;
     sampleCount: number;
@@ -122,13 +122,117 @@ export const getAnswerAttributesWithNewStructure = async (
     }>;
     generatedAt: string;
     requestId: string;
+  } | {
+    requestId: string;
+    estimatedWaitTime: number;
+    message: string;
+    priority: number;
+    status: string;
   };
+  requestId?: string;
+  message?: string;
+  estimatedWaitTime?: number;
+  priority?: number;
+  pageSize?: number | null;
+  pageNumber?: number | null;
+  totalPages?: number | null;
+  totalElements?: number | null;
 }> => {
   const response = await axiosServices.post(`${AI_SUGGESTION_ENDPOINT}/answer-attributes`, {
     formId,
     sampleCount,
     requirements
   });
+  return response.data;
+};
+
+/**
+ * Poll status của AI suggestion request
+ * @param requestId - ID của request từ queue
+ * @returns Promise với status và kết quả (nếu hoàn thành)
+ */
+export const pollAISuggestionStatus = async (requestId: string): Promise<{
+  status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'OK';
+  message?: string;
+  estimatedWaitTime?: number;
+  priority?: number;
+  content?: {
+    formId: string;
+    formTitle: string;
+    sampleCount: number;
+    questionAnswerAttributes: Array<{
+      questionId: string;
+      questionTitle: string;
+      questionType: string;
+      isRequired: boolean;
+      optionDistributions: Array<{
+        optionId: string;
+        optionText: string;
+        optionValue: string;
+        percentage: number;
+        sampleValues: string[];
+        description: string | null;
+      }>;
+      sampleAnswers: string[];
+      description: string | null;
+    }>;
+    generatedAt: string;
+    requestId: string;
+  } | {
+    result: {
+      formId: string;
+      formTitle: string;
+      sampleCount: number;
+      questionAnswerAttributes: Array<{
+        questionId: string;
+        questionTitle: string;
+        questionType: string;
+        isRequired: boolean;
+        optionDistributions: Array<{
+          optionId: string;
+          optionText: string;
+          optionValue: string;
+          percentage: number;
+          sampleValues: string[];
+          description: string | null;
+        }>;
+        sampleAnswers: string[];
+        description: string | null;
+      }>;
+      generatedAt: string;
+      requestId: string;
+    };
+    createdAt: string;
+    queuedAt: string;
+    maxRetries: number;
+    queuePosition: number;
+    requestId: string;
+    retryCount: number;
+    errorMessage?: string;
+    priority: number;
+    processingStartedAt?: string;
+    processingCompletedAt?: string | null;
+    status: string;
+  } | {
+    createdAt: string;
+    queuedAt: string;
+    maxRetries: number;
+    queuePosition: number;
+    requestId: string;
+    retryCount: number;
+    errorMessage?: string;
+    priority: number;
+    processingStartedAt?: string;
+    processingCompletedAt?: string | null;
+    status: string;
+  };
+  error?: string;
+  pageSize?: number | null;
+  pageNumber?: number | null;
+  totalPages?: number | null;
+  totalElements?: number | null;
+}> => {
+  const response = await axiosServices.get(`${AI_SUGGESTION_ENDPOINT}/status/${requestId}`);
   return response.data;
 };
 

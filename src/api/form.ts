@@ -98,6 +98,13 @@ export interface FillRequestDTO {
   humanLike?: boolean;
   startDate?: string;
   endDate?: string;
+  // Thêm các trường queue (optional để backward compatibility)
+  queuePosition?: number;
+  priority?: number;
+  estimatedWaitTime?: number;
+  queuedAt?: string;
+  retryCount?: number;
+  maxRetries?: number;
 }
 
 // New types for data filling functionality

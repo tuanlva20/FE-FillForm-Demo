@@ -35,7 +35,8 @@ import {
 } from '@mui/material';
 import { getAnswerAttributesWithNewStructure, validateAISuggestionRequest } from 'api/ai-suggestion';
 import { FormDetailResponse } from 'api/form';
-import { useMemo, useState } from 'react';
+import { useAISuggestionPolling } from 'hooks/useAISuggestionPolling';
+import { useEffect, useMemo, useState } from 'react';
 import { AISuggestionRequest } from 'types/ai-suggestion';
 import { validateDistributionPercentages } from 'utils/ai-error-handler';
 
@@ -74,6 +75,16 @@ export default function AISuggestionModal({
   // State để track các step của quá trình
   const [validationStep, setValidationStep] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
   const [processingStep, setProcessingStep] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  
+  // Hook để xử lý polling
+  const { pollingState, startPolling, stopPolling, resetPolling } = useAISuggestionPolling();
+
+  // Cleanup polling khi component unmount
+  useEffect(() => {
+    return () => {
+      stopPolling();
+    };
+  }, [stopPolling]);
 
   // Bỏ auto validation - chỉ validate khi user submit
 
@@ -116,9 +127,75 @@ export default function AISuggestionModal({
       
       console.log('Received answerAttributes response:', response);
       
-      // Kiểm tra response structure
-      if (response.status === 'OK' && response.content && response.content.questionAnswerAttributes) {
-        // Tạo request với response mới
+      // Kiểm tra response structure - có thể là ACCEPTED, QUEUED hoặc OK
+      if (response.status === 'ACCEPTED' || response.status === 'QUEUED') {
+        const requestId = response.content?.requestId || response.requestId;
+        if (!requestId) {
+          throw new Error('Request queued but no requestId received');
+        }
+        
+        // Trường hợp queue-based processing
+        console.log('Request accepted/queued, starting polling with requestId:', requestId);
+        
+        // Bắt đầu polling
+        startPolling(
+          requestId,
+          (result) => {
+            // Polling thành công
+            console.log('Polling completed successfully:', result);
+            
+            // Tạo request với response từ polling
+            const request: AISuggestionRequest = {
+              formId: formData.id,
+              sampleCount,
+              requirements,
+              formData: {
+                id: formData.id,
+                name: formData.name,
+                questions: formData.questions
+              },
+              answerAttributesResponse: {
+                status: 'OK',
+                content: result.content!
+              }
+            };
+            
+            console.log('Submitting request with polling result:', request);
+            
+            // Gọi onSubmit để xử lý tiếp
+            onSubmit(request);
+            
+            // Hiển thị thông báo thành công
+            setValidationResult({
+              isValid: true,
+              estimatedTokens: validationResult?.estimatedTokens || 0,
+              estimatedCost: validationResult?.estimatedCost
+            });
+            
+            // Đánh dấu step xử lý thành công
+            setProcessingStep('success');
+            
+            // Đóng modal sau khi hoàn thành
+            setTimeout(() => {
+              onClose();
+            }, 1500);
+          },
+          (error) => {
+            // Polling thất bại
+            console.error('Polling failed:', error);
+            setProcessingStep('error');
+            setValidationResult({
+              isValid: false,
+              estimatedTokens: 0,
+              error: `Lỗi khi xử lý AI: ${error}`
+            });
+          }
+        );
+        
+      } else if (response.status === 'OK' && response.content && 'questionAnswerAttributes' in response.content) {
+        // Trường hợp response trực tiếp (legacy)
+        console.log('Direct response received, no polling needed');
+        
         const request: AISuggestionRequest = {
           formId: formData.id,
           sampleCount,
@@ -128,10 +205,13 @@ export default function AISuggestionModal({
             name: formData.name,
             questions: formData.questions
           },
-          answerAttributesResponse: response // Thêm response mới vào request
+          answerAttributesResponse: {
+            status: response.status,
+            content: response.content as any
+          }
         };
         
-        console.log('Submitting request with new answerAttributes response:', request);
+        console.log('Submitting request with direct response:', request);
         
         // Gọi onSubmit để xử lý tiếp
         onSubmit(request);
@@ -154,14 +234,84 @@ export default function AISuggestionModal({
         throw new Error('Invalid response structure from API');
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error getting answerAttributes:', error);
-      setProcessingStep('error');
-      setValidationResult({
-        isValid: false,
-        estimatedTokens: 0,
-        error: 'Lỗi khi lấy thông tin câu trả lời'
-      });
+      
+      // Không hiển thị lỗi nếu response thành công nhưng có status QUEUED hoặc ACCEPTED
+      if (error.response?.status === 200 && (error.response?.data?.status === 'QUEUED' || error.response?.data?.status === 'ACCEPTED')) {
+        console.log('Request queued successfully, starting polling...');
+        
+        const requestId = error.response.data.content?.requestId;
+        if (requestId) {
+          startPolling(
+            requestId,
+            (result) => {
+              // Polling thành công
+              console.log('Polling completed successfully:', result);
+              
+              // Tạo request với response từ polling
+              const request: AISuggestionRequest = {
+                formId: formData.id,
+                sampleCount,
+                requirements,
+                formData: {
+                  id: formData.id,
+                  name: formData.name,
+                  questions: formData.questions
+                },
+                answerAttributesResponse: {
+                  status: 'OK',
+                  content: result.content!
+                }
+              };
+              
+              console.log('Submitting request with polling result:', request);
+              
+              // Gọi onSubmit để xử lý tiếp
+              onSubmit(request);
+              
+              // Hiển thị thông báo thành công
+              setValidationResult({
+                isValid: true,
+                estimatedTokens: validationResult?.estimatedTokens || 0,
+                estimatedCost: validationResult?.estimatedCost
+              });
+              
+              // Đánh dấu step xử lý thành công
+              setProcessingStep('success');
+              
+              // Đóng modal sau khi hoàn thành
+              setTimeout(() => {
+                onClose();
+              }, 1500);
+            },
+            (error) => {
+              // Polling thất bại
+              console.error('Polling failed:', error);
+              setProcessingStep('error');
+              setValidationResult({
+                isValid: false,
+                estimatedTokens: 0,
+                error: `Lỗi khi xử lý AI: ${error}`
+              });
+            }
+          );
+        } else {
+          setProcessingStep('error');
+          setValidationResult({
+            isValid: false,
+            estimatedTokens: 0,
+            error: 'Lỗi khi lấy thông tin câu trả lời'
+          });
+        }
+      } else {
+        setProcessingStep('error');
+        setValidationResult({
+          isValid: false,
+          estimatedTokens: 0,
+          error: 'Lỗi khi lấy thông tin câu trả lời'
+        });
+      }
     }
   };
 
@@ -818,7 +968,7 @@ export default function AISuggestionModal({
           )}
 
           {/* Step indicators - chỉ hiện khi bắt đầu quá trình */}
-          {(validationStep !== 'idle' || processingStep !== 'idle') && (
+          {(validationStep !== 'idle' || processingStep !== 'idle' || pollingState.isPolling) && (
             <Box sx={{ mt: 2 }}>
               {/* Step 1: Validation */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
@@ -847,9 +997,9 @@ export default function AISuggestionModal({
               </Box>
 
               {/* Step 2: Processing - chỉ hiện khi step 1 thành công */}
-              {(validationStep === 'success' || processingStep !== 'idle') && (
+              {(validationStep === 'success' || processingStep !== 'idle' || pollingState.isPolling) && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {processingStep === 'processing' && (
+                  {(processingStep === 'processing' || pollingState.isPolling) && (
                     <CircularProgress size={24} sx={{ color: '#673AB7' }} />
                   )}
                   {processingStep === 'success' && (
@@ -864,29 +1014,51 @@ export default function AISuggestionModal({
                   <Typography variant="body2" sx={{ 
                     color: processingStep === 'success' ? '#4CAF50' : 
                            processingStep === 'error' ? '#F44336' : 
-                           processingStep === 'processing' ? '#673AB7' : '#757575',
-                    fontWeight: processingStep === 'processing' || processingStep === 'success' ? 600 : 400
+                           (processingStep === 'processing' || pollingState.isPolling) ? '#673AB7' : '#757575',
+                    fontWeight: (processingStep === 'processing' || pollingState.isPolling) || processingStep === 'success' ? 600 : 400
                   }}>
-                    {processingStep === 'processing' && 'Đang xử lý câu trả lời cho toàn bộ form...'}
+                    {pollingState.isPolling && pollingState.status === 'QUEUED' && 'Đang chờ xử lý...'}
+                    {pollingState.isPolling && pollingState.status === 'PROCESSING' && 'AI đang phân tích dữ liệu form...'}
+                    {processingStep === 'processing' && !pollingState.isPolling && 'Đang xử lý câu trả lời cho toàn bộ form...'}
                     {processingStep === 'success' && 'Xử lý câu trả lời thành công'}
                     {processingStep === 'error' && 'Xử lý câu trả lời thất bại'}
                   </Typography>
+                  
+                  {/* Hiển thị progress bar nếu đang polling */}
+                  {pollingState.isPolling && pollingState.progress && (
+                    <Box sx={{ width: '100%', mt: 1 }}>
+                      <Box sx={{ 
+                        width: `${pollingState.progress}%`, 
+                        height: 4, 
+                        backgroundColor: '#673AB7', 
+                        borderRadius: 2,
+                        transition: 'width 0.3s ease'
+                      }} />
+                    </Box>
+                  )}
+                  
+                  {/* Hiển thị thông tin thời gian chờ */}
+                  {pollingState.isPolling && pollingState.estimatedWaitTime && (
+                    <Typography variant="caption" sx={{ color: '#757575', mt: 0.5 }}>
+                      Ước tính: {pollingState.estimatedWaitTime} giây
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>
           )}
 
           {/* Error message */}
-          {validationResult && !validationResult.isValid && (
+          {(validationResult && !validationResult.isValid) || (pollingState.status === 'FAILED' && pollingState.error) ? (
             <Alert severity="error" sx={{ mt: 2 }}>
               <Typography variant="body2">
-                {validationResult.error}
+                {pollingState.error || validationResult?.error}
               </Typography>
             </Alert>
-          )}
+          ) : null}
 
           {/* Success message */}
-          {validationResult && validationResult.isValid && processingStep === 'success' && (
+          {validationResult && validationResult.isValid && (processingStep === 'success' || pollingState.status === 'COMPLETED') && (
             <Alert severity="success" sx={{ mt: 2 }}>
               <Typography variant="h6">
                 Tạo dữ liệu mẫu thành công!
@@ -918,8 +1090,8 @@ export default function AISuggestionModal({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          startIcon={validationStep === 'validating' || processingStep === 'processing' ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
-          disabled={validationStep === 'validating' || processingStep === 'processing' || !isFormValid}
+          startIcon={validationStep === 'validating' || processingStep === 'processing' || pollingState.isPolling ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+          disabled={validationStep === 'validating' || processingStep === 'processing' || pollingState.isPolling || !isFormValid}
           sx={{
             backgroundColor: '#673AB7',
             '&:hover': {
@@ -932,7 +1104,7 @@ export default function AISuggestionModal({
           }}
         >
           {validationStep === 'validating' ? 'Đang kiểm tra...' : 
-           processingStep === 'processing' ? 'Đang xử lý...' : 
+           processingStep === 'processing' || pollingState.isPolling ? 'Đang xử lý...' : 
            'Tạo dữ liệu mẫu'}
         </Button>
       </DialogActions>

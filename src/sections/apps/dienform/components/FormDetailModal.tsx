@@ -47,11 +47,16 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
       case 'COMPLETED':
         return 'Hoàn thành';
       case 'IN_PROGRESS':
+      case 'IN_PROCESS':
         return 'Đang thực thi';
-      case 'PENDING':
-        return 'Chưa bắt đầu';
+      case 'QUEUED':
+        return fillRequest?.queuePosition 
+          ? `Đang chờ... (Vị trí: ${fillRequest.queuePosition})`
+          : 'Đang chờ...';
+      case 'FAILED':
+        return 'Không thành công';
       default:
-        return 'Chưa xác định';
+        return 'Đang chờ...';
     }
   };
 

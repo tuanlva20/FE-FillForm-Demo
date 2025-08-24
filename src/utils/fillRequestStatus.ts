@@ -1,15 +1,15 @@
-import { ErrorIcon, InProcessIcon, PendingIcon, SuccessIcon } from 'assets/images/svg/icon';
-import { CloseCircle } from 'iconsax-react';
+import type { FillRequestDTO } from 'api/form';
+import { ErrorIcon, InProcessIcon, SuccessIcon } from 'assets/images/svg/icon';
+import { Clock } from 'iconsax-react';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
 export type FillRequestStatus =
-  | 'PENDING'
+  | 'QUEUED'
   | 'IN_PROCESS'
   | 'IN_PROGRESS'
   | 'COMPLETED'
-  | 'FAILED'
-  | 'CANCELLED';
+  | 'FAILED';
 
 export type ChipColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 
@@ -23,19 +23,29 @@ function normalizeStatus(status?: string): FillRequestStatus | undefined {
 export function getFillRequestStatusMeta(status?: string): { label: string; color: ChipColor; icon?: ReactNode } {
   const s = normalizeStatus(status);
   switch (s) {
+    case 'QUEUED':
+      return { 
+        label: 'Đang chờ...', 
+        color: 'warning', 
+        icon: createElement(Clock, { size: 16 }) 
+      };
     case 'COMPLETED':
       return { label: 'Hoàn thành', color: 'success', icon: createElement(SuccessIcon) };
     case 'IN_PROCESS':
       return { label: 'Đang thực thi', color: 'info', icon: createElement(InProcessIcon) };
-    case 'PENDING':
-      return { label: 'Chưa bắt đầu', color: 'secondary', icon: createElement(PendingIcon) };
     case 'FAILED':
       return { label: 'Không thành công', color: 'error', icon: createElement(ErrorIcon) };
-    case 'CANCELLED':
-      return { label: 'Đã hủy', color: 'warning', icon: createElement(CloseCircle, { size: 16 }) };
     default:
-      return { label: 'Chưa bắt đầu', color: 'secondary', icon: createElement(PendingIcon) };
+      return { label: 'Đang chờ...', color: 'warning', icon: createElement(Clock, { size: 16 }) };
   }
+}
+
+// Function để hiển thị queue position trong status chip
+export function getQueueStatusText(request: FillRequestDTO): string {
+  if (request.status === 'QUEUED' && request.queuePosition) {
+    return `Đang chờ... (Vị trí: ${request.queuePosition})`;
+  }
+  return getFillRequestStatusMeta(request.status).label;
 }
 
 
