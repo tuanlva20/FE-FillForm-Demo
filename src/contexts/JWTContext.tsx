@@ -11,6 +11,9 @@ import { clearTokens, setAccessExpiry } from 'utils/authToken';
 // types
 import { AuthProps, JWTContextType } from 'types/auth';
 
+// utils
+import { logger } from '../utils/logger';
+
 // constant
 const initialState: AuthProps = {
   isLoggedIn: false,
@@ -43,7 +46,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
             }
           });
           hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo thành công
-          console.log('🔐 JWTContext: Auth initialized successfully, staying on current page');
+          logger.log('🔐 JWTContext: Auth initialized successfully, staying on current page');
         } else {
           dispatch({ type: LOGOUT });
           hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
@@ -146,7 +149,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
     if (!state.isInitialized) {
       const pathname = window.location.pathname || '/';
       const isProtected = !shouldSkipAuthInit();
-      console.log('🔐 JWTContext: Auth not initialized, checking route...', {
+      logger.log('🔐 JWTContext: Auth not initialized, checking route...', {
         pathname,
         shouldSkip: !isProtected
       });
@@ -155,7 +158,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         // Try to initialize auth first on protected routes to preserve current URL for logged-in users
         void initAuth();
       } else {
-        console.log('🔐 JWTContext: Public route detected, skipping auth init');
+        logger.log('🔐 JWTContext: Public route detected, skipping auth init');
         dispatch({ type: LOGOUT });
       }
     }
@@ -270,7 +273,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         rehydrate: async (): Promise<boolean> => {
           // Nếu đã khởi tạo auth rồi, không gọi lại API
           if (hasInitializedAuth.current) {
-            console.log('🔐 JWTContext: Auth already initialized, skipping rehydrate');
+            logger.log('🔐 JWTContext: Auth already initialized, skipping rehydrate');
             return state.isLoggedIn;
           }
           
@@ -286,7 +289,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
                 }
               });
               hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo
-              console.log('🔐 JWTContext: Rehydrate successful');
+              logger.log('🔐 JWTContext: Rehydrate successful');
               return true;
             }
             hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)

@@ -1,3 +1,5 @@
+import { logger } from './logger';
+
 export type FieldErrorMap = Record<string, string>;
 
 export type ParsedApiError = {
@@ -87,9 +89,9 @@ export function combineFormikErrors(parsed: ParsedApiError): FieldErrorMap {
  * @returns Error message đã được xử lý
  */
 export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi xảy ra. Vui lòng thử lại.'): string => {
-  console.log('Error object:', err);
-  console.log('Error response:', err?.response);
-  console.log('Error response data:', err?.response?.data);
+  logger.log('Error object:', err);
+  logger.log('Error response:', err?.response);
+  logger.log('Error response data:', err?.response?.data);
 
   // Do axios interceptor đang trả về error.response.data trực tiếp,
   // nên cần lấy data từ nhiều khả năng khác nhau
@@ -119,7 +121,7 @@ export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi x�
 
   // Nếu có message từ backend, ưu tiên sử dụng
   if (backendMessage) {
-    console.log('Using backend message:', backendMessage);
+    logger.log('Using backend message:', backendMessage);
     return backendMessage;
   }
 
@@ -224,19 +226,19 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
  * @param err - Error object từ axios
  */
 export const testErrorStructure = (err: any) => {
-  console.log('=== ERROR STRUCTURE TEST ===');
-  console.log('Error type:', typeof err);
-  console.log('Error keys:', Object.keys(err));
-  console.log('Error response:', err.response);
-  console.log('Error response type:', typeof err.response);
+  logger.log('=== ERROR STRUCTURE TEST ===');
+  logger.log('Error type:', typeof err);
+  logger.log('Error keys:', Object.keys(err));
+  logger.log('Error response:', err.response);
+  logger.log('Error response type:', typeof err.response);
   if (err.response) {
-    console.log('Response keys:', Object.keys(err.response));
-    console.log('Response data:', err.response.data);
-    console.log('Response data type:', typeof err.response.data);
+    logger.log('Response keys:', Object.keys(err.response));
+    logger.log('Response data:', err.response.data);
+    logger.log('Response data type:', typeof err.response.data);
     if (err.response.data) {
-      console.log('Data keys:', Object.keys(err.response.data));
+      logger.log('Data keys:', Object.keys(err.response.data));
     }
   }
-  console.log('Error message:', err.message);
-  console.log('=== END TEST ===');
+  logger.log('Error message:', err.message);
+  logger.log('=== END TEST ===');
 }; 

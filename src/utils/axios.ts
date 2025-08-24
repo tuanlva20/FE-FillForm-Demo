@@ -1,6 +1,7 @@
 import { openSnackbar } from 'api/snackbar';
 import axios, { AxiosRequestConfig } from 'axios';
 import { clearTokens, ensureFreshToken } from './authToken';
+import { logger } from './logger';
 
 // Create axios instance with cookie-based auth and CSRF protection
 const axiosServices = axios.create({
@@ -97,7 +98,7 @@ export const fetcher = async (args: string | [string, AxiosRequestConfig]) => {
   const bypassEndpoint = BYPASS_ENDPOINTS.find((endpoint) => url.includes(endpoint));
 
   if (bypassEndpoint) {
-    console.log(`📦 Bypassing API call to ${url} and returning mock data`);
+    logger.log(`📦 Bypassing API call to ${url} and returning mock data`);
     return MOCK_RESPONSES[bypassEndpoint];
   }
 

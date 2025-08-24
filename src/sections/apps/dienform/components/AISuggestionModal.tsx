@@ -39,6 +39,7 @@ import { useAISuggestionPolling } from 'hooks/useAISuggestionPolling';
 import { useEffect, useMemo, useState } from 'react';
 import { AISuggestionRequest } from 'types/ai-suggestion';
 import { validateDistributionPercentages } from 'utils/ai-error-handler';
+import { logger } from 'utils/logger';
 
 interface AISuggestionModalProps {
   open: boolean;
@@ -116,7 +117,7 @@ export default function AISuggestionModal({
     // Function để lấy answerAttribute cho tất cả câu hỏi trong một request
   const getAllAnswerAttributesForForm = async () => {
     try {
-      console.log('Calling getAnswerAttributesWithNewStructure API with payload:', {
+      logger.log('Calling getAnswerAttributesWithNewStructure API with payload:', {
         formId: formData.id,
         sampleCount,
         requirements
@@ -125,7 +126,7 @@ export default function AISuggestionModal({
       // Gọi API để lấy tất cả answerAttribute trong một request với cấu trúc mới
       const response = await getAnswerAttributesWithNewStructure(formData.id, sampleCount, requirements);
       
-      console.log('Received answerAttributes response:', response);
+      logger.log('Received answerAttributes response:', response);
       
       // Kiểm tra response structure - có thể là ACCEPTED, QUEUED hoặc OK
       if (response.status === 'ACCEPTED' || response.status === 'QUEUED') {
@@ -135,14 +136,14 @@ export default function AISuggestionModal({
         }
         
         // Trường hợp queue-based processing
-        console.log('Request accepted/queued, starting polling with requestId:', requestId);
+        logger.log('Request accepted/queued, starting polling with requestId:', requestId);
         
         // Bắt đầu polling
         startPolling(
           requestId,
           (result) => {
             // Polling thành công
-            console.log('Polling completed successfully:', result);
+            logger.log('Polling completed successfully:', result);
             
             // Tạo request với response từ polling
             const request: AISuggestionRequest = {
@@ -160,7 +161,7 @@ export default function AISuggestionModal({
               }
             };
             
-            console.log('Submitting request with polling result:', request);
+            logger.log('Submitting request with polling result:', request);
             
             // Gọi onSubmit để xử lý tiếp
             onSubmit(request);
@@ -182,7 +183,7 @@ export default function AISuggestionModal({
           },
           (error) => {
             // Polling thất bại
-            console.error('Polling failed:', error);
+            logger.error('Polling failed:', error);
             setProcessingStep('error');
             setValidationResult({
               isValid: false,
@@ -194,7 +195,7 @@ export default function AISuggestionModal({
         
       } else if (response.status === 'OK' && response.content && 'questionAnswerAttributes' in response.content) {
         // Trường hợp response trực tiếp (legacy)
-        console.log('Direct response received, no polling needed');
+        logger.log('Direct response received, no polling needed');
         
         const request: AISuggestionRequest = {
           formId: formData.id,
@@ -211,7 +212,7 @@ export default function AISuggestionModal({
           }
         };
         
-        console.log('Submitting request with direct response:', request);
+        logger.log('Submitting request with direct response:', request);
         
         // Gọi onSubmit để xử lý tiếp
         onSubmit(request);
@@ -235,11 +236,11 @@ export default function AISuggestionModal({
       }
       
     } catch (error: any) {
-      console.error('Error getting answerAttributes:', error);
+      logger.error('Error getting answerAttributes:', error);
       
       // Không hiển thị lỗi nếu response thành công nhưng có status QUEUED hoặc ACCEPTED
       if (error.response?.status === 200 && (error.response?.data?.status === 'QUEUED' || error.response?.data?.status === 'ACCEPTED')) {
-        console.log('Request queued successfully, starting polling...');
+        logger.log('Request queued successfully, starting polling...');
         
         const requestId = error.response.data.content?.requestId;
         if (requestId) {
@@ -247,7 +248,7 @@ export default function AISuggestionModal({
             requestId,
             (result) => {
               // Polling thành công
-              console.log('Polling completed successfully:', result);
+              logger.log('Polling completed successfully:', result);
               
               // Tạo request với response từ polling
               const request: AISuggestionRequest = {
@@ -265,7 +266,7 @@ export default function AISuggestionModal({
                 }
               };
               
-              console.log('Submitting request with polling result:', request);
+              logger.log('Submitting request with polling result:', request);
               
               // Gọi onSubmit để xử lý tiếp
               onSubmit(request);
@@ -287,7 +288,7 @@ export default function AISuggestionModal({
             },
             (error) => {
               // Polling thất bại
-              console.error('Polling failed:', error);
+              logger.error('Polling failed:', error);
               setProcessingStep('error');
               setValidationResult({
                 isValid: false,
@@ -324,16 +325,16 @@ export default function AISuggestionModal({
     setValidationResult(null);
     
     try {
-      console.log('Requirements being sent:', requirements);
-      console.log('DistributionRequirements:', requirements.distributionRequirements);
+      logger.log('Requirements being sent:', requirements);
+      logger.log('DistributionRequirements:', requirements.distributionRequirements);
       const result = await validateAISuggestionRequest(formData.id, sampleCount, requirements);
       
       // Debug response structure
-      console.log('Raw validation result:', result);
-      console.log('Result type:', typeof result);
-      console.log('Result keys:', Object.keys(result));
-      console.log('Result.isValid:', result.isValid);
-      console.log('Result.isValid type:', typeof result.isValid);
+      logger.log('Raw validation result:', result);
+      logger.log('Result type:', typeof result);
+      logger.log('Result keys:', Object.keys(result));
+      logger.log('Result.isValid:', result.isValid);
+      logger.log('Result.isValid type:', typeof result.isValid);
       
       // Handle different response structures
       let normalizedResult = result;
@@ -347,12 +348,12 @@ export default function AISuggestionModal({
           estimatedCost: result.estimatedCost || anyResult.cost,
           error: result.error || anyResult.message
         };
-        console.log('Normalized result from success field:', normalizedResult);
+        logger.log('Normalized result from success field:', normalizedResult);
       }
       // Check if response is wrapped in data field
       else if (anyResult.data && anyResult.data.isValid !== undefined) {
         normalizedResult = anyResult.data;
-        console.log('Normalized result from data field:', normalizedResult);
+        logger.log('Normalized result from data field:', normalizedResult);
       }
       // Check if HTTP 200 but isValid is false/undefined, consider it success
       else if (result.isValid === undefined || result.isValid === null) {
@@ -362,7 +363,7 @@ export default function AISuggestionModal({
           estimatedCost: result.estimatedCost || anyResult.cost,
           error: result.error || anyResult.message
         };
-        console.log('Normalized result assuming success:', normalizedResult);
+        logger.log('Normalized result assuming success:', normalizedResult);
       }
       
       setValidationResult(normalizedResult);
@@ -374,22 +375,22 @@ export default function AISuggestionModal({
         // Delay nhỏ để user thấy check mark
         await new Promise(resolve => setTimeout(resolve, 800));
         
-        console.log('Validation successful, calling getAllAnswerAttributesForForm...');
+        logger.log('Validation successful, calling getAllAnswerAttributesForForm...');
         // Bắt đầu step xử lý answer attributes
         setProcessingStep('processing');
         await getAllAnswerAttributesForForm();
       } else {
         setValidationStep('error');
-        console.log('Validation failed with result:', normalizedResult);
+        logger.log('Validation failed with result:', normalizedResult);
       }
     } catch (error: any) {
-      console.error('Validation error:', error);
-      console.error('Error response:', error.response);
-      console.error('Error data:', error.response?.data);
+      logger.error('Validation error:', error);
+      logger.error('Error response:', error.response);
+      logger.error('Error data:', error.response?.data);
       
       // Check if it's actually a successful response but axios threw error
       if (error.response?.status === 200 && error.response?.data) {
-        console.log('Handling 200 response that was caught as error');
+        logger.log('Handling 200 response that was caught as error');
         const data = error.response.data;
         const normalizedResult = {
           isValid: Boolean(data.isValid || data.success || data.valid || true), // Default to true for 200
@@ -404,7 +405,7 @@ export default function AISuggestionModal({
           setValidationStep('success');
           await new Promise(resolve => setTimeout(resolve, 800));
           setProcessingStep('processing');
-          console.log('Success from catch block, calling getAllAnswerAttributesForForm...');
+          logger.log('Success from catch block, calling getAllAnswerAttributesForForm...');
           await getAllAnswerAttributesForForm();
         }
       } else {

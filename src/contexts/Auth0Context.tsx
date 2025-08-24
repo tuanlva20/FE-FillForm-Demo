@@ -1,4 +1,4 @@
-import { createContext, useEffect, useReducer, ReactElement } from 'react';
+import { createContext, ReactElement, useEffect, useReducer } from 'react';
 
 // third-party
 import { Auth0Client } from '@auth0/auth0-spa-js';
@@ -13,6 +13,9 @@ import Loader from 'components/Loader';
 // types
 import { Auth0ContextType, AuthProps } from 'types/auth';
 import { KeyedObject } from 'types/root';
+
+// utils
+import { logger } from '../utils/logger';
 
 // constant
 let auth0Client: Auth0Client;
@@ -101,7 +104,7 @@ export const Auth0Provider = ({ children }: { children: ReactElement }) => {
   };
 
   const resetPassword = async (email: string) => {
-    console.log('email - ', email);
+    logger.log('email - ', email);
   };
 
   const updateProfile = () => {};

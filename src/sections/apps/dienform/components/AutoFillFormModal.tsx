@@ -1,5 +1,6 @@
 import { isValid } from 'date-fns';
 import { ChangeEvent, useEffect, useState } from 'react';
+import { logger } from 'utils/logger';
 
 // material-ui
 import Box from '@mui/material/Box';
@@ -68,7 +69,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   // Ensure endDate is always set to startDate if not set
   useEffect(() => {
     if (formValues.startDate && !formValues.endDate) {
-      console.log('AutoFillFormModal - Setting endDate to startDate:', formValues.startDate);
+      logger.log('AutoFillFormModal - Setting endDate to startDate:', formValues.startDate);
       setFormValues(prev => ({
         ...prev,
         endDate: formValues.startDate
@@ -78,7 +79,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
 
   // Debug logging for formValues
   useEffect(() => {
-    console.log('AutoFillFormModal - formValues changed:', {
+    logger.log('AutoFillFormModal - formValues changed:', {
       startDate: formValues.startDate,
       endDate: formValues.endDate,
       startDateType: typeof formValues.startDate,
@@ -201,20 +202,20 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       
       // Set time to end of day for end date (23:59:59)
       let endDate = formValues.endDate;
-      console.log('handleSubmit - formValues.endDate:', formValues.endDate);
+      logger.log('handleSubmit - formValues.endDate:', formValues.endDate);
       if (endDate) {
         endDate = new Date(endDate);
         endDate.setHours(23, 59, 59, 999);
-        console.log('handleSubmit - processed endDate:', endDate);
+        logger.log('handleSubmit - processed endDate:', endDate);
       } else {
-        console.log('handleSubmit - endDate is null/undefined');
+        logger.log('handleSubmit - endDate is null/undefined');
       }
       
       // Ensure endDate is always provided if startDate exists
       const finalEndDate = endDate || startDate;
       
       // Debug logging
-      console.log('AutoFillFormModal - Submitting with values:', {
+      logger.log('AutoFillFormModal - Submitting with values:', {
         submissionCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
         isHumanLike: formValues.isHumanLike,
@@ -365,7 +366,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     <DatePicker
                       value={formValues.startDate}
                       onChange={(newValue) => {
-                        console.log('DatePicker startDate onChange:', newValue);
+                        logger.log('DatePicker startDate onChange:', newValue);
                         handleStartDateChange(newValue);
                       }}
                       format="dd-MM-yyyy"
@@ -396,7 +397,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     <DatePicker
                       value={formValues.endDate}
                       onChange={(newValue) => {
-                        console.log('DatePicker endDate onChange:', newValue);
+                        logger.log('DatePicker endDate onChange:', newValue);
                         handleEndDateChange(newValue);
                       }}
                       format="dd-MM-yyyy"
