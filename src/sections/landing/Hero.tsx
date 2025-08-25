@@ -384,7 +384,7 @@ export default function HeroPage() {
                           >
                             <Button
                               component={RouterLink}
-                              to="login"
+                              to="/dashboard/default"
                               size="large"
                               variant="contained"
                               sx={{
