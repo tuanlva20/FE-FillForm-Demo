@@ -33,15 +33,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-  checkDataMapping,
-  createDataFillRequest,
-  DataFillRequestDTO,
-  DataMappingRequest,
-  DataMappingResponse,
-  FormData,
-  FormDetailResponse,
-  getAllUserForms,
-  getFormDetail
+    checkDataMapping,
+    createDataFillRequest,
+    DataFillRequestDTO,
+    DataMappingRequest,
+    DataMappingResponse,
+    FormData,
+    FormDetailResponse,
+    getAllUserForms,
+    getFormDetail
 } from 'api/form';
 
 // assets
@@ -102,11 +102,11 @@ export default function TabFillInData() {
   const toLocalDateStringAtEndOfDay = (date?: Date | null): string | undefined => {
     if (!date) return undefined;
     const local = new Date(date);
-    local.setHours(23, 59, 59, 999);
+    local.setHours(10, 59, 59, 999);
     const y = local.getFullYear();
     const m = String(local.getMonth() + 1).padStart(2, '0');
     const d = String(local.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}T23:59:59`;
+    return `${y}-${m}-${d}T10:59:59`;
   };
   
   // Load forms on component mount

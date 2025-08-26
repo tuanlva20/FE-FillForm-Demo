@@ -1091,7 +1091,14 @@ export default function TabFillExpectedRatio() {
         isHumanLike: formValues.isHumanLike,
         answerDistributions: finalAnswerDistributions,
         startDate: formValues.startDate?.toISOString(),
-        endDate: formValues.endDate?.toISOString()
+        endDate: formValues.endDate ? (() => {
+          const local = new Date(formValues.endDate);
+          local.setHours(10, 59, 59, 999);
+          const y = local.getFullYear();
+          const m = String(local.getMonth() + 1).padStart(2, '0');
+          const d = String(local.getDate()).padStart(2, '0');
+          return `${y}-${m}-${d}T10:59:59`;
+        })() : undefined
       };
       
       // Call API to save fill request
