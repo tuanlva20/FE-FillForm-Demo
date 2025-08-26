@@ -1,12 +1,16 @@
 import { Box, Button, Paper, Step, StepLabel, Stepper } from '@mui/material';
 import { useState } from 'react';
 import AlertInfoBox from './components/AlertInfoBox';
+import PaymentHistory from './components/PaymentHistory';
+import PaymentStats from './components/PaymentStats';
 import PaymentTabs from './components/PaymentTabs';
 import SpecialNoticeBox from './components/SpecialNoticeBox';
 
 const steps = [
   'Chuyển khoản & QR',
-  'Lưu ý đặc biệt'
+  'Lưu ý đặc biệt',
+  'Lịch sử thanh toán',
+  'Thống kê'
 ];
 
 export default function PaymentStepper() {
@@ -17,7 +21,7 @@ export default function PaymentStepper() {
   const handleReset = () => setActiveStep(0);
 
   return (
-    <Paper sx={{ maxWidth: 700, mx: 'auto', mt: 4, p: { xs: 2, md: 4 } }} elevation={2}>
+    <Paper sx={{ maxWidth: 1000, mx: 'auto', mt: 4, p: { xs: 2, md: 4 } }} elevation={2}>
       <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
         {steps.map((label) => (
           <Step key={label}>
@@ -35,6 +39,8 @@ export default function PaymentStepper() {
           </>
         )}
         {activeStep === 1 && <SpecialNoticeBox />}
+        {activeStep === 2 && <PaymentHistory />}
+        {activeStep === 3 && <PaymentStats />}
       </Box>
       <Box sx={{ display: 'flex', flexDirection: 'row', pt: 3 }}>
         <Button color="inherit" disabled={activeStep === 0} onClick={handleBack} sx={{ mr: 1 }}>

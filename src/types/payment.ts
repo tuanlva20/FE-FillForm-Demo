@@ -31,3 +31,35 @@ export interface PaymentConfig {
   feePercentage: number;
   supportedMethods: PaymentMethod[];
 }
+
+// SEPAY Payment Interfaces
+export interface SEPAYOrderRequest {
+  amount: number;
+  description?: string;
+}
+
+export interface SEPAYOrderResponse {
+  success: boolean;
+  orderId: string;
+  qrCodeUrl: string;
+  amount: number;
+  expiresAt: string;
+}
+
+export interface SEPAYWebhookData {
+  orderId: string;
+  amount: number;
+  actualAmount: number;
+  status: 'success' | 'failed';
+  signature: string;
+  timestamp: string;
+}
+
+export interface SEPAYPaymentStatus {
+  orderId: string;
+  status: 'pending' | 'completed' | 'failed' | 'expired' | 'mismatch';
+  amount: number;
+  actualAmount?: number;
+  expiresAt: string;
+  createdAt: string;
+}

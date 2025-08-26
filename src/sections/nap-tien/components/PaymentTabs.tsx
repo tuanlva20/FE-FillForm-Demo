@@ -1,6 +1,7 @@
 import { Box, Tab, Tabs } from '@mui/material';
 import { useState } from 'react';
 import BankTransferTab from './BankTransferTab';
+import SEPAYTab from './SEPAYTab';
 import VNPayTab from './VNPayTab';
 
 export default function PaymentTabs() {
@@ -27,10 +28,12 @@ export default function PaymentTabs() {
       >
         <Tab label="Chuyển khoản & QR" />
         <Tab label="VNPAY" />
+        <Tab label="SEPAY" />
       </Tabs>
       
       {activeTab === 0 && <BankTransferTab />}
       {activeTab === 1 && <VNPayTab />}
+      {activeTab === 2 && <SEPAYTab />}
     </Box>
   );
 }
