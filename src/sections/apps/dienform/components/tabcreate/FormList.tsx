@@ -150,7 +150,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
                 <TableCell>Tên Form</TableCell>
                 <TableCell>Ngày Tạo</TableCell>
                 {/* <TableCell>Link</TableCell> */}
-                <TableCell align="center">Hành động</TableCell>
+                {/* <TableCell align="center">Hành động</TableCell> */}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -173,7 +173,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
                     <TableCell>{form.name}</TableCell>
                     <TableCell>{formatDate(form.createdAt)}</TableCell>
                     {/* <TableCell>{form.editLink}</TableCell> */}
-                    <TableCell align="center">
+                    {/* <TableCell align="center">
                       <Stack direction="row" sx={{ justifyContent: 'center', alignItems: 'center' }}>
                         <Tooltip title="Delete">
                           <IconButton
@@ -185,7 +185,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
                           </IconButton>
                         </Tooltip>
                       </Stack>
-                    </TableCell>
+                    </TableCell> */}
                   </TableRow>
                 ))
               )}
