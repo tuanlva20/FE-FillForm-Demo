@@ -75,7 +75,7 @@ export default function FillRequestList({
     return filteredRequests.slice(startIndex, endIndex);
   };
   
-  const getStatusChip = (status: string) => <StatusChip status={status} />;
+  const getStatusChip = (request: FillRequestDTO) => <StatusChip status={request.status} fillRequest={request} />;
 
   const getScheduleIcon = (isHumanLike: boolean | undefined) => {
     const color = isHumanLike ? '#ff4d4f' : '#d9d9d9';
@@ -178,7 +178,7 @@ export default function FillRequestList({
                   <TableCell align="center">{formatDate(request.startDate || '')}</TableCell>
                   <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
-                  <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
+                  <TableCell align="center">{getStatusChip(request)}</TableCell>
                   {/* <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
                       <Tooltip title="Xem chi tiết">

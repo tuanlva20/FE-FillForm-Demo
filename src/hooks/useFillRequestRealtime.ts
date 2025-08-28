@@ -11,6 +11,12 @@ type BulkStatePayload = {
     completedSurvey?: number;
     surveyCount?: number;
     totalPrice?: number;
+    // Thêm các trường queue
+    queuePosition?: number;
+    priority?: number;
+    estimatedWaitTime?: number;
+    queuedAt?: string;
+    retryCount?: number;
   }>;
   updatedAt?: string;
 };
@@ -22,12 +28,18 @@ type UpdatePayload = {
   completedSurvey?: number;
   surveyCount?: number;
   totalPrice?: number;
+  // Thêm các trường queue
+  queuePosition?: number;
+  priority?: number;
+  estimatedWaitTime?: number;
+  queuedAt?: string;
+  retryCount?: number;
   updatedAt?: string;
 };
 
 function mergeRequest(
   list: FillRequestDTO[] | undefined,
-  update: { requestId: string; status?: string; completedSurvey?: number; surveyCount?: number; totalPrice?: number }
+  update: { requestId: string; status?: string; completedSurvey?: number; surveyCount?: number; totalPrice?: number; queuePosition?: number; priority?: number; estimatedWaitTime?: number; queuedAt?: string; retryCount?: number }
 ): FillRequestDTO[] {
   const requests = Array.isArray(list) ? [...list] : [];
   const index = requests.findIndex((r) => r.id === update.requestId);
@@ -38,7 +50,13 @@ function mergeRequest(
       status: update.status ?? prev.status,
       completedSurvey: update.completedSurvey ?? prev.completedSurvey,
       surveyCount: update.surveyCount ?? prev.surveyCount,
-      totalPrice: update.totalPrice ?? prev.totalPrice
+      totalPrice: update.totalPrice ?? prev.totalPrice,
+      // Thêm các trường queue
+      queuePosition: update.queuePosition ?? prev.queuePosition,
+      priority: update.priority ?? prev.priority,
+      estimatedWaitTime: update.estimatedWaitTime ?? prev.estimatedWaitTime,
+      queuedAt: update.queuedAt ?? prev.queuedAt,
+      retryCount: update.retryCount ?? prev.retryCount
     };
   } else {
     requests.unshift({
@@ -48,7 +66,13 @@ function mergeRequest(
       surveyCount: update.surveyCount ?? 0,
       pricePerSurvey: 0,
       totalPrice: update.totalPrice,
-      isHumanLike: false
+      isHumanLike: false,
+      // Thêm các trường queue
+      queuePosition: update.queuePosition,
+      priority: update.priority,
+      estimatedWaitTime: update.estimatedWaitTime,
+      queuedAt: update.queuedAt,
+      retryCount: update.retryCount
     });
   }
   return requests;
@@ -137,7 +161,13 @@ export default function useFillRequestRealtime(
             ...(payload.status !== undefined && { status: payload.status }),
             ...(payload.completedSurvey !== undefined && { completedSurvey: payload.completedSurvey }),
             ...(payload.surveyCount !== undefined && { surveyCount: payload.surveyCount }),
-            ...(payload.totalPrice !== undefined && { totalPrice: payload.totalPrice })
+            ...(payload.totalPrice !== undefined && { totalPrice: payload.totalPrice }),
+            // Thêm các trường queue
+            ...(payload.queuePosition !== undefined && { queuePosition: payload.queuePosition }),
+            ...(payload.priority !== undefined && { priority: payload.priority }),
+            ...(payload.estimatedWaitTime !== undefined && { estimatedWaitTime: payload.estimatedWaitTime }),
+            ...(payload.queuedAt !== undefined && { queuedAt: payload.queuedAt }),
+            ...(payload.retryCount !== undefined && { retryCount: payload.retryCount })
           };
         } else {
           next.fillRequests.unshift({
@@ -147,7 +177,13 @@ export default function useFillRequestRealtime(
             surveyCount: payload.surveyCount ?? 0,
             pricePerSurvey: 0,
             totalPrice: payload.totalPrice,
-            isHumanLike: false
+            isHumanLike: false,
+            // Thêm các trường queue
+            queuePosition: payload.queuePosition,
+            priority: payload.priority,
+            estimatedWaitTime: payload.estimatedWaitTime,
+            queuedAt: payload.queuedAt,
+            retryCount: payload.retryCount
           });
         }
         console.log('✅ Request updated immediately:', {

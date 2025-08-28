@@ -1,4 +1,5 @@
 import io from 'socket.io-client';
+import { logger } from './logger';
 
 let socketInstance: any = null;
 
@@ -31,27 +32,27 @@ export function getSocket(): any {
 
   // Add connection event listeners for debugging
   socketInstance.on('connect', () => {
-    console.log('✅ Socket connected successfully to v2.4.0 server');
+    logger.log('✅ Socket connected successfully to v2.4.0 server');
   });
 
   socketInstance.on('disconnect', (reason: string) => {
-    console.log('❌ Socket disconnected:', reason);
+    logger.log('❌ Socket disconnected:', reason);
   });
 
   socketInstance.on('connect_error', (error: any) => {
-    console.error('❌ Socket connection error:', error);
+    logger.error('❌ Socket connection error:', error);
   });
 
   socketInstance.on('reconnect', (attemptNumber: number) => {
-    console.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
+    logger.log('🔄 Socket reconnected after', attemptNumber, 'attempts');
   });
 
   socketInstance.on('reconnect_error', (error: any) => {
-    console.error('❌ Socket reconnection error:', error);
+    logger.error('❌ Socket reconnection error:', error);
   });
 
   socketInstance.on('reconnect_failed', () => {
-    console.error('❌ Socket reconnection failed after all attempts');
+    logger.error('❌ Socket reconnection failed after all attempts');
   });
 
   return socketInstance;
@@ -59,7 +60,7 @@ export function getSocket(): any {
 
 export function closeSocket() {
   if (socketInstance) {
-    console.log('🔌 Closing socket connection...');
+    logger.log('🔌 Closing socket connection...');
     socketInstance.close();
     socketInstance = null;
   }

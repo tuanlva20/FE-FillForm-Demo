@@ -103,10 +103,13 @@ export default function TabFillInData() {
     if (!date) return undefined;
     const local = new Date(date);
     local.setHours(23, 59, 59, 999);
+    // Trừ 8 tiếng từ endDate
+    local.setHours(local.getHours() - 8);
     const y = local.getFullYear();
     const m = String(local.getMonth() + 1).padStart(2, '0');
     const d = String(local.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}T23:59:59`;
+    const h = String(local.getHours()).padStart(2, '0');
+    return `${y}-${m}-${d}T${h}:59:59`;
   };
   
   // Load forms on component mount
@@ -537,6 +540,19 @@ export default function TabFillInData() {
             </Alert>
           )}
           
+          {/* Mapping guidance note */}
+          <Alert color="info" variant="border" icon={<InfoCircle variant="Bold" />} sx={{ mb: 2 }}>
+            <AlertTitle>Quy tắc mapping dữ liệu</AlertTitle>
+            <Stack spacing={0.5}>
+              <Typography variant="body2">
+                • Chương trình sẽ ưu tiên mapping theo tên <b>Cột</b> trùng với tên <b>Câu hỏi</b>.
+              </Typography>
+              <Typography variant="body2">
+                • Nếu sheet <b>Không có tên câu hỏi</b>, hệ thống sẽ mapping theo vị trí: Câu 1 ↔ Cột A, Câu 2 ↔ Cột B, ...
+              </Typography>
+            </Stack>
+          </Alert>
+
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
@@ -731,6 +747,7 @@ export default function TabFillInData() {
           )}
         </MainCard>
       </Grid>
+      
       
       {/* Fill Request List - Only show when a form is selected */}
       {selectedFormId && selectedForm && (

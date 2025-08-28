@@ -1,5 +1,6 @@
 // AI Error Handler Utility
 // Xử lý và chuẩn hóa lỗi từ AI suggestion service
+import { logger } from './logger';
 
 /**
  * Validate tổng tỉ lệ phân bố có bằng 100% không
@@ -145,23 +146,21 @@ export const validateAISuggestionInput = (
  * @param context - Context thông tin thêm
  */
 export const logAISuggestionError = (error: any, context?: string) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.group('🤖 AI Suggestion Error');
-    if (context) {
-      console.log('Context:', context);
-    }
-    console.error('Error:', error);
-    if (error?.response) {
-      console.log('Response data:', error.response.data);
-      console.log('Response status:', error.response.status);
-    }
-    if (error?.config) {
-      console.log('Request config:', {
-        url: error.config.url,
-        method: error.config.method,
-        data: error.config.data
-      });
-    }
-    console.groupEnd();
+  logger.group('🤖 AI Suggestion Error');
+  if (context) {
+    logger.log('Context:', context);
   }
+  logger.error('Error:', error);
+  if (error?.response) {
+    logger.log('Response data:', error.response.data);
+    logger.log('Response status:', error.response.status);
+  }
+  if (error?.config) {
+    logger.log('Request config:', {
+      url: error.config.url,
+      method: error.config.method,
+      data: error.config.data
+    });
+  }
+  logger.groupEnd();
 };
