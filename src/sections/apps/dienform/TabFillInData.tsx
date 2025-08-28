@@ -102,11 +102,14 @@ export default function TabFillInData() {
   const toLocalDateStringAtEndOfDay = (date?: Date | null): string | undefined => {
     if (!date) return undefined;
     const local = new Date(date);
-    local.setHours(10, 59, 59, 999);
+    local.setHours(23, 59, 59, 999);
+    // Trừ 8 tiếng từ endDate
+    local.setHours(local.getHours() - 8);
     const y = local.getFullYear();
     const m = String(local.getMonth() + 1).padStart(2, '0');
     const d = String(local.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}T10:59:59`;
+    const h = String(local.getHours()).padStart(2, '0');
+    return `${y}-${m}-${d}T${h}:59:59`;
   };
   
   // Load forms on component mount
