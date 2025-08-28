@@ -33,15 +33,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // assets
@@ -540,6 +540,19 @@ export default function TabFillInData() {
             </Alert>
           )}
           
+          {/* Mapping guidance note */}
+          <Alert color="info" variant="border" icon={<InfoCircle variant="Bold" />} sx={{ mb: 2 }}>
+            <AlertTitle>Quy tắc mapping dữ liệu</AlertTitle>
+            <Stack spacing={0.5}>
+              <Typography variant="body2">
+                • Chương trình sẽ ưu tiên mapping theo tên <b>Cột</b> trùng với tên <b>Câu hỏi</b>.
+              </Typography>
+              <Typography variant="body2">
+                • Nếu sheet <b>Không có tên câu hỏi</b>, hệ thống sẽ mapping theo vị trí: Câu 1 ↔ Cột A, Câu 2 ↔ Cột B, ...
+              </Typography>
+            </Stack>
+          </Alert>
+
           <Grid container spacing={2}>
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
@@ -734,6 +747,7 @@ export default function TabFillInData() {
           )}
         </MainCard>
       </Grid>
+      
       
       {/* Fill Request List - Only show when a form is selected */}
       {selectedFormId && selectedForm && (
