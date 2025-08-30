@@ -44,7 +44,22 @@ axiosServices.interceptors.response.use(
     }
 
     const originalRequest: any = error.config;
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const requestUrl: string = (originalRequest?.url || '').toString();
+
+    // Handle /api/auth/me specifically: if 401 or 403, attempt a single refresh then retry /me
+    if ((status === 401 || status === 403) && requestUrl.includes('/api/auth/me')) {
+      if (!originalRequest._meRetry) {
+        originalRequest._meRetry = true;
+        const ok = await ensureFreshToken(true);
+        if (ok) {
+          return axiosServices(originalRequest);
+        }
+      }
+      // fall through to generic 401 handling
+    }
+
+    if (status === 401) {
       // Retry up to 3 times attempting to refresh the session
       originalRequest._retryCount = originalRequest._retryCount || 0;
       while (originalRequest._retryCount < 3) {

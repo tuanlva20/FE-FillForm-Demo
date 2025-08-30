@@ -1,8 +1,6 @@
-import { Box, Tab, Tabs } from '@mui/material';
+import { Box } from '@mui/material';
 import { useState } from 'react';
-import BankTransferTab from './BankTransferTab';
 import SEPAYTab from './SEPAYTab';
-import VNPayTab from './VNPayTab';
 
 export default function PaymentTabs() {
   const [activeTab, setActiveTab] = useState(0);
@@ -13,7 +11,7 @@ export default function PaymentTabs() {
 
   return (
     <Box>
-      <Tabs
+      {/* <Tabs
         value={activeTab}
         onChange={handleTabChange}
         variant="fullWidth"
@@ -25,15 +23,16 @@ export default function PaymentTabs() {
             textTransform: 'none'
           }
         }}
-      >
-        <Tab label="Chuyển khoản & QR" />
-        <Tab label="VNPAY" />
-        <Tab label="SEPAY" />
-      </Tabs>
+      > */}
+        {/* <Tab label="Chuyển khoản & QR" />
+        <Tab label="VNPAY" /> */}
+        {/* <Tab label="Chuyển khoản QR" /> */}
+      {/* </Tabs> */}
+      <SEPAYTab />
       
-      {activeTab === 0 && <BankTransferTab />}
-      {activeTab === 1 && <VNPayTab />}
-      {activeTab === 2 && <SEPAYTab />}
+      {/* {activeTab === 0 && <BankTransferTab />}
+      {activeTab === 1 && <VNPayTab />} */}
+      {/* {activeTab === 2 && <SEPAYTab />} */}
     </Box>
   );
 }

@@ -44,6 +44,16 @@ export interface SEPAYOrderResponse {
   qrCodeUrl: string;
   amount: number;
   expiresAt: string;
+  message?: string;
+}
+
+export interface SEPAYOrderResponseWrapper {
+  status: string;
+  content: SEPAYOrderResponse;
+  pageSize?: number | null;
+  pageNumber?: number | null;
+  totalPages?: number | null;
+  totalElements?: number | null;
 }
 
 export interface SEPAYWebhookData {
@@ -62,4 +72,5 @@ export interface SEPAYPaymentStatus {
   actualAmount?: number;
   expiresAt: string;
   createdAt: string;
+  message?: string;
 }

@@ -6,7 +6,7 @@ export const usePaymentWebSocket = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   useEffect(() => {
-    wsRef.current = new WebSocket(process.env.REACT_APP_WS_URL || 'ws://localhost:8080');
+    wsRef.current = new WebSocket(import.meta.env.VITE_APP_SOCKET_URL || 'ws://localhost:9092');
 
     wsRef.current.onmessage = (event) => {
       const data = JSON.parse(event.data);

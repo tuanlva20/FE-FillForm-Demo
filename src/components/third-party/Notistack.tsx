@@ -34,6 +34,7 @@ export default function Notistack({ children }: { children: ReactNode }) {
     <StyledSnackbarProvider
       maxSnack={snackbar.maxStack}
       dense={snackbar.dense}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       iconVariant={
         snackbar.iconVariant === 'useemojis'
           ? {

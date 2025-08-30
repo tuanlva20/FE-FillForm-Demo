@@ -2,7 +2,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { Alert, Box, IconButton, Paper, Snackbar, Stack, TextField, Typography } from '@mui/material';
 import QRCode from 'qrcode.react';
 import { useState } from 'react';
-import { formatAmount, parseAmount, validateAmount } from '../../../utils/paymentUtils';
+import { formatAmount, parseAmount, validateAmount } from 'utils/paymentUtils';
 
 const BANK_INFO = {
   accountName: 'SMARTFILL',

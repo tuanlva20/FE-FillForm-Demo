@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
+import io from 'socket.io-client';
 
 interface PaymentUpdateData {
   orderId: string;
@@ -9,11 +9,11 @@ interface PaymentUpdateData {
 }
 
 export const useWebSocket = () => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [socket, setSocket] = useState<any>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const wsUrl = process.env.REACT_APP_WS_URL || 'ws://localhost:8080';
+    const wsUrl = import.meta.env.VITE_APP_SOCKET_URL || 'ws://localhost:9092';
     const newSocket = io(wsUrl, {
       transports: ['websocket', 'polling'],
       timeout: 20000,
@@ -32,7 +32,7 @@ export const useWebSocket = () => {
       setIsConnected(false);
     });
 
-    newSocket.on('connect_error', (error) => {
+    newSocket.on('connect_error', (error: any) => {
       console.error('WebSocket connection error:', error);
       setIsConnected(false);
     });

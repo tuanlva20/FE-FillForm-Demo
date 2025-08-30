@@ -11,7 +11,7 @@ import {
     Stack,
     Typography
 } from '@mui/material';
-import { formatAmount } from '../../../../utils/paymentUtils';
+import { formatAmount } from 'utils/paymentUtils';
 
 interface PaymentSuccessModalProps {
   open: boolean;

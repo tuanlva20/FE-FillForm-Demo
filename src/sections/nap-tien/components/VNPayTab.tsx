@@ -1,9 +1,9 @@
 import { Box, Button, Paper, Stack, TextField, Typography } from '@mui/material';
+import { createVNPayPayment } from 'api/payment';
 import { useSnackbar } from 'notistack';
 import QRCode from 'qrcode.react';
 import { useState } from 'react';
-import { createVNPayPayment } from '../../../api/payment';
-import { formatAmount, parseAmount, validateAmount } from '../../../utils/paymentUtils';
+import { formatAmount, parseAmount, validateAmount } from 'utils/paymentUtils';
 
 export default function VNPayTab() {
   const [amount, setAmount] = useState('');

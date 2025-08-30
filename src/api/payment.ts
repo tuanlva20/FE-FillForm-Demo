@@ -1,4 +1,4 @@
-import { SEPAYOrderRequest, SEPAYOrderResponse, SEPAYPaymentStatus } from '../types/payment';
+import { SEPAYOrderRequest, SEPAYOrderResponseWrapper, SEPAYPaymentStatus } from '../types/payment';
 import axios from '../utils/axios';
 
 export interface VNPayPaymentRequest {
@@ -41,7 +41,7 @@ export const getPaymentHistory = async (params?: {
 };
 
 // SEPAY Payment APIs
-export const createSEPAYOrder = async (data: SEPAYOrderRequest): Promise<SEPAYOrderResponse> => {
+export const createSEPAYOrder = async (data: SEPAYOrderRequest): Promise<SEPAYOrderResponseWrapper> => {
   const response = await axios.post('/api/payments/sepay/create-order', data);
   return response.data;
 };

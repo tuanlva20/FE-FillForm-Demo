@@ -15,10 +15,10 @@ import {
     Stack,
     Typography
 } from '@mui/material';
+import { getPaymentHistory } from 'api/payment';
 import { useEffect, useState } from 'react';
-import { getPaymentHistory } from '../../../../api/payment';
-import { PaymentTransaction } from '../../../../types/payment';
-import { formatAmount } from '../../../../utils/paymentUtils';
+import { PaymentTransaction } from 'types/payment';
+import { formatAmount } from 'utils/paymentUtils';
 
 interface PaymentStats {
   totalAmount: number;
