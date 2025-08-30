@@ -92,6 +92,12 @@ export default function useFillRequestRealtime(
     const socket = getSocket();
     socketRef.current = socket;
     
+    // If no socket is available, skip realtime updates
+    if (!socket) {
+      console.log('⚠️ WebSocket not available, skipping realtime updates');
+      return;
+    }
+    
     console.log('🔌 Socket Debug - useFillRequestRealtime:', {
       selectedFormId,
       userId: user?.id,

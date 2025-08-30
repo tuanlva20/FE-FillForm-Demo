@@ -520,7 +520,7 @@ export default function TabFillInData() {
                       Bạn có thể sử dụng
                     </Typography>
                     <Link 
-                      href="http://localhost:3000/ma-hoa-data" 
+                      href="/ma-hoa-data" 
                       target="_blank"
                       rel="noopener noreferrer"
                       sx={{ 

@@ -11,7 +11,22 @@ import AuthContext from 'contexts/JWTContext';
 export default function useAuth() {
   const context = useContext(AuthContext);
 
-  if (!context) throw new Error('context must be use inside provider');
+  if (!context) {
+    // Return a fallback context instead of throwing error
+    return {
+      isLoggedIn: false,
+      isInitialized: false,
+      user: null,
+      logout: () => {},
+      login: () => {},
+      googleLogin: () => {},
+      register: () => {},
+      resetPassword: () => {},
+      updateProfile: () => {},
+      changePassword: () => {},
+      rehydrate: async () => false
+    };
+  }
 
   return context;
 }

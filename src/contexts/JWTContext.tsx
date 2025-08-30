@@ -30,10 +30,14 @@ const JWTContext = createContext<JWTContextType | null>(null);
 
 export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const hasInitializedAuth = useRef(false); // Thêm flag để track việc đã gọi getCurrentUser
+  const hasInitializedAuth = useRef(false);
 
   useEffect(() => {
     const initAuth = async () => {
+      if (hasInitializedAuth.current) {
+        return;
+      }
+
       try {
         const response = await authAPI.getCurrentUser();
         if (response?.success) {
@@ -45,137 +49,32 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
               user: response.data
             }
           });
-          hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo thành công
-          logger.log('🔐 JWTContext: Auth initialized successfully, staying on current page');
+          hasInitializedAuth.current = true;
+          logger.log('🔐 JWTContext: Auth initialized successfully');
         } else {
           dispatch({ type: LOGOUT });
-          hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
-          // Chỉ redirect nếu đang ở protected route và không phải public route
-          try {
-            const pathname = window.location.pathname || '/';
-            const PUBLIC_ROUTES = [
-              '/',
-              '/login',
-              '/register',
-              '/forgot-password',
-              '/reset-password',
-              '/check-mail',
-              '/code-verification',
-              '/auth/login',
-              '/auth/register',
-              '/auth/forgot-password',
-              '/auth/reset-password',
-              '/auth/check-mail',
-              '/auth/code-verification',
-              '/maintenance',
-              '/404',
-              '/500'
-            ];
-            const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? pathname === '/' : pathname.startsWith(r)));
-            if (!isPublic) {
-              const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
-              const ts = Date.now();
-              const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
-              window.location.assign(loginUrl);
-            }
-          } catch {}
+          hasInitializedAuth.current = true;
         }
-      } catch (err) {
+              } catch (err: any) {
+          // Handle network errors gracefully
+          if (err?.code === 'ECONNABORTED' || err?.code === 'ERR_NETWORK') {
+          logger.warn('🔐 JWTContext: Backend not available, skipping auth initialization');
+          dispatch({ type: LOGOUT });
+          hasInitializedAuth.current = true;
+          return;
+        }
+        
+        logger.error('🔐 JWTContext: Auth initialization error:', err);
         dispatch({ type: LOGOUT });
-        hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
-        // Chỉ redirect nếu đang ở protected route và không phải public route
-        try {
-          const pathname = window.location.pathname || '/';
-          const PUBLIC_ROUTES = [
-            '/',
-            '/login',
-            '/register',
-            '/forgot-password',
-            '/reset-password',
-            '/check-mail',
-            '/code-verification',
-            '/auth/login',
-            '/auth/register',
-            '/auth/forgot-password',
-            '/auth/reset-password',
-            '/auth/check-mail',
-            '/auth/code-verification',
-            '/maintenance',
-            '/404',
-            '/500'
-          ];
-          const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? pathname === '/' : pathname.startsWith(r)));
-          if (!isPublic) {
-            const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
-            const ts = Date.now();
-            const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
-            window.location.assign(loginUrl);
-          }
-        } catch {}
+        hasInitializedAuth.current = true;
       }
     };
 
-    // Helper function to check if we should skip auth initialization
-    const shouldSkipAuthInit = () => {
-      if (typeof window === 'undefined') return false;
-      const pathname = window.location.pathname || '';
-      
-      // Skip auth initialization for these specific routes
-      const skipRoutes = [
-        '/',           // Landing page
-        '/login',      
-        '/register',   
-        '/forgot-password',
-        '/reset-password',
-        '/check-mail',
-        '/code-verification',
-        '/auth/login',
-        '/auth/register',
-        '/auth/forgot-password',
-        '/auth/reset-password', 
-        '/auth/check-mail',
-        '/auth/code-verification'
-      ];
-      
-      return skipRoutes.some(route => {
-        if (route === '/') {
-          return pathname === '/';
-        }
-        return pathname.startsWith(route);
-      });
-    };
-
-    // Only initialize auth if needed
-    if (!state.isInitialized) {
-      const pathname = window.location.pathname || '/';
-      const isProtected = !shouldSkipAuthInit();
-      logger.log('🔐 JWTContext: Auth not initialized, checking route...', {
-        pathname,
-        shouldSkip: !isProtected
-      });
-
-      if (isProtected) {
-        // Try to initialize auth first on protected routes to preserve current URL for logged-in users
-        void initAuth();
-      } else {
-        logger.log('🔐 JWTContext: Public route detected, skipping auth init');
-        dispatch({ type: LOGOUT });
-      }
+    // Only initialize auth once
+    if (!state.isInitialized && !hasInitializedAuth.current) {
+      void initAuth();
     }
-
-    // Listen for route changes and conditionally initialize auth
-    const handleRouteChange = () => {
-      // If we're now on a protected route and auth is not properly initialized
-      if (!shouldSkipAuthInit() && (!state.isLoggedIn || state.user == null)) {
-        void initAuth();
-      }
-    };
-
-    // Listen for browser navigation (back/forward)
-    window.addEventListener('popstate', handleRouteChange);
-    return () => window.removeEventListener('popstate', handleRouteChange);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [state.isInitialized]);
 
   const login = async (email: string, password: string) => {
     try {

@@ -1,3 +1,4 @@
+import useBalance from 'hooks/useBalance';
 import { useRef, useState } from 'react';
 
 // material-ui
@@ -45,6 +46,7 @@ const actionSX = {
 
 export default function NotificationPage() {
   const downMD = useMediaQuery((theme) => theme.breakpoints.down('md'));
+  const { balance, isLoading: isBalanceLoading, forceRefresh, debugSocket, testNotification } = useBalance();
 
   const anchorRef = useRef<any>(null);
   const [read] = useState(2);
@@ -64,11 +66,19 @@ export default function NotificationPage() {
     <Box sx={{ flexShrink: 0, ml: 0.5 }}>
       <Stack direction="row" spacing={1} alignItems="center">
         <Tooltip 
-          title="Số dư hiện có: 300.000đ"
+          title={`Số dư hiện có: ${isBalanceLoading ? 'Đang tải...' : `${(balance || 0).toLocaleString('vi-VN')}đ`}`}
           placement="bottom"
           arrow
         >
           <Box 
+            onClick={() => {
+              forceRefresh();
+              debugSocket(); // Debug socket connection
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              testNotification(); // Right-click to test notification
+            }}
             sx={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -77,14 +87,16 @@ export default function NotificationPage() {
               py: 0.75,
               borderRadius: 2,
               mr: 1,
+              bgcolor: '#ffffff',
               border: '1px solid',
               borderColor: 'primary.lighter',
               boxShadow: '0 2px 8px rgba(145, 158, 171, 0.16)',
               transition: 'all 0.2s ease-in-out',
-              cursor: 'default',
+              cursor: 'pointer',
               '&:hover': {
                 boxShadow: '0 4px 12px rgba(145, 158, 171, 0.24)',
-                borderColor: 'primary.light'
+                borderColor: 'primary.light',
+                bgcolor: '#ffffff'
               }
             }}
           >
@@ -97,7 +109,7 @@ export default function NotificationPage() {
                 fontSize: '1rem'
               }}
             >
-              300.000đ
+              {isBalanceLoading ? 'Đang tải...' : `${(balance || 0).toLocaleString('vi-VN')}đ`}
             </Typography>
           </Box>
         </Tooltip>

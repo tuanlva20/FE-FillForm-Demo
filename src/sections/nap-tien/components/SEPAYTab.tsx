@@ -41,7 +41,8 @@ export default function SEPAYTab() {
     isConnected, 
     handlePaymentUpdate, 
     subscribeToPayment, 
-    unsubscribeFromPayment 
+    unsubscribeFromPayment,
+    connectionError
   } = useWebSocket();
 
   const numericAmount = parseAmount(amount);
@@ -216,7 +217,7 @@ export default function SEPAYTab() {
         {/* Header */}
         <Box textAlign="center">
           <Typography 
-            variant="h2" 
+            variant="h3" 
             fontWeight={700} 
             color="text.primary" 
             gutterBottom
@@ -229,7 +230,7 @@ export default function SEPAYTab() {
             Nạp tiền bằng QR
           </Typography>
           <Typography 
-            variant="body1" 
+            variant="body2" 
             color="text.secondary"
             sx={{ 
               fontSize: { xs: '1rem', sm: '1.125rem' },
@@ -457,10 +458,46 @@ export default function SEPAYTab() {
             }}
           >
             <Typography variant="body2" sx={{ fontSize: '0.95rem' }}>
-              <strong>Hướng dẫn:</strong> Nhập số tiền và nhấn "Tạo Mã QR" để bắt đầu thanh toán quét mã QR qua các ứng dụng ngân hàng.
+              <strong>Hướng dẫn:</strong> Nhập số tiền và nhấn "Tạo Mã QR" để bắt đầu thanh toán.
             </Typography>
           </Alert>
         )}
+
+        {/* WebSocket Status Alert */}
+        {connectionError && (
+          <Alert 
+            severity="warning" 
+            sx={{ 
+              borderRadius: 2,
+              '& .MuiAlert-message': {
+                fontSize: '0.95rem',
+                lineHeight: 1.5
+              }
+            }}
+          >
+            <Typography variant="body2" sx={{ fontSize: '0.95rem' }}>
+              <strong>Lưu ý:</strong> {connectionError}. Tính năng cập nhật realtime có thể không hoạt động.
+            </Typography>
+          </Alert>
+        )}
+
+        {/* Payment Status Info */}
+        {/* {paymentStatus === 'pending' && (
+          <Alert 
+            severity="info" 
+            sx={{ 
+              borderRadius: 2,
+              '& .MuiAlert-message': {
+                fontSize: '0.95rem',
+                lineHeight: 1.5
+              }
+            }}
+          >
+            <Typography variant="body2" sx={{ fontSize: '0.95rem' }}>
+              <strong>Đang chờ thanh toán:</strong> Vui lòng quét mã QR và hoàn tất thanh toán trong ứng dụng SEPAY.
+            </Typography>
+          </Alert>
+        )} */}
 
         {/* QR Code Instructions */}
         {qrCodeUrl && !qrCodeLoading && !qrCodeError && (

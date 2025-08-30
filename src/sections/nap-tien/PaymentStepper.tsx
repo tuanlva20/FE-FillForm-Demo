@@ -1,6 +1,7 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { Alert, Box, Button, CircularProgress, LinearProgress, Paper, Step, StepLabel, Stepper } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
+import { usePayment } from '../../contexts/PaymentContext';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import PaymentTabs from './components/PaymentTabs';
 import SpecialNoticeBox from './components/SpecialNoticeBox';
@@ -13,6 +14,7 @@ export default function PaymentStepper() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const { setCurrentStepper } = usePayment();
 
   // Optional: if later we have current order id, we can subscribe by id
   const currentOrderId = useMemo<string | null>(() => null, []);
@@ -68,12 +70,20 @@ export default function PaymentStepper() {
     return () => clearTimeout(timeoutId);
   }, [activeStep, isProcessing]);
 
+  // Clear stepper when component unmounts
+  useEffect(() => {
+    return () => {
+      setCurrentStepper(null);
+    };
+  }, [setCurrentStepper]);
+
   const handleConfirmPaid = () => {
     setIsSuccess(false);
     setErrorMessage(null);
     setWarningMessage(null);
     setIsProcessing(true);
     setActiveStep(1);
+    setCurrentStepper('Xác nhận thanh toán');
   };
 
   return (
@@ -109,7 +119,10 @@ export default function PaymentStepper() {
                 <Alert severity="success" sx={{ width: '100%', maxWidth: 520 }}>
                   Nạp tiền thành công! Số dư sẽ được cập nhật trong giây lát.
                 </Alert>
-                <Button variant="contained" color="success" onClick={() => setActiveStep(0)}>
+                <Button variant="contained" color="success" onClick={() => {
+                  setActiveStep(0);
+                  setCurrentStepper(null);
+                }}>
                   Hoàn tất
                 </Button>
               </>
@@ -119,7 +132,10 @@ export default function PaymentStepper() {
                 <Alert severity="warning" sx={{ width: '100%', maxWidth: 520 }}>
                   {warningMessage}
                 </Alert>
-                <Button variant="outlined" onClick={() => setActiveStep(0)}>
+                <Button variant="outlined" onClick={() => {
+                  setActiveStep(0);
+                  setCurrentStepper(null);
+                }}>
                   Quay lại
                 </Button>
               </>
@@ -129,7 +145,10 @@ export default function PaymentStepper() {
                 <Alert severity="error" sx={{ width: '100%', maxWidth: 520 }}>
                   {errorMessage}
                 </Alert>
-                <Button variant="outlined" onClick={() => setActiveStep(0)}>
+                <Button variant="outlined" onClick={() => {
+                  setActiveStep(0);
+                  setCurrentStepper(null);
+                }}>
                   Quay lại
                 </Button>
               </>

@@ -1,4 +1,5 @@
 import { isValid } from 'date-fns';
+import useBalance from 'hooks/useBalance';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { logger } from 'utils/logger';
 
@@ -55,6 +56,15 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     endDate?: string;
     startDate?: string;
   }>({});
+
+  const { balance, isLoading: isBalanceLoading, forceRefresh } = useBalance();
+
+  // Force refresh balance when modal opens
+  useEffect(() => {
+    if (open) {
+      forceRefresh();
+    }
+  }, [open, forceRefresh]);
 
   // Ensure endDate is always set when component mounts or startDate changes
   useEffect(() => {
@@ -286,7 +296,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="body1">Số dư hiện có:</Typography>
                   <Typography variant="h6" color="primary">
-                    300.000đ
+                    {isBalanceLoading ? 'Đang tải...' : `${(balance || 0).toLocaleString('vi-VN')}đ`}
                   </Typography>
                 </Stack>
 

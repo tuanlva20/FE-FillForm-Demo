@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useRef } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 // project-imports
@@ -31,69 +30,37 @@ const PUBLIC_ROUTES = [
 ];
 
 export default function AuthGuard({ children }: GuardProps) {
+  // Tất cả hooks phải được gọi ở đầu component
   const { isLoggedIn, isInitialized } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const hasRedirected = useRef(false);
   
-  const performAuthCheck = useCallback(() => {
-    const pathname = location.pathname || '';
-    
-    // Check if current route is public
-    const isPublicRoute = PUBLIC_ROUTES.some(route => {
-      if (route === '/') {
-        return pathname === '/';
-      }
-      return pathname.startsWith(route);
-    });
-
-    // If route is protected and user is not logged in, redirect to login
-    if (!isPublicRoute && !isLoggedIn && !hasRedirected.current) {
-      const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
-      const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;
-      
-      hasRedirected.current = true;
-      navigate(loginUrl, {
-        state: { from: pathname },
-        replace: true
-      });
-    }
-  }, [location.pathname, isLoggedIn, isInitialized, navigate]);
-
-  useEffect(() => {
-    if (!isInitialized) {
-      return;
-    }
-
-    // Add a small delay to ensure state has fully updated
-    const timeoutId = setTimeout(() => {
-      performAuthCheck();
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [isLoggedIn, isInitialized, performAuthCheck]);
-
-  // Reset redirect flag when location changes (new route)
-  useEffect(() => {
-    hasRedirected.current = false;
-  }, [location.pathname]);
-
-  // Determine route visibility for render phase as well
+  // If auth context is not yet initialized, show loader
+  if (!isInitialized) {
+    return <Loader />;
+  }
+  
+  // Determine route visibility
   const pathname = location.pathname || '';
-  const isPublicRoute = PUBLIC_ROUTES.some((route) => (route === '/' ? pathname === '/' : pathname.startsWith(route)));
+  const isPublicRoute = PUBLIC_ROUTES.some(route => {
+    if (route === '/') {
+      return pathname === '/';
+    }
+    return pathname.startsWith(route);
+  });
 
   // Always allow public routes
-  if (isPublicRoute) return children;
+  if (isPublicRoute) {
+    return children;
+  }
 
-  // If not logged in on a protected route, redirect immediately to login (no loading state)
+  // If not logged in on a protected route, redirect to login
   if (!isLoggedIn) {
     const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
     const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;
     return <Navigate to={loginUrl} state={{ from: pathname }} replace />;
   }
 
-  // If logged in but auth context not yet fully initialized (rare), show loader briefly
-  if (!isInitialized) return <Loader />;
-
+  // User is logged in and route is protected, allow access
   return children;
 }

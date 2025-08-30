@@ -5,8 +5,9 @@ import { logger } from './logger';
 
 // Create axios instance with cookie-based auth and CSRF protection
 const axiosServices = axios.create({
-  baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:3010/',
-  withCredentials: true
+  baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:2412/',
+  withCredentials: true,
+  timeout: 10000 // 10 second timeout
 });
 
 // Configure Axios to automatically send CSRF header based on XSRF-TOKEN cookie
@@ -39,6 +40,13 @@ axiosServices.interceptors.request.use(
 axiosServices.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // Handle network errors gracefully
+    if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+      console.warn('Network error or timeout:', error.message);
+      // Don't show error snackbar for network issues to avoid spam
+      return Promise.reject(error);
+    }
+
     if (BYPASS_AUTH) {
       return Promise.reject(error);
     }

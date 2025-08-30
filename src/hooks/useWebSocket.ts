@@ -11,20 +11,32 @@ interface PaymentUpdateData {
 export const useWebSocket = () => {
   const [socket, setSocket] = useState<any>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   useEffect(() => {
-    const wsUrl = import.meta.env.VITE_APP_SOCKET_URL || 'ws://localhost:9092';
+    // Only try to connect if WebSocket URL is configured
+    const wsUrl = import.meta.env.VITE_APP_SOCKET_URL;
+    
+    if (!wsUrl) {
+      console.log('WebSocket URL not configured, skipping connection');
+      return;
+    }
+
+    console.log('Attempting to connect to WebSocket:', wsUrl);
+    
     const newSocket = io(wsUrl, {
       transports: ['websocket', 'polling'],
-      timeout: 20000,
+      timeout: 10000, // Reduced timeout
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
+      reconnectionAttempts: 3, // Reduced attempts
+      reconnectionDelay: 2000,
+      autoConnect: true,
     });
 
     newSocket.on('connect', () => {
-      console.log('WebSocket connected');
+      console.log('WebSocket connected successfully');
       setIsConnected(true);
+      setConnectionError(null);
     });
 
     newSocket.on('disconnect', () => {
@@ -33,35 +45,47 @@ export const useWebSocket = () => {
     });
 
     newSocket.on('connect_error', (error: any) => {
-      console.error('WebSocket connection error:', error);
+      console.warn('WebSocket connection error:', error);
       setIsConnected(false);
+      setConnectionError('Không thể kết nối WebSocket server');
     });
 
     setSocket(newSocket);
 
     return () => {
-      newSocket.close();
+      if (newSocket) {
+        newSocket.close();
+      }
     };
   }, []);
 
   const handlePaymentUpdate = useCallback((callback: (data: PaymentUpdateData) => void) => {
-    if (!socket) return;
+    if (!socket || !isConnected) {
+      console.log('WebSocket not available for payment updates');
+      return;
+    }
 
     socket.on('payment:update', callback);
 
     return () => {
       socket.off('payment:update', callback);
     };
-  }, [socket]);
+  }, [socket, isConnected]);
 
   const subscribeToPayment = useCallback((orderId: string) => {
-    if (!socket || !isConnected) return;
+    if (!socket || !isConnected) {
+      console.log('WebSocket not available for subscription');
+      return;
+    }
 
     socket.emit('subscribe:payment', { orderId });
   }, [socket, isConnected]);
 
   const unsubscribeFromPayment = useCallback((orderId: string) => {
-    if (!socket || !isConnected) return;
+    if (!socket || !isConnected) {
+      console.log('WebSocket not available for unsubscription');
+      return;
+    }
 
     socket.emit('unsubscribe:payment', { orderId });
   }, [socket, isConnected]);
@@ -69,6 +93,7 @@ export const useWebSocket = () => {
   return {
     socket,
     isConnected,
+    connectionError,
     handlePaymentUpdate,
     subscribeToPayment,
     unsubscribeFromPayment,
