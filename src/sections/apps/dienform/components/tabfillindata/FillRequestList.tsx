@@ -40,7 +40,7 @@ interface FillRequestListProps {
   onEdit?: (requestId: string) => void;
 }
 
-export default function FillRequestList({ 
+export default function FillRequestList({
   fillRequests,
   loading,
   searchQuery,
@@ -53,28 +53,28 @@ export default function FillRequestList({
   onViewDetails,
   onEdit
 }: FillRequestListProps) {
-  
   // Filter fill requests based on search text
-  const filteredRequests = searchQuery.trim() === '' 
-    ? fillRequests 
-    : fillRequests.filter(request => {
-        // Convert date to string for searching if available
-        const dateStr = request.createdAt 
-          ? new Date(request.createdAt).toLocaleDateString('vi-VN')
-          : '';
-        
-        // Search by date or status
-        return dateStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               (request.status && request.status.toLowerCase().includes(searchQuery.toLowerCase()));
-      });
-  
+  const filteredRequests =
+    searchQuery.trim() === ''
+      ? fillRequests
+      : fillRequests.filter((request) => {
+          // Convert date to string for searching if available
+          const dateStr = request.createdAt ? new Date(request.createdAt).toLocaleDateString('vi-VN') : '';
+
+          // Search by date or status
+          return (
+            dateStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (request.status && request.status.toLowerCase().includes(searchQuery.toLowerCase()))
+          );
+        });
+
   // Get paginated requests
   const getPaginatedRequests = () => {
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredRequests.slice(startIndex, endIndex);
   };
-  
+
   const getStatusChip = (request: FillRequestDTO) => <StatusChip status={request.status} fillRequest={request} />;
 
   const getScheduleIcon = (isHumanLike: boolean | undefined) => {
@@ -134,7 +134,7 @@ export default function FillRequestList({
           sx={{ maxWidth: 300 }}
         />
       </Box>
-      
+
       <TableContainer>
         <Table>
           <TableHead>
@@ -166,8 +166,8 @@ export default function FillRequestList({
                   <TableCell>Yêu cầu điền form #{request.id?.slice(-6) || 'N/A'}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Hẹn giờ điền">
-                      <IconButton 
-                        color="primary" 
+                      <IconButton
+                        color="primary"
                         // onClick={() => handleSchedule(request.id || '')}
                       >
                         {getScheduleIcon(request.isHumanLike ?? (request as any).humanLike)}
@@ -206,8 +206,6 @@ export default function FillRequestList({
           </TableBody>
         </Table>
       </TableContainer>
-      
-
     </MainCard>
   );
-} 
+}

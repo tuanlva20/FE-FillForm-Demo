@@ -10,12 +10,20 @@ export default function SpecialNoticeBox() {
         </Typography>
       </Stack>
       <Box ml={3}>
-        <Typography variant="body1" mb={0.5}>- KHAOSAT.TECH sẽ hoàn tiền 100% nếu Tool lỗi / Sử dụng dịch vụ không thành công.</Typography>
-        <Typography variant="body1" mb={0.5}>- <b>Nạp tối thiểu: 10,000 đ</b>. Nạp dưới mức tối thiểu sẽ không hỗ trợ dưới mọi hình thức.</Typography>
-        <Typography variant="body1" mb={0.5}>- <b>Nội dung cần phải chính xác</b> để hệ thống tự động nhận diện, nếu sai sẽ phải liên hệ thủ công.</Typography>
-        <Typography variant="body1" mb={0.5}>- <b>Hệ thống xử lý tự động 24/7</b>, nhưng nếu giao dịch từ ngân hàng treo lệnh có thể xử lý chậm.</Typography>
+        <Typography variant="body1" mb={0.5}>
+          - KHAOSAT.TECH sẽ hoàn tiền 100% nếu Tool lỗi / Sử dụng dịch vụ không thành công.
+        </Typography>
+        <Typography variant="body1" mb={0.5}>
+          - <b>Nạp tối thiểu: 10,000 đ</b>. Nạp dưới mức tối thiểu sẽ không hỗ trợ dưới mọi hình thức.
+        </Typography>
+        <Typography variant="body1" mb={0.5}>
+          - <b>Nội dung cần phải chính xác</b> để hệ thống tự động nhận diện, nếu sai sẽ phải liên hệ thủ công.
+        </Typography>
+        <Typography variant="body1" mb={0.5}>
+          - <b>Hệ thống xử lý tự động 24/7</b>, nhưng nếu giao dịch từ ngân hàng treo lệnh có thể xử lý chậm.
+        </Typography>
         <Typography variant="body1">- Liên hệ bộ phận hỗ trợ nếu sau 20 phút không thấy cộng tiền.</Typography>
       </Box>
     </Paper>
   );
-} 
+}

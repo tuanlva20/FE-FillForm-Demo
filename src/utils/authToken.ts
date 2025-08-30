@@ -127,5 +127,3 @@ async function refreshSingleFlight(): Promise<boolean> {
   ongoingRefreshPromise = doRefresh();
   return ongoingRefreshPromise;
 }
-
-

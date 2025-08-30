@@ -34,7 +34,7 @@ export function PaymentProvider({ children }: { children: ReactNode }) {
         currentStepper,
         showPaymentSuccess,
         hidePaymentSuccess,
-        setCurrentStepper,
+        setCurrentStepper
       }}
     >
       {children}

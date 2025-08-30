@@ -1,11 +1,7 @@
 // AI Suggestion API
 // Endpoint cho việc gọi AI service để tạo dữ liệu mẫu
 
-import {
-    AISuggestionRequest,
-    AISuggestionResponse,
-    AISuggestionValidationResponse
-} from 'types/ai-suggestion';
+import { AISuggestionRequest, AISuggestionResponse, AISuggestionValidationResponse } from 'types/ai-suggestion';
 import axiosServices from 'utils/axios';
 
 const AI_SUGGESTION_ENDPOINT = '/api/ai-suggestion';
@@ -15,9 +11,7 @@ const AI_SUGGESTION_ENDPOINT = '/api/ai-suggestion';
  * @param request - Thông tin form và yêu cầu tạo mẫu
  * @returns Promise với kết quả AI suggestion
  */
-export const generateAISuggestions = async (
-  request: AISuggestionRequest
-): Promise<AISuggestionResponse> => {
+export const generateAISuggestions = async (request: AISuggestionRequest): Promise<AISuggestionResponse> => {
   const response = await axiosServices.post(AI_SUGGESTION_ENDPOINT, request);
   return response.data;
 };
@@ -100,35 +94,37 @@ export const getAnswerAttributesWithNewStructure = async (
   requirements?: AISuggestionRequest['requirements']
 ): Promise<{
   status: string;
-  content?: {
-    formId: string;
-    formTitle: string;
-    sampleCount: number;
-    questionAnswerAttributes: Array<{
-      questionId: string;
-      questionTitle: string;
-      questionType: string;
-      isRequired: boolean;
-      optionDistributions: Array<{
-        optionId: string;
-        optionText: string;
-        optionValue: string;
-        percentage: number;
-        sampleValues: string[];
-        description: string | null;
-      }>;
-      sampleAnswers: string[];
-      description: string | null;
-    }>;
-    generatedAt: string;
-    requestId: string;
-  } | {
-    requestId: string;
-    estimatedWaitTime: number;
-    message: string;
-    priority: number;
-    status: string;
-  };
+  content?:
+    | {
+        formId: string;
+        formTitle: string;
+        sampleCount: number;
+        questionAnswerAttributes: Array<{
+          questionId: string;
+          questionTitle: string;
+          questionType: string;
+          isRequired: boolean;
+          optionDistributions: Array<{
+            optionId: string;
+            optionText: string;
+            optionValue: string;
+            percentage: number;
+            sampleValues: string[];
+            description: string | null;
+          }>;
+          sampleAnswers: string[];
+          description: string | null;
+        }>;
+        generatedAt: string;
+        requestId: string;
+      }
+    | {
+        requestId: string;
+        estimatedWaitTime: number;
+        message: string;
+        priority: number;
+        status: string;
+      };
   requestId?: string;
   message?: string;
   estimatedWaitTime?: number;
@@ -151,81 +147,86 @@ export const getAnswerAttributesWithNewStructure = async (
  * @param requestId - ID của request từ queue
  * @returns Promise với status và kết quả (nếu hoàn thành)
  */
-export const pollAISuggestionStatus = async (requestId: string): Promise<{
+export const pollAISuggestionStatus = async (
+  requestId: string
+): Promise<{
   status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'OK';
   message?: string;
   estimatedWaitTime?: number;
   priority?: number;
-  content?: {
-    formId: string;
-    formTitle: string;
-    sampleCount: number;
-    questionAnswerAttributes: Array<{
-      questionId: string;
-      questionTitle: string;
-      questionType: string;
-      isRequired: boolean;
-      optionDistributions: Array<{
-        optionId: string;
-        optionText: string;
-        optionValue: string;
-        percentage: number;
-        sampleValues: string[];
-        description: string | null;
-      }>;
-      sampleAnswers: string[];
-      description: string | null;
-    }>;
-    generatedAt: string;
-    requestId: string;
-  } | {
-    result: {
-      formId: string;
-      formTitle: string;
-      sampleCount: number;
-      questionAnswerAttributes: Array<{
-        questionId: string;
-        questionTitle: string;
-        questionType: string;
-        isRequired: boolean;
-        optionDistributions: Array<{
-          optionId: string;
-          optionText: string;
-          optionValue: string;
-          percentage: number;
-          sampleValues: string[];
+  content?:
+    | {
+        formId: string;
+        formTitle: string;
+        sampleCount: number;
+        questionAnswerAttributes: Array<{
+          questionId: string;
+          questionTitle: string;
+          questionType: string;
+          isRequired: boolean;
+          optionDistributions: Array<{
+            optionId: string;
+            optionText: string;
+            optionValue: string;
+            percentage: number;
+            sampleValues: string[];
+            description: string | null;
+          }>;
+          sampleAnswers: string[];
           description: string | null;
         }>;
-        sampleAnswers: string[];
-        description: string | null;
-      }>;
-      generatedAt: string;
-      requestId: string;
-    };
-    createdAt: string;
-    queuedAt: string;
-    maxRetries: number;
-    queuePosition: number;
-    requestId: string;
-    retryCount: number;
-    errorMessage?: string;
-    priority: number;
-    processingStartedAt?: string;
-    processingCompletedAt?: string | null;
-    status: string;
-  } | {
-    createdAt: string;
-    queuedAt: string;
-    maxRetries: number;
-    queuePosition: number;
-    requestId: string;
-    retryCount: number;
-    errorMessage?: string;
-    priority: number;
-    processingStartedAt?: string;
-    processingCompletedAt?: string | null;
-    status: string;
-  };
+        generatedAt: string;
+        requestId: string;
+      }
+    | {
+        result: {
+          formId: string;
+          formTitle: string;
+          sampleCount: number;
+          questionAnswerAttributes: Array<{
+            questionId: string;
+            questionTitle: string;
+            questionType: string;
+            isRequired: boolean;
+            optionDistributions: Array<{
+              optionId: string;
+              optionText: string;
+              optionValue: string;
+              percentage: number;
+              sampleValues: string[];
+              description: string | null;
+            }>;
+            sampleAnswers: string[];
+            description: string | null;
+          }>;
+          generatedAt: string;
+          requestId: string;
+        };
+        createdAt: string;
+        queuedAt: string;
+        maxRetries: number;
+        queuePosition: number;
+        requestId: string;
+        retryCount: number;
+        errorMessage?: string;
+        priority: number;
+        processingStartedAt?: string;
+        processingCompletedAt?: string | null;
+        status: string;
+      }
+    | {
+        createdAt: string;
+        queuedAt: string;
+        maxRetries: number;
+        queuePosition: number;
+        requestId: string;
+        retryCount: number;
+        errorMessage?: string;
+        priority: number;
+        processingStartedAt?: string;
+        processingCompletedAt?: string | null;
+        status: string;
+      };
   error?: string;
   pageSize?: number | null;
   pageNumber?: number | null;

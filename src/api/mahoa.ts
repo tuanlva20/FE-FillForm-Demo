@@ -45,9 +45,7 @@ export const deleteEncryptItem = async (id: string): Promise<void> => {
 };
 
 // For immediate download use-case: POST and receive Excel as blob (201 Created)
-export const encryptAndDownload = async (
-  payload: CreateEncryptRequest
-): Promise<{ blob: Blob; filename?: string }> => {
+export const encryptAndDownload = async (payload: CreateEncryptRequest): Promise<{ blob: Blob; filename?: string }> => {
   const response = await axiosServices.post(MAHOA_API_ENDPOINT, payload, {
     responseType: 'blob',
     validateStatus: () => true
@@ -66,13 +64,11 @@ export const encryptAndDownload = async (
     } catch (e: any) {
       // If JSON.parse failed, still throw a normalized object for UI
       const fallback = { status, errorMessage: 'Dữ liệu không hợp lệ', errorDetails: undefined } as any;
-      throw (e && typeof e === 'object') ? e : fallback;
+      throw e && typeof e === 'object' ? e : fallback;
     }
   }
 
-  const disposition =
-    (response as any).headers?.['content-disposition'] ||
-    (response as any).headers?.get?.('content-disposition');
+  const disposition = (response as any).headers?.['content-disposition'] || (response as any).headers?.get?.('content-disposition');
   let filename: string | undefined;
   if (typeof disposition === 'string') {
     const match = disposition.match(/filename\*=UTF-8''([^;]+)|filename="?([^";]+)"?/i);
@@ -83,5 +79,3 @@ export const encryptAndDownload = async (
 };
 
 export type { CreateEncryptRequest as MaHoaCreateEncryptRequest };
-
-

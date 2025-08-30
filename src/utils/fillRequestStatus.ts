@@ -4,12 +4,7 @@ import { Clock } from 'iconsax-react';
 import type { ReactNode } from 'react';
 import { createElement } from 'react';
 
-export type FillRequestStatus =
-  | 'QUEUED'
-  | 'IN_PROCESS'
-  | 'IN_PROGRESS'
-  | 'COMPLETED'
-  | 'FAILED';
+export type FillRequestStatus = 'QUEUED' | 'IN_PROCESS' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
 
 export type ChipColor = 'default' | 'primary' | 'secondary' | 'success' | 'error' | 'info' | 'warning';
 
@@ -24,10 +19,10 @@ export function getFillRequestStatusMeta(status?: string): { label: string; colo
   const s = normalizeStatus(status);
   switch (s) {
     case 'QUEUED':
-      return { 
-        label: 'Đang chờ...', 
-        color: 'warning', 
-        icon: createElement(Clock, { size: 16 }) 
+      return {
+        label: 'Đang chờ...',
+        color: 'warning',
+        icon: createElement(Clock, { size: 16 })
       };
     case 'COMPLETED':
       return { label: 'Hoàn thành', color: 'success', icon: createElement(SuccessIcon) };
@@ -47,5 +42,3 @@ export function getQueueStatusText(request: FillRequestDTO): string {
   }
   return getFillRequestStatusMeta(request.status).label;
 }
-
-

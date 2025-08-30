@@ -56,7 +56,7 @@ import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
 export default function TabFillInData() {
   // Ref for scrolling to top
   const topRef = useRef<HTMLDivElement>(null);
-  
+
   // States for API interactions
   const [loading, setLoading] = useState<boolean>(false);
   const [forms, setForms] = useState<FormData[]>([]);
@@ -64,23 +64,23 @@ export default function TabFillInData() {
   const [selectedForm, setSelectedForm] = useState<FormDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorAlert, setErrorAlert] = useState<{ title: string; description: string; showEncryption?: boolean } | null>(null);
-  
+
   // State for payment modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
   const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
-  
+
   // State for form inputs
   const [formLink, setFormLink] = useState<string>('');
   const [sheetLink, setSheetLink] = useState<string>('');
-  
+
   // States for data checking
   const [isCheckingData, setIsCheckingData] = useState<boolean>(false);
   const [dataChecked, setDataChecked] = useState<boolean>(false);
   const [mappingData, setMappingData] = useState<DataMappingResponse | null>(null);
   const [columnMappings, setColumnMappings] = useState<Map<string, string>>(new Map());
-  
+
   // States for form list - Updated default limit to 10
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [pageIndex, setPageIndex] = useState<number>(0);
@@ -111,7 +111,7 @@ export default function TabFillInData() {
     const h = String(local.getHours()).padStart(2, '0');
     return `${y}-${m}-${d}T${h}:59:59`;
   };
-  
+
   // Load forms on component mount
   useEffect(() => {
     const fetchForms = async () => {
@@ -119,7 +119,7 @@ export default function TabFillInData() {
       try {
         const list = await getAllUserForms();
         setForms(Array.isArray(list) ? list : []);
-        
+
         // Don't select any form by default - user must choose
       } catch (err: any) {
         console.error('Error fetching forms:', err);
@@ -130,10 +130,10 @@ export default function TabFillInData() {
         setLoading(false);
       }
     };
-    
+
     fetchForms();
   }, []);
-  
+
   // Load form details when form is selected
   useEffect(() => {
     if (!selectedFormId) {
@@ -141,7 +141,7 @@ export default function TabFillInData() {
       setFormLink('');
       return;
     }
-    
+
     const fetchFormDetails = async () => {
       try {
         const formDetails = await getFormDetail(selectedFormId);
@@ -154,7 +154,7 @@ export default function TabFillInData() {
         setErrorAlert({ title: 'Lỗi tải chi tiết form', description: msg });
       }
     };
-    
+
     fetchFormDetails();
   }, [selectedFormId]);
 
@@ -164,21 +164,19 @@ export default function TabFillInData() {
   // Helper: scroll to top of component
   const scrollToTop = () => {
     if (topRef.current) {
-      topRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
+      topRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
       });
     }
   };
-  
+
   // Helper: build alert from data-mapping error (check)
   const buildAlertForCheckDataError = (err: any): { title: string; description: string } => {
     const data = err?.response?.data ?? err;
     if (data?.sheetAccessibilityInfo?.isAccessible === false) {
       const title = 'Lỗi link Google sheet';
-      const reasons = Array.isArray(data?.errors)
-        ? data.errors.join(', ')
-        : (typeof data?.errors === 'string' ? data.errors : '');
+      const reasons = Array.isArray(data?.errors) ? data.errors.join(', ') : typeof data?.errors === 'string' ? data.errors : '';
       const details: string[] = [];
       if (data.sheetAccessibilityInfo?.isPublic === false) details.push('sheet không công khai');
       if (!data.sheetAccessibilityInfo?.accessMethod) details.push('không có quyền truy cập');
@@ -195,16 +193,16 @@ export default function TabFillInData() {
   // Helper: build alert from create fill request error
   const buildAlertForCreateFillRequestError = (err: any): { title: string; description: string; showEncryption?: boolean } => {
     const data = err?.response?.data ?? err;
-    
+
     // Check if this is a validation error from backend
     if (data?.errorMessage) {
-      return { 
-        title: 'Lỗi tạo yêu cầu điền form', 
+      return {
+        title: 'Lỗi tạo yêu cầu điền form',
         description: data.errorMessage,
         showEncryption: true // Show encryption suggestion for validation errors
       };
     }
-    
+
     // Fallback to generic error handling
     const message = handleDataMappingError(err, 'create');
     return { title: 'Lỗi tạo yêu cầu điền form', description: message };
@@ -237,38 +235,39 @@ export default function TabFillInData() {
       setTimeout(() => scrollToTop(), 100);
       return;
     }
-    
+
     // Validate Google Sheets URL - more flexible pattern
     const sheetUrlPattern = /^https:\/\/docs\.google\.com\/spreadsheets\/d\/[a-zA-Z0-9-_]+/;
-    
+
     if (!sheetUrlPattern.test(sheetLink)) {
-      const msg = 'Link Google Sheet không hợp lệ. Vui lòng nhập link Google Sheets (không phải Google Forms). Ví dụ: https://docs.google.com/spreadsheets/d/1ABC123.../edit';
+      const msg =
+        'Link Google Sheet không hợp lệ. Vui lòng nhập link Google Sheets (không phải Google Forms). Ví dụ: https://docs.google.com/spreadsheets/d/1ABC123.../edit';
       setError(msg);
       setErrorAlert({ title: 'Link Google Sheet không hợp lệ', description: msg });
       setTimeout(() => scrollToTop(), 100);
       return;
     }
-    
+
     setIsCheckingData(true);
     setError(null);
     setErrorAlert(null);
-    
+
     try {
       const request: DataMappingRequest = {
         formId: selectedFormId,
         sheetLink
       };
-      
+
       const response = await checkDataMapping(request);
-      
+
       setMappingData(response);
-      
+
       // Initialize column mappings
       const initialMappings = new Map<string, string>();
-      
+
       // Auto-map columns based on similarity (if provided by backend)
       if (response.autoMappings) {
-        response.autoMappings.forEach(mapping => {
+        response.autoMappings.forEach((mapping) => {
           initialMappings.set(mapping.questionId, mapping.columnName);
         });
       }
@@ -321,10 +320,9 @@ export default function TabFillInData() {
           }
         }
       });
-      
+
       setColumnMappings(initialMappings);
       setDataChecked(true);
-      
     } catch (err: any) {
       // Handle specific error types
       const msg = handleDataMappingError(err, 'check');
@@ -335,12 +333,12 @@ export default function TabFillInData() {
       setIsCheckingData(false);
     }
   };
-  
+
   // Handle column mapping change
   const handleMappingChange = (questionId: string, rowTitle: string | null, columnIndex: number) => {
     const newMappings = new Map(columnMappings);
     const columnName = mappingData?.sheetColumns[columnIndex] || '';
-    
+
     if (rowTitle) {
       // For grid questions, store mapping with row title
       newMappings.set(`${questionId}:${rowTitle}`, columnName);
@@ -348,10 +346,10 @@ export default function TabFillInData() {
       // For regular questions, store mapping directly
       newMappings.set(questionId, columnName);
     }
-    
+
     setColumnMappings(newMappings);
   };
-  
+
   // Handle create fill request
   const handleCreateFillRequest = async (formValues: {
     submissionCount: number;
@@ -361,16 +359,16 @@ export default function TabFillInData() {
     endDate?: Date;
   }) => {
     if (!mappingData || !selectedFormId) return;
-    
+
     // Validate mappings - allow empty mappings for optional questions
     const mappingArray = Array.from(columnMappings.entries()).map(([questionId, columnName]) => ({
       questionId,
       columnName: columnName || null // Allow null for unmapped questions
     }));
-    
+
     try {
-    setLoading(true);
-      
+      setLoading(true);
+
       const request: DataFillRequestDTO = {
         formId: selectedFormId,
         sheetLink,
@@ -381,9 +379,9 @@ export default function TabFillInData() {
         startDate: toLocalDateStringAtStartOfDay(formValues.startDate),
         endDate: toLocalDateStringAtEndOfDay(formValues.endDate || formValues.startDate)
       };
-      
+
       await createDataFillRequest(request);
-      
+
       // Reset form
       setSheetLink('');
       setDataChecked(false);
@@ -392,7 +390,7 @@ export default function TabFillInData() {
       setIsAutoFillModalOpen(false);
       setError(null);
       setErrorAlert(null);
-      
+
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
         try {
@@ -403,11 +401,10 @@ export default function TabFillInData() {
           // Không hiển thị lỗi ở đây vì đã tạo thành công fill request
         }
       }
-      
+
       // Show success message
       setErrorSnackMessage('Tạo yêu cầu điền form thành công!');
       setErrorSnackOpen(true);
-      
     } catch (err: any) {
       console.error('Error creating fill request:', err);
       const errorDetails = buildAlertForCreateFillRequestError(err);
@@ -415,7 +412,7 @@ export default function TabFillInData() {
       setErrorAlert(errorDetails);
       setErrorSnackMessage(errorDetails.description);
       setErrorSnackOpen(true);
-      
+
       // Scroll to top to show error alert
       setTimeout(() => {
         scrollToTop();
@@ -424,12 +421,12 @@ export default function TabFillInData() {
       setLoading(false);
     }
   };
-  
+
   // Open payment modal
   const handleOpenPaymentModal = () => {
     setIsPaymentModalOpen(true);
   };
-  
+
   // Open auto fill modal
   const handleOpenAutoFillModal = () => {
     if (!dataChecked || !mappingData) {
@@ -443,40 +440,41 @@ export default function TabFillInData() {
     }
     setIsAutoFillModalOpen(true);
   };
-  
+
   // Handle page change
   const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
     setPageIndex(value - 1);
   };
-  
+
   // Handle rows per page change
   const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPageSize(parseInt(event.target.value, 10));
     setPageIndex(0);
   };
 
-  const getTableState = () => ({
-    pagination: { pageIndex, pageSize },
-    columnVisibility: {},
-    columnOrder: [],
-    columnPinning: { left: [], right: [] },
-    rowSelection: {},
-    sorting: [],
-    columnFilters: [],
-    globalFilter: '',
-    expanded: {},
-    columnSizing: {},
-    columnSizingInfo: {
-      startOffset: null,
-      columnSizingStart: [],
-      isResizingColumn: false,
-      deltaOffset: null,
-      deltaPercentage: null,
-      startSize: null
-    },
-    rowPinning: { top: [], bottom: [] },
-    grouping: []
-  } as any);
+  const getTableState = () =>
+    ({
+      pagination: { pageIndex, pageSize },
+      columnVisibility: {},
+      columnOrder: [],
+      columnPinning: { left: [], right: [] },
+      rowSelection: {},
+      sorting: [],
+      columnFilters: [],
+      globalFilter: '',
+      expanded: {},
+      columnSizing: {},
+      columnSizingInfo: {
+        startOffset: null,
+        columnSizingStart: [],
+        isResizingColumn: false,
+        deltaOffset: null,
+        deltaPercentage: null,
+        startSize: null
+      },
+      rowPinning: { top: [], bottom: [] },
+      grouping: []
+    }) as any;
 
   // Enable schedule modal opening from list
   const handleOpenScheduleModal = (requestId: string) => {
@@ -488,7 +486,7 @@ export default function TabFillInData() {
   const handleFormChange = (event: SelectChangeEvent) => {
     const formId = event.target.value;
     setSelectedFormId(formId);
-    
+
     // Reset form inputs when changing form
     setFormLink('');
     setSheetLink('');
@@ -511,7 +509,16 @@ export default function TabFillInData() {
                 {errorAlert.description}
               </Typography>
               {errorAlert.showEncryption && (
-                <Box sx={{ mt: 1, p: 2, backgroundColor: 'rgba(25, 118, 210, 0.04)', borderRadius: 1, border: '1px solid', borderColor: 'primary.light' }}>
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 2,
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'primary.light'
+                  }}
+                >
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Typography variant="body2" color="primary.main" fontWeight="600">
                       💡 Gợi ý:
@@ -519,12 +526,12 @@ export default function TabFillInData() {
                     <Typography variant="body2" color="text.secondary">
                       Bạn có thể sử dụng
                     </Typography>
-                    <Link 
-                      href="/ma-hoa-data" 
+                    <Link
+                      href="/ma-hoa-data"
                       target="_blank"
                       rel="noopener noreferrer"
-                      sx={{ 
-                        fontWeight: 600, 
+                      sx={{
+                        fontWeight: 600,
                         textDecoration: 'none',
                         '&:hover': { textDecoration: 'underline' }
                       }}
@@ -539,7 +546,7 @@ export default function TabFillInData() {
               )}
             </Alert>
           )}
-          
+
           {/* Mapping guidance note */}
           <Alert color="info" variant="border" icon={<InfoCircle variant="Bold" />} sx={{ mb: 2 }}>
             <AlertTitle>Quy tắc mapping dữ liệu</AlertTitle>
@@ -557,14 +564,7 @@ export default function TabFillInData() {
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
-                <Select 
-                  fullWidth 
-                  id="ten-form" 
-                  value={selectedFormId || ''} 
-                  onChange={handleFormChange}
-                  disabled={loading}
-                  displayEmpty
-                >
+                <Select fullWidth id="ten-form" value={selectedFormId || ''} onChange={handleFormChange} disabled={loading} displayEmpty>
                   <MenuItem value="">
                     <em>- Chọn Form cần điền -</em>
                   </MenuItem>
@@ -576,37 +576,37 @@ export default function TabFillInData() {
                 </Select>
               </Stack>
             </Grid>
-            
+
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-form">Link Form</InputLabel>
-                <TextField 
-                  fullWidth 
-                  id="link-form" 
-                  placeholder="https://docs.google.com/forms/d/e/1FAlpQLSdUJNsCKqqokI1kMTrfXYWWR5ZqDH4S3-wGkczCAkhzBxzg9A/viewform" 
+                <TextField
+                  fullWidth
+                  id="link-form"
+                  placeholder="https://docs.google.com/forms/d/e/1FAlpQLSdUJNsCKqqokI1kMTrfXYWWR5ZqDH4S3-wGkczCAkhzBxzg9A/viewform"
                   value={formLink}
                   onChange={(e) => setFormLink(e.target.value)}
                   disabled={!selectedFormId}
                 />
               </Stack>
             </Grid>
-            
+
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-data-sheet">Link Data Sheet</InputLabel>
-                <TextField 
-                  fullWidth 
-                  id="link-data-sheet" 
-                  placeholder="https://docs.google.com/spreadsheets/d/1ABC123.../edit" 
+                <TextField
+                  fullWidth
+                  id="link-data-sheet"
+                  placeholder="https://docs.google.com/spreadsheets/d/1ABC123.../edit"
                   value={sheetLink}
                   onChange={(e) => setSheetLink(e.target.value)}
                 />
               </Stack>
             </Grid>
-            
+
             <Grid size={12} sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
-              <Button 
-                variant="contained" 
+              <Button
+                variant="contained"
                 color="primary"
                 onClick={handleCheckData}
                 disabled={isCheckingData || !selectedFormId || !sheetLink}
@@ -616,21 +616,25 @@ export default function TabFillInData() {
               </Button>
             </Grid>
           </Grid>
-          
+
           {/* Data mapping section - shown after data check */}
           {dataChecked && mappingData && (
             <>
               <Divider sx={{ my: 3 }} />
-              
-              <Typography variant="h5" sx={{ mb: 2 }}>Thông tin cột liên kết</Typography>
+
+              <Typography variant="h5" sx={{ mb: 2 }}>
+                Thông tin cột liên kết
+              </Typography>
               <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
                 Hãy kiểm tra các câu hỏi với cột liên kết trong data
               </Typography>
-              
+
               {/* Show data validation errors if any */}
               {mappingData.errors && mappingData.errors.length > 0 && (
                 <Alert color="warning" icon={<Warning2 variant="Bold" />} sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Phát hiện các vấn đề:</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Phát hiện các vấn đề:
+                  </Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.errors.map((error, index) => (
                       <li key={index}>{error}</li>
@@ -638,11 +642,13 @@ export default function TabFillInData() {
                   </ul>
                 </Alert>
               )}
-              
+
               {/* Show unmapped questions if any */}
               {mappingData.unmappedQuestions && mappingData.unmappedQuestions.length > 0 && (
                 <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Câu hỏi không tìm thấy trong sheet:</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Câu hỏi không tìm thấy trong sheet:
+                  </Typography>
                   <ul style={{ margin: 0, paddingLeft: 20 }}>
                     {mappingData.unmappedQuestions.map((question, index) => (
                       <li key={index}>{question}</li>
@@ -650,7 +656,7 @@ export default function TabFillInData() {
                   </ul>
                 </Alert>
               )}
-              
+
               {/* Header Row */}
               <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Grid container spacing={2} alignItems="center">
@@ -659,11 +665,11 @@ export default function TabFillInData() {
                       Câu hỏi
                     </Typography>
                   </Grid>
-                  
+
                   <Grid size={{ xs: 12, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
                     {/* Empty space for arrow */}
                   </Grid>
-                  
+
                   <Grid size={{ xs: 12, md: 6 }}>
                     <Typography variant="h6" fontWeight="600" color="text.primary">
                       Cột dữ liệu liên kết
@@ -675,68 +681,70 @@ export default function TabFillInData() {
               {mappingData.questions
                 .sort((a, b) => a.position - b.position)
                 .map((question) => {
-                const isGridQuestion = question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid';
-                const getColumnIndex = (columnName: string) => mappingData.sheetColumns.findIndex((c) => c === columnName);
+                  const isGridQuestion = question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid';
+                  const getColumnIndex = (columnName: string) => mappingData.sheetColumns.findIndex((c) => c === columnName);
 
-                if (isGridQuestion) {
+                  if (isGridQuestion) {
+                    return (
+                      <Box key={question.id} sx={{ mb: 3 }}>
+                        <GridQuestionMapping
+                          question={question as any}
+                          sheetColumns={mappingData.sheetColumns}
+                          columnMappings={columnMappings}
+                          onMappingChange={handleMappingChange}
+                        />
+                      </Box>
+                    );
+                  }
+
+                  // Non-grid question (single mapping)
                   return (
                     <Box key={question.id} sx={{ mb: 3 }}>
-                      <GridQuestionMapping
-                        question={question as any}
-                        sheetColumns={mappingData.sheetColumns}
-                        columnMappings={columnMappings}
-                        onMappingChange={handleMappingChange}
-                      />
+                      <Grid container spacing={2} alignItems="center">
+                        <Grid size={{ xs: 5, md: 5 }}>
+                          <Typography fontWeight="500">
+                            {question.title}
+                            {question.required && (
+                              <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
+                                *
+                              </Typography>
+                            )}
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 1, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
+                          <ArrowRight2 size={24} />
+                        </Grid>
+                        <Grid size={{ xs: 6, md: 6 }}>
+                          <FormControl fullWidth>
+                            <Select
+                              value={getColumnIndex(columnMappings.get(question.id) || '')}
+                              onChange={(e) => handleMappingChange(question.id, null, Number(e.target.value))}
+                              displayEmpty
+                              size="small"
+                            >
+                              <MenuItem value={-1}>- Chọn cột dữ liệu tương ứng -</MenuItem>
+                              {mappingData.sheetColumns.map((column, idx) => (
+                                <MenuItem key={`${question.id}:${column}`} value={idx}>
+                                  {column}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      </Grid>
                     </Box>
                   );
-                }
+                })}
 
-                // Non-grid question (single mapping)
-                return (
-                  <Box key={question.id} sx={{ mb: 3 }}>
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid size={{ xs: 5, md: 5 }}>
-                        <Typography fontWeight="500">
-                          {question.title}
-                          {question.required && (
-                            <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
-                              *
-                            </Typography>
-                          )}
-                        </Typography>
-                      </Grid>
-                      <Grid size={{ xs: 1, md: 1 }} sx={{ display: 'flex', justifyContent: 'center' }}>
-                        <ArrowRight2 size={24} />
-                      </Grid>
-                      <Grid size={{ xs: 6, md: 6 }}>
-                        <FormControl fullWidth>
-                          <Select
-                            value={getColumnIndex(columnMappings.get(question.id) || '')}
-                            onChange={(e) => handleMappingChange(question.id, null, Number(e.target.value))}
-                            displayEmpty
-                            size="small"
-                          >
-                            <MenuItem value={-1}>
-                              - Chọn cột dữ liệu tương ứng -
-                            </MenuItem>
-                            {mappingData.sheetColumns.map((column, idx) => (
-                              <MenuItem key={`${question.id}:${column}`} value={idx}>
-                                {column}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                    </Grid>
-                  </Box>
-                );
-              })}
-              
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
                 <Button
                   variant="contained"
                   color="primary"
-                  startIcon={<Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><FormIcon /></Box>}
+                  startIcon={
+                    <Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <FormIcon />
+                    </Box>
+                  }
                   onClick={handleOpenAutoFillModal}
                   disabled={loading}
                 >
@@ -747,12 +755,11 @@ export default function TabFillInData() {
           )}
         </MainCard>
       </Grid>
-      
-      
+
       {/* Fill Request List - Only show when a form is selected */}
       {selectedFormId && selectedForm && (
-      <Grid size={12}>
-          <FillRequestList 
+        <Grid size={12}>
+          <FillRequestList
             fillRequests={(selectedForm.fillRequests || []).filter(
               (req) => !req.answerDistributions || req.answerDistributions.length === 0
             )}
@@ -765,40 +772,36 @@ export default function TabFillInData() {
             onRowsPerPageChange={handleRowsPerPageChange}
             onSchedule={handleOpenScheduleModal}
           />
-          
+
           <Divider />
           <Box sx={{ p: 2 }}>
             <ReactTablePagination
               setPageSize={setPageSize as any}
               setPageIndex={setPageIndex as any}
               getState={getTableState as any}
-              getPageCount={() => Math.ceil(((selectedForm.fillRequests || []).filter(
-                (req) => !req.answerDistributions || req.answerDistributions.length === 0
-              ).length) / pageSize)}
+              getPageCount={() =>
+                Math.ceil(
+                  (selectedForm.fillRequests || []).filter((req) => !req.answerDistributions || req.answerDistributions.length === 0)
+                    .length / pageSize
+                )
+              }
               initialPageSize={10}
             />
           </Box>
-      </Grid>
+        </Grid>
       )}
-      
+
       {/* Modals */}
-      <PaymentModal
-        open={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
-      />
-      
-      <AutoFillFormModal 
-        open={isAutoFillModalOpen} 
+      <PaymentModal open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+
+      <AutoFillFormModal
+        open={isAutoFillModalOpen}
         onClose={() => setIsAutoFillModalOpen(false)}
         formName={selectedForm?.name || 'Form điền từ data'}
         onSubmit={handleCreateFillRequest}
       />
 
-      <ScheduleFormModal 
-        open={isScheduleModalOpen}
-        onClose={() => setIsScheduleModalOpen(false)}
-        formId={selectedDetailFormId}
-      />
+      <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />
 
       {/* Prominent error snackbar */}
       <AlertSnackbarWithProgress

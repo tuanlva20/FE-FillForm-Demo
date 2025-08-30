@@ -31,7 +31,7 @@ export default function DashboardDefault() {
           Thống kê khảo sát
         </Typography>
       </Grid>
-      
+
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
         <SurveyStatsCard
           title="Khảo sát chờ xử lý"
@@ -43,7 +43,7 @@ export default function DashboardDefault() {
           icon={<Clock />}
         />
       </Grid>
-      
+
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
         <SurveyStatsCard
           title="Khảo sát thành công"
@@ -55,7 +55,7 @@ export default function DashboardDefault() {
           icon={<TickCircle />}
         />
       </Grid>
-      
+
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
         <SurveyStatsCard
           title="Khảo sát thất bại"
@@ -68,7 +68,7 @@ export default function DashboardDefault() {
           icon={<CloseCircle />}
         />
       </Grid>
-      
+
       <Grid size={{ xs: 12, sm: 6, lg: 3 }}>
         <SurveyStatsCard
           title="Tổng số khảo sát"
@@ -87,7 +87,7 @@ export default function DashboardDefault() {
           Biểu đồ hoạt động theo tháng
         </Typography>
       </Grid>
-      
+
       <Grid size={12}>
         <MainCard>
           <Grid container spacing={2}>

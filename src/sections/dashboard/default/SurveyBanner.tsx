@@ -66,9 +66,9 @@ export default function SurveyBanner() {
               </Box>
 
               {/* Main Title */}
-              <Typography 
-                variant="h2" 
-                sx={{ 
+              <Typography
+                variant="h2"
+                sx={{
                   fontWeight: 700,
                   lineHeight: 1.2,
                   background: `linear-gradient(45deg, ${theme.palette.background.paper} 0%, ${alpha(theme.palette.background.paper, 0.8)} 100%)`,
@@ -78,21 +78,22 @@ export default function SurveyBanner() {
                   textShadow: '0 2px 4px rgba(0,0,0,0.1)'
                 }}
               >
-                Điền Form Siêu Nhanh<br />
+                Điền Form Siêu Nhanh
+                <br />
                 Dùng Thử Miễn Phí 50 Form!
               </Typography>
 
               {/* Description */}
-              <Typography 
-                variant="body1" 
-                sx={{ 
+              <Typography
+                variant="body1"
+                sx={{
                   color: alpha(theme.palette.background.paper, 0.9),
                   maxWidth: '600px',
                   lineHeight: 1.6
                 }}
               >
-                Bạn là sinh viên bận rộn hay cần chạy luận văn gấp? Khaosat.tech giúp bạn tự động điền khảo sát, 
-                bảng câu hỏi chỉ trong tích tắc! Tiết kiệm thời gian, tăng hiệu quả – thử ngay hôm nay!
+                Bạn là sinh viên bận rộn hay cần chạy luận văn gấp? Khaosat.tech giúp bạn tự động điền khảo sát, bảng câu hỏi chỉ trong tích
+                tắc! Tiết kiệm thời gian, tăng hiệu quả – thử ngay hôm nay!
               </Typography>
 
               {/* CTA Button */}
@@ -237,4 +238,4 @@ export default function SurveyBanner() {
       </Box>
     </MainCard>
   );
-} 
+}

@@ -1,7 +1,19 @@
 // project-imports
 
 // assets
-import { Calendar1, CpuCharge, DocumentText, Kanban, KyberNetwork, Link1, Messages2, Profile2User, SecuritySafe, ShoppingBag, UserSquare } from 'iconsax-react';
+import {
+  Calendar1,
+  CpuCharge,
+  DocumentText,
+  Kanban,
+  KyberNetwork,
+  Link1,
+  Messages2,
+  Profile2User,
+  SecuritySafe,
+  ShoppingBag,
+  UserSquare
+} from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
@@ -38,7 +50,7 @@ const tools: NavItemType = {
       url: '/apps/dienform/create',
       link: '/apps/dienform/:tab',
       icon: icons.form,
-      breadcrumbs: false,
+      breadcrumbs: false
     },
     {
       id: 'ma-hoa-data',
@@ -47,7 +59,7 @@ const tools: NavItemType = {
       url: '/ma-hoa-data',
       icon: icons.encrypt,
       breadcrumbs: false
-    },
+    }
     // {
     //   id: 'calendar',
     //   title: 'calendar',

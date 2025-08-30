@@ -24,10 +24,11 @@ interface Props {
 const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, onChange, value }) => {
   // Phân tích row & column - memoized để tránh recalculate
   const { rows, columns } = useMemo(() => {
-    const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
+    const rows = (question.options || []).filter((opt) => opt.value && opt.value.startsWith('row'));
     const seen = new Set();
-    const columns = (question.options || [])
-      .filter(opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value));
+    const columns = (question.options || []).filter(
+      (opt) => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+    );
     return { rows, columns };
   }, [question.options]);
 
@@ -35,7 +36,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
   // State lưu lỗi tổng phần trăm
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
-  
+
   // Refs for optimization
   const onChangeRef = useRef(onChange);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
@@ -53,17 +54,20 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
   }, [value]); // Removed values dependency to prevent infinite loops
 
   // Memoized validation function with stable reference
-  const validateRow = useCallback((rowValue: string, rowVals: Record<string, number>) => {
-    const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.value]) || 0), 0);
-    return Math.abs(total - 100) > 0.01; // Use small epsilon for floating point comparison
-  }, [columns]);
+  const validateRow = useCallback(
+    (rowValue: string, rowVals: Record<string, number>) => {
+      const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.value]) || 0), 0);
+      return Math.abs(total - 100) > 0.01; // Use small epsilon for floating point comparison
+    },
+    [columns]
+  );
 
   // Optimized validation effect with reduced re-renders
   useEffect(() => {
     const errors: Record<string, boolean> = {};
     let hasChanges = false;
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const rowVals = values[row.value] || {};
       const error = validateRow(row.value, rowVals);
       if (rowErrors[row.value] !== error) {
@@ -79,25 +83,25 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
 
   // Optimized input handler without additional debouncing
   const handleInput = useCallback((rowValue: string, colValue: string, percent: number) => {
-    setValues(prev => {
-      const next = { 
-        ...prev, 
-        [rowValue]: { 
-          ...prev[rowValue], 
-          [colValue]: percent 
-        } 
+    setValues((prev) => {
+      const next = {
+        ...prev,
+        [rowValue]: {
+          ...prev[rowValue],
+          [colValue]: percent
+        }
       };
-      
+
       // Clear previous timeout
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
-      
+
       // Single debounce at grid level (CustomPercentTextField already handles input debouncing)
       debounceTimeoutRef.current = setTimeout(() => {
         onChangeRef.current?.(next);
       }, 50); // Reduced timeout since CustomPercentTextField already debounces
-      
+
       return next;
     });
   }, []); // Empty dependency array since we use refs
@@ -114,7 +118,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
   // Memoized row totals calculation
   const rowTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const rowVals = values[row.value] || {};
       totals[row.value] = columns.reduce((sum, col) => sum + (Number(rowVals[col.value]) || 0), 0);
     });
@@ -130,7 +134,7 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
           <TableHead>
             <TableRow>
               <TableCell />
-              {columns.map(col => (
+              {columns.map((col) => (
                 <TableCell key={col.value} align="center">
                   {col.text}
                 </TableCell>
@@ -138,10 +142,10 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map(row => {
+            {rows.map((row) => {
               const total = rowTotals[row.value];
               const hasError = rowErrors[row.value];
-              
+
               return (
                 <TableRow key={row.value}>
                   <TableCell>
@@ -152,11 +156,11 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
                       </Typography>
                     )}
                   </TableCell>
-                  {columns.map(col => (
+                  {columns.map((col) => (
                     <TableCell key={col.value} align="center">
                       <CustomPercentTextField
                         value={values[row.value]?.[col.value] ?? ''}
-                        onChange={val => handleInput(row.value, col.value, val)}
+                        onChange={(val) => handleInput(row.value, col.value, val)}
                         error={hasError}
                       />
                     </TableCell>
@@ -178,4 +182,4 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
 
 MultipleChoiceGridPercentInput.displayName = 'MultipleChoiceGridPercentInput';
 
-export default MultipleChoiceGridPercentInput; 
+export default MultipleChoiceGridPercentInput;

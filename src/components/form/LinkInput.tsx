@@ -20,7 +20,17 @@ export type LinkInputProps = {
 
 const isHttpUrl = (v: string): boolean => /^https?:\/\//i.test(v.trim());
 
-export default function LinkInput({ id, placeholder, value, onChange, disabled, readOnly, size = 'small', fullWidth = true, sx }: LinkInputProps) {
+export default function LinkInput({
+  id,
+  placeholder,
+  value,
+  onChange,
+  disabled,
+  readOnly,
+  size = 'small',
+  fullWidth = true,
+  sx
+}: LinkInputProps) {
   const canOpen = isHttpUrl(value);
 
   const handleOpen = (e: React.MouseEvent) => {
@@ -52,7 +62,7 @@ export default function LinkInput({ id, placeholder, value, onChange, disabled, 
                   onClick={handleOpen}
                   disabled={!canOpen}
                   sx={() => ({
-                    cursor: canOpen ? 'pointer' : 'not-allowed',
+                    cursor: canOpen ? 'pointer' : 'not-allowed'
                   })}
                 >
                   <ExportSquare size={18} />
@@ -65,5 +75,3 @@ export default function LinkInput({ id, placeholder, value, onChange, disabled, 
     />
   );
 }
-
-

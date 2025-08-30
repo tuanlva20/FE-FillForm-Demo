@@ -11,7 +11,7 @@ export default function KhaosatBrand(mode: ThemeMode): PaletteThemeProps {
 
   // Brand Colors for KHAOSAT.TECH
   // #673AB7 - Màu chủ đạo (Primary)
-  // #9575CD - Màu phụ 1 
+  // #9575CD - Màu phụ 1
   // #D1C4E9 - Màu phụ 2
   // #FFC107 - Màu nhấn chính (Warning/Accent)
   // #512DA8 - Màu phụ nhấn
@@ -94,4 +94,4 @@ export default function KhaosatBrand(mode: ThemeMode): PaletteThemeProps {
       contrastText
     }
   };
-} 
+}

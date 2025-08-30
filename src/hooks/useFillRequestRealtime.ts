@@ -39,7 +39,18 @@ type UpdatePayload = {
 
 function mergeRequest(
   list: FillRequestDTO[] | undefined,
-  update: { requestId: string; status?: string; completedSurvey?: number; surveyCount?: number; totalPrice?: number; queuePosition?: number; priority?: number; estimatedWaitTime?: number; queuedAt?: string; retryCount?: number }
+  update: {
+    requestId: string;
+    status?: string;
+    completedSurvey?: number;
+    surveyCount?: number;
+    totalPrice?: number;
+    queuePosition?: number;
+    priority?: number;
+    estimatedWaitTime?: number;
+    queuedAt?: string;
+    retryCount?: number;
+  }
 ): FillRequestDTO[] {
   const requests = Array.isArray(list) ? [...list] : [];
   const index = requests.findIndex((r) => r.id === update.requestId);
@@ -91,13 +102,13 @@ export default function useFillRequestRealtime(
   useEffect(() => {
     const socket = getSocket();
     socketRef.current = socket;
-    
+
     // If no socket is available, skip realtime updates
     if (!socket) {
       console.log('⚠️ WebSocket not available, skipping realtime updates');
       return;
     }
-    
+
     console.log('🔌 Socket Debug - useFillRequestRealtime:', {
       selectedFormId,
       userId: user?.id,
@@ -223,14 +234,14 @@ export default function useFillRequestRealtime(
         console.log('🔌 Connecting socket...');
         socket.connect();
       }
-      
+
       currentFormRef.current = selectedFormId;
       console.log('🚪 Joining room:', selectedFormId);
-      
+
       // Register listeners BEFORE emitting join to avoid missing the first snapshot
       socket.on('fill_request_update', handleUpdate);
       socket.on('fill_request_bulk_state', handleBulk);
-      
+
       // Also listen to alternative event names that might be used by BE
       socket.on('request_update', (data: any) => {
         console.log('🔄 Alternative request_update received:', data);
@@ -238,14 +249,14 @@ export default function useFillRequestRealtime(
           handleUpdate(data as UpdatePayload);
         }
       });
-      
+
       socket.on('bulk_state', (data: any) => {
         console.log('📦 Alternative bulk_state received:', data);
         if (data && typeof data === 'object') {
           handleBulk(data as BulkStatePayload);
         }
       });
-      
+
       // Listen to generic events in case BE uses different naming
       socket.on('update', (data: any) => {
         console.log('🔄 Generic update event received:', data);
@@ -253,17 +264,17 @@ export default function useFillRequestRealtime(
           handleUpdate(data as UpdatePayload);
         }
       });
-      
+
       socket.on('state', (data: any) => {
         console.log('📦 Generic state event received:', data);
         if (data && typeof data === 'object' && data.formId && Array.isArray(data.requests)) {
           handleBulk(data as BulkStatePayload);
         }
       });
-      
+
       // Emit join after setting up listeners
       socket.emit('join_form_room', { formId: selectedFormId, userId: user.id });
-      
+
       // Debug: Check if join was successful
       setTimeout(() => {
         console.log('🔍 Socket state after join:', {
@@ -277,7 +288,7 @@ export default function useFillRequestRealtime(
     return () => {
       console.log('🧹 Cleaning up socket listeners');
       if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
-      
+
       // Remove all listeners
       socket.off('fill_request_update');
       socket.off('fill_request_bulk_state');
@@ -285,16 +296,13 @@ export default function useFillRequestRealtime(
       socket.off('bulk_state');
       socket.off('update');
       socket.off('state');
-      
+
       if (currentFormRef.current) {
         socket.emit('leave_form_room', { formId: currentFormRef.current, userId: user?.id });
       }
-      
+
       pendingUpdatesRef.current.clear();
       currentFormRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFormId, setSelectedForm, user?.id]);
 }
-
-

@@ -10,16 +10,16 @@ export default function useRedirectAfterLogin() {
   const handleRedirectAfterLogin = useCallback(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const redirectPath = urlParams.get('redirect');
-    
+
     let targetPath = APP_DEFAULT_PATH;
-    
+
     if (redirectPath) {
       targetPath = decodeURIComponent(redirectPath);
     }
 
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, '', cleanUrl);
-    
+
     navigate(targetPath, {
       replace: true
     });

@@ -95,7 +95,7 @@ export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi x�
 
   // Do axios interceptor đang trả về error.response.data trực tiếp,
   // nên cần lấy data từ nhiều khả năng khác nhau
-  const responseData = (err && err.response && err.response.data) ? err.response.data : err;
+  const responseData = err && err.response && err.response.data ? err.response.data : err;
 
   // Kiểm tra nhiều cấu trúc response khác nhau từ backend
   let backendMessage: string | null = null;
@@ -110,7 +110,10 @@ export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi x�
   } else if (responseData?.error) {
     backendMessage = responseData.error;
   } else if (Array.isArray(responseData?.errors)) {
-    backendMessage = responseData.errors.map((e: any) => (typeof e === 'string' ? e : (e?.message ?? ''))).filter(Boolean).join(', ');
+    backendMessage = responseData.errors
+      .map((e: any) => (typeof e === 'string' ? e : (e?.message ?? '')))
+      .filter(Boolean)
+      .join(', ');
   } else if (typeof responseData?.errors === 'string') {
     backendMessage = responseData.errors;
   } else if (responseData?.detail) {
@@ -168,7 +171,7 @@ export const handleFormError = (err: any, operation: 'create' | 'update' | 'dele
     delete: 'Có lỗi xảy ra khi xóa yêu cầu điền form. Vui lòng thử lại.',
     fetch: 'Có lỗi xảy ra khi tải thông tin form. Vui lòng thử lại.'
   };
-  
+
   return handleApiError(err, operationMessages[operation]);
 };
 
@@ -183,9 +186,9 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
     check: 'Có lỗi xảy ra khi kiểm tra dữ liệu. Vui lòng thử lại.',
     create: 'Có lỗi xảy ra khi tạo yêu cầu điền form từ data. Vui lòng thử lại.'
   };
-  
+
   // Chuẩn hóa data từ error
-  const data = (err && err.response && err.response.data) ? err.response.data : err;
+  const data = err && err.response && err.response.data ? err.response.data : err;
 
   // Xử lý các lỗi đặc biệt cho data mapping
   const statusCode = err?.response?.status ?? err?.status;
@@ -194,9 +197,7 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
   // Do interceptor có thể loại bỏ response wrapper, đừng phụ thuộc duy nhất vào status code
   if ((data?.sheetAccessibilityInfo && data?.sheetAccessibilityInfo?.isAccessible === false) || data?.errors) {
     // Ưu tiên hiển thị danh sách lỗi BE gửi về
-    const reasons = Array.isArray(data?.errors)
-      ? data.errors.join(', ')
-      : (typeof data?.errors === 'string' ? data.errors : null);
+    const reasons = Array.isArray(data?.errors) ? data.errors.join(', ') : typeof data?.errors === 'string' ? data.errors : null;
 
     if (data?.sheetAccessibilityInfo?.isAccessible === false) {
       const details: string[] = [];
@@ -217,9 +218,9 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
   if (statusCode === 403) {
     return 'Không thể truy cập link Google Sheet. Vui lòng đảm bảo sheet được chia sẻ công khai hoặc có quyền truy cập.';
   }
-  
+
   return handleApiError(err, operationMessages[operation]);
-}; 
+};
 
 /**
  * Test function để kiểm tra cấu trúc error object
@@ -241,4 +242,4 @@ export const testErrorStructure = (err: any) => {
   }
   logger.log('Error message:', err.message);
   logger.log('=== END TEST ===');
-}; 
+};

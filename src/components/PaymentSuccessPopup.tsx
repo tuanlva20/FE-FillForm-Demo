@@ -76,7 +76,7 @@ export default function PaymentSuccessPopup() {
                 Nạp tiền thành công!
               </Typography>
               <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                +{paymentAmount.toLocaleString('vi-VN')}đ đã được thêm vào tài khoản
+                +{paymentAmount.toLocaleString('vi-VN')}đ đã được thêm vào ví.
               </Typography>
             </Box>
           </Stack>

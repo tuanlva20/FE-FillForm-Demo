@@ -1,4 +1,3 @@
-
 // material-ui
 import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
@@ -66,9 +65,7 @@ export default function GridQuestionMapping({ question, sheetColumns, columnMapp
                 displayEmpty
                 size="small"
               >
-                <MenuItem value={-1}>
-                  - Chọn cột dữ liệu liên kết -
-                </MenuItem>
+                <MenuItem value={-1}>- Chọn cột dữ liệu liên kết -</MenuItem>
                 {sheetColumns.map((column, idx) => (
                   <MenuItem key={`${question.id}:${row.text}:${column}`} value={idx}>
                     {column}
@@ -86,5 +83,3 @@ export default function GridQuestionMapping({ question, sheetColumns, columnMapp
     </Box>
   );
 }
-
-

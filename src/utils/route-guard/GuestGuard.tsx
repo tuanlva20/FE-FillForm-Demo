@@ -46,9 +46,9 @@ export default function GuestGuard({ children }: GuardProps) {
       logger.log('🔐 GuestGuard: User is logged in, redirecting...');
       const urlParams = new URLSearchParams(window.location.search);
       const redirectPath = urlParams.get('redirect');
-      
+
       let targetPath = APP_DEFAULT_PATH;
-      
+
       if (redirectPath) {
         targetPath = decodeURIComponent(redirectPath);
       } else if (location?.state?.from) {

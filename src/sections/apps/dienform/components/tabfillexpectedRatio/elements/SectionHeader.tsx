@@ -8,7 +8,7 @@ interface SectionHeaderProps {
 
 export default function SectionHeader({ sectionData }: SectionHeaderProps) {
   const theme = useTheme();
-  
+
   console.log('SectionHeader - sectionData:', sectionData);
 
   // Display index is +1 from backend-provided section_index (only for UI)
@@ -65,7 +65,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
             {sectionData.section_title}
           </Typography>
         </Stack>
-        
+
         {sectionData.section_description && (
           <Typography
             variant="body1"
@@ -81,7 +81,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
           </Typography>
         )}
       </Stack>
-      
+
       <Divider sx={{ mt: 2, mb: 0 }} />
     </Box>
   );

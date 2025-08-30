@@ -28,7 +28,7 @@ axiosServices.interceptors.request.use(
   async (config) => {
     // Only refresh auth on protected /apps/* routes
     const url = (config.url || '').toString();
-    const isAppsApi = url.startsWith('/apps/') || url.includes('/api/') && window.location.pathname.startsWith('/apps/');
+    const isAppsApi = url.startsWith('/apps/') || (url.includes('/api/') && window.location.pathname.startsWith('/apps/'));
     if (isAppsApi) {
       await ensureFreshToken(false);
     }
@@ -88,17 +88,30 @@ axiosServices.interceptors.response.use(
       // Luôn redirect về /login nếu đang ở route cần authenticate (kể cả khi fail /me hoặc /refresh)
       const currentPath = window.location.pathname || '/';
       const PUBLIC_ROUTES = [
-        '/', '/login', '/register', '/forgot-password', '/reset-password',
-        '/check-mail', '/code-verification',
-        '/auth/login', '/auth/register', '/auth/forgot-password',
-        '/auth/reset-password', '/auth/check-mail', '/auth/code-verification',
-        '/maintenance', '/404', '/500'
+        '/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/check-mail',
+        '/code-verification',
+        '/auth/login',
+        '/auth/register',
+        '/auth/forgot-password',
+        '/auth/reset-password',
+        '/auth/check-mail',
+        '/auth/code-verification',
+        '/maintenance',
+        '/404',
+        '/500'
       ];
       const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? currentPath === '/' : currentPath.startsWith(r)));
 
       if (!isPublic && !isRedirectingToLogin) {
         isRedirectingToLogin = true;
-        try { clearTokens(); } catch {}
+        try {
+          clearTokens();
+        } catch {}
 
         // Bypass cache và tránh loop
         const redirectPath = currentPath !== '/' ? currentPath : '/dashboard/default';

@@ -41,7 +41,7 @@ export default function Error404() {
           <Typography align="center" sx={{ color: 'text.secondary', width: { xs: '73%', sm: '61%' } }}>
             Trang bạn đang tìm kiếm đã bị xóa, di chuyển, đổi tên hoặc có thể không tồn tại!
           </Typography>
-          <Button component={Link} to='/' variant="contained" sx={{ gap: 1 }}>
+          <Button component={Link} to="/" variant="contained" sx={{ gap: 1 }}>
             <HomeIcon /> Quay về trang chủ
           </Button>
         </Stack>

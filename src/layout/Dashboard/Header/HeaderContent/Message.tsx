@@ -80,9 +80,7 @@ export default function Customization() {
                   </IconButton>
                 </Stack>
                 <Grid container spacing={1.5} sx={{ mt: 2 }}>
-                  <Grid size={12}>
-                    {/* <Typography variant="h6">Today</Typography> */}
-                  </Grid>
+                  <Grid size={12}>{/* <Typography variant="h6">Today</Typography> */}</Grid>
                   <Grid size={12}>
                     <MessageCard
                       status={{ label: 'New Feature', color: 'success' }}
@@ -104,7 +102,7 @@ export default function Customization() {
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{ }}
+                      status={{}}
                       time=""
                       title="General Meeting for update"
                       message="You can use the Dashboard to explore how many new users download reports daily and monthly"
@@ -116,7 +114,7 @@ export default function Customization() {
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{  }}
+                      status={{}}
                       time=""
                       title="Widgets update"
                       message="We've made some updates to the emendable widget which we think you are going to love."
@@ -125,7 +123,7 @@ export default function Customization() {
                   </Grid>
                   <Grid size={12}>
                     <MessageCard
-                      status={{ }}
+                      status={{}}
                       time=""
                       title="Coming soon dark mode"
                       message="We've made some updates to the emendable widget which we think you are going to love."

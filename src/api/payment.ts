@@ -31,11 +31,7 @@ export const checkPaymentStatus = async (paymentId: string): Promise<PaymentStat
   return response.data;
 };
 
-export const getPaymentHistory = async (params?: {
-  page?: number;
-  limit?: number;
-  status?: string;
-}) => {
+export const getPaymentHistory = async (params?: { page?: number; limit?: number; status?: string }) => {
   const response = await axios.get('/api/payments/history', { params });
   return response.data;
 };

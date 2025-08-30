@@ -107,4 +107,4 @@ export default function FormSubmissionChart() {
   ]);
 
   return <ReactApexChart options={options} series={series} type="area" height={284} />;
-} 
+}

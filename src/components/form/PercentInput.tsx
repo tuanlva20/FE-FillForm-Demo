@@ -9,13 +9,7 @@ interface PercentInputProps {
   sx?: any;
 }
 
-const PercentInput: React.FC<PercentInputProps> = React.memo(({
-  value,
-  onChange,
-  error,
-  disabled,
-  sx
-}) => {
+const PercentInput: React.FC<PercentInputProps> = React.memo(({ value, onChange, error, disabled, sx }) => {
   const [localValue, setLocalValue] = useState<string>('');
   const [isTyping, setIsTyping] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout>();
@@ -31,7 +25,7 @@ const PercentInput: React.FC<PercentInputProps> = React.memo(({
   useEffect(() => {
     if (!isTyping) {
       const displayValue = value === undefined || value === null || value < 0 ? '0' : String(value);
-      
+
       // Only update if the value actually changed to prevent unnecessary re-renders
       if (localValue !== displayValue) {
         setLocalValue(displayValue);
@@ -47,7 +41,7 @@ const PercentInput: React.FC<PercentInputProps> = React.memo(({
 
     let val = Number(inputValue);
     if (isNaN(val) || val < 0) val = 0;
-    
+
     // Clear existing timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
@@ -56,7 +50,7 @@ const PercentInput: React.FC<PercentInputProps> = React.memo(({
     // Only debounce if the value actually changed
     if (lastValueRef.current !== val) {
       lastValueRef.current = val;
-      
+
       // Use shorter debounce for better responsiveness
       timeoutRef.current = setTimeout(() => {
         onChangeRef.current(val);
@@ -70,10 +64,10 @@ const PercentInput: React.FC<PercentInputProps> = React.memo(({
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     setIsTyping(false);
     const finalValue = Number(localValue);
-    
+
     // UX improvement: If input is empty or invalid, set to 0
     if (localValue === '' || isNaN(finalValue) || finalValue < 0) {
       setLocalValue('0');

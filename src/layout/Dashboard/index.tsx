@@ -80,7 +80,6 @@ export default function MainLayout() {
               <Footer />
             </Container>
           </Box>
-
         </Box>
       )}
     </AuthGuard>

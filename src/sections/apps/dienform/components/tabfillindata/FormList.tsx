@@ -1,4 +1,3 @@
-
 // project utils and constants
 import { formatFullDateTime } from 'utils/DateUtil';
 
@@ -45,7 +44,7 @@ interface DataFillFormListProps {
   onEdit?: (formId: string) => void;
 }
 
-export default function DataFillFormList({ 
+export default function DataFillFormList({
   forms,
   loading,
   searchQuery,
@@ -58,29 +57,29 @@ export default function DataFillFormList({
   onViewDetails,
   onEdit
 }: DataFillFormListProps) {
-  
   // Filter forms based on search text
-  const filteredForms = searchQuery.trim() === '' 
-    ? forms 
-    : forms.filter(form => {
-        // Convert date to string for searching if available
-        const dateStr = form.createdAt 
-          ? new Date(form.createdAt).toLocaleDateString('vi-VN')
-          : '';
-        
-        // Search by name, date, or status
-        return form.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-               dateStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
-               (form.status && form.status.toLowerCase().includes(searchQuery.toLowerCase()));
-      });
-  
+  const filteredForms =
+    searchQuery.trim() === ''
+      ? forms
+      : forms.filter((form) => {
+          // Convert date to string for searching if available
+          const dateStr = form.createdAt ? new Date(form.createdAt).toLocaleDateString('vi-VN') : '';
+
+          // Search by name, date, or status
+          return (
+            form.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            dateStr.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (form.status && form.status.toLowerCase().includes(searchQuery.toLowerCase()))
+          );
+        });
+
   // Get paginated forms
   const getPaginatedForms = () => {
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredForms.slice(startIndex, endIndex);
   };
-  
+
   const getStatusChip = (status: string) => <StatusChip status={status} />;
 
   const getScheduleIcon = (isScheduled: boolean) => {
@@ -148,7 +147,7 @@ export default function DataFillFormList({
           sx={{ maxWidth: 300 }}
         />
       </Box>
-      
+
       <TableContainer>
         <Table>
           <TableHead>
@@ -177,10 +176,7 @@ export default function DataFillFormList({
                   <TableCell align="center">{(page - 1) * rowsPerPage + index + 1}</TableCell>
                   <TableCell>{form.name}</TableCell>
                   <TableCell align="center">
-                    <IconButton 
-                      color="primary" 
-                      onClick={() => handleSchedule(form.id)}
-                    >
+                    <IconButton color="primary" onClick={() => handleSchedule(form.id)}>
                       {getScheduleIcon(false)} {/* TODO: Add scheduled time check */}
                     </IconButton>
                   </TableCell>
@@ -190,35 +186,30 @@ export default function DataFillFormList({
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
                       <Tooltip title="Chỉnh sửa">
-                        <IconButton 
-                          color="primary" 
-                          size="small" 
-                          onClick={() => handleEdit(form.id)}
-                        >
+                        <IconButton color="primary" size="small" onClick={() => handleEdit(form.id)}>
                           <Edit2 size={18} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Xem chi tiết">
-                        <IconButton 
-                          color="info" 
-                          size="small"
-                          onClick={() => handleViewDetails(form.id)}
-                        >
+                        <IconButton color="info" size="small" onClick={() => handleViewDetails(form.id)}>
                           <Eye size={18} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Mở form trong tab mới">
-                        <IconButton 
-                          color="primary" 
-                          size="small" 
-                          component="a" 
-                          href={form.editLink} 
-                          target="_blank" 
+                        <IconButton
+                          color="primary"
+                          size="small"
+                          component="a"
+                          href={form.editLink}
+                          target="_blank"
                           rel="noopener noreferrer"
                         >
                           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M13 3L16.293 6.293L9.293 13.293L10.707 14.707L17.707 7.707L21 11V3H13Z" fill="currentColor"/>
-                            <path d="M19 19H5V5H12L10 3H5C3.897 3 3 3.897 3 5V19C3 20.103 3.897 21 5 21H19C20.103 21 21 20.103 21 19V14L19 12V19Z" fill="currentColor"/>
+                            <path d="M13 3L16.293 6.293L9.293 13.293L10.707 14.707L17.707 7.707L21 11V3H13Z" fill="currentColor" />
+                            <path
+                              d="M19 19H5V5H12L10 3H5C3.897 3 3 3.897 3 5V19C3 20.103 3.897 21 5 21H19C20.103 21 21 20.103 21 19V14L19 12V19Z"
+                              fill="currentColor"
+                            />
                           </svg>
                         </IconButton>
                       </Tooltip>
@@ -238,7 +229,7 @@ export default function DataFillFormList({
           </TableBody>
         </Table>
       </TableContainer>
-      
+
       {/* Pagination */}
       {filteredForms.length > 0 && (
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
@@ -255,15 +246,10 @@ export default function DataFillFormList({
             </Select>
             <Typography variant="body2">mỗi trang</Typography>
           </Stack>
-          
-          <Pagination 
-            count={Math.ceil(filteredForms.length / rowsPerPage)} 
-            page={page}
-            onChange={onPageChange}
-            shape="rounded"
-          />
+
+          <Pagination count={Math.ceil(filteredForms.length / rowsPerPage)} page={page} onChange={onPageChange} shape="rounded" />
         </Box>
       )}
     </MainCard>
   );
-} 
+}

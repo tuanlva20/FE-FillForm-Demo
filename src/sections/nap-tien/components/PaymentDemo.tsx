@@ -1,13 +1,4 @@
-import {
-    Box,
-    Button,
-    Divider,
-    Paper,
-    Stack,
-    Tab,
-    Tabs,
-    Typography
-} from '@mui/material';
+import { Box, Button, Divider, Paper, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useState } from 'react';
 import PaymentHistory from './PaymentHistory';
 import PaymentStats from './PaymentStats';
@@ -24,13 +15,7 @@ function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props;
 
   return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`payment-tabpanel-${index}`}
-      aria-labelledby={`payment-tab-${index}`}
-      {...other}
-    >
+    <div role="tabpanel" hidden={value !== index} id={`payment-tabpanel-${index}`} aria-labelledby={`payment-tab-${index}`} {...other}>
       {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
     </div>
   );
@@ -93,7 +78,7 @@ export default function PaymentDemo() {
             <Typography variant="h6" textAlign="center">
               Test Payment Success Modal
             </Typography>
-            
+
             <Button
               variant="contained"
               color="primary"

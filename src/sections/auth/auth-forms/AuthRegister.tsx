@@ -82,8 +82,11 @@ export default function AuthRegister() {
           password: Yup.string()
             .required('Mật khẩu là bắt buộc')
             .min(6, 'Mật khẩu phải có ít nhất 6 ký tự')
-            .test('no-leading-trailing-whitespace', 'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng', (value) => value === value.trim())
-            ,
+            .test(
+              'no-leading-trailing-whitespace',
+              'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng',
+              (value) => value === value.trim()
+            ),
           confirmPassword: Yup.string()
             .required('Xác nhận mật khẩu là bắt buộc')
             .test('confirmPassword', 'Cả hai mật khẩu phải khớp nhau!', (confirmPassword, yup) => yup.parent.password === confirmPassword)
@@ -129,7 +132,9 @@ export default function AuthRegister() {
             <Grid container spacing={3}>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="name-signup">Họ và Tên <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <InputLabel htmlFor="name-signup">
+                    Họ và Tên <span style={{ color: 'red' }}>*</span>
+                  </InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.name && errors.name)}
@@ -151,7 +156,9 @@ export default function AuthRegister() {
               </Grid>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="email-signup">Địa chỉ Email <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <InputLabel htmlFor="email-signup">
+                    Địa chỉ Email <span style={{ color: 'red' }}>*</span>
+                  </InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.email && errors.email)}
@@ -173,7 +180,9 @@ export default function AuthRegister() {
               </Grid>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="password-signup">Mật khẩu <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <InputLabel htmlFor="password-signup">
+                    Mật khẩu <span style={{ color: 'red' }}>*</span>
+                  </InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.password && errors.password)}
@@ -223,7 +232,9 @@ export default function AuthRegister() {
               </Grid>
               <Grid size={12}>
                 <Stack sx={{ gap: 1 }}>
-                  <InputLabel htmlFor="confirm-password-signup">Xác nhận mật khẩu <span style={{ color: 'red' }}>*</span></InputLabel>
+                  <InputLabel htmlFor="confirm-password-signup">
+                    Xác nhận mật khẩu <span style={{ color: 'red' }}>*</span>
+                  </InputLabel>
                   <OutlinedInput
                     fullWidth
                     error={Boolean(touched.confirmPassword && errors.confirmPassword)}
@@ -270,7 +281,9 @@ export default function AuthRegister() {
               </Grid>
               {errors.submit && (
                 <Grid size={12}>
-                  <Alert severity="error" variant="outlined" sx={{ color: 'red' }}>{errors.submit}</Alert>
+                  <Alert severity="error" variant="outlined" sx={{ color: 'red' }}>
+                    {errors.submit}
+                  </Alert>
                 </Grid>
               )}
               <Grid size={12}>

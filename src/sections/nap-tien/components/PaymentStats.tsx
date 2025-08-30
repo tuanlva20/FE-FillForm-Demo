@@ -1,20 +1,5 @@
-import {
-    AccountBalance,
-    Payment,
-    Schedule,
-    TrendingUp
-} from '@mui/icons-material';
-import {
-    Alert,
-    Box,
-    Card,
-    CardContent,
-    CircularProgress,
-    Grid,
-    Paper,
-    Stack,
-    Typography
-} from '@mui/material';
+import { AccountBalance, Payment, Schedule, TrendingUp } from '@mui/icons-material';
+import { Alert, Box, Card, CardContent, CircularProgress, Grid, Paper, Stack, Typography } from '@mui/material';
 import { getPaymentHistory } from 'api/payment';
 import { useEffect, useState } from 'react';
 import { PaymentTransaction } from 'types/payment';
@@ -42,26 +27,24 @@ export default function PaymentStats() {
   const fetchStats = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Fetch all transactions for stats calculation
       const response = await getPaymentHistory({
         page: 1,
-        limit: 1000, // Get all transactions for stats
+        limit: 1000 // Get all transactions for stats
       });
-      
+
       if (response.success) {
         const transactions: PaymentTransaction[] = response.data || [];
-        
-        const totalAmount = transactions
-          .filter(t => t.status === 'completed')
-          .reduce((sum, t) => sum + t.amount, 0);
-        
+
+        const totalAmount = transactions.filter((t) => t.status === 'completed').reduce((sum, t) => sum + t.amount, 0);
+
         const totalTransactions = transactions.length;
-        const completedTransactions = transactions.filter(t => t.status === 'completed').length;
-        const pendingTransactions = transactions.filter(t => t.status === 'pending').length;
+        const completedTransactions = transactions.filter((t) => t.status === 'completed').length;
+        const pendingTransactions = transactions.filter((t) => t.status === 'pending').length;
         const successRate = totalTransactions > 0 ? (completedTransactions / totalTransactions) * 100 : 0;
-        
+
         setStats({
           totalAmount,
           totalTransactions,
@@ -137,8 +120,8 @@ export default function PaymentStats() {
       <Grid container spacing={3}>
         {statCards.map((card, index) => (
           <Grid item xs={12} sm={6} md={3} key={index}>
-            <Card 
-              sx={{ 
+            <Card
+              sx={{
                 height: '100%',
                 background: `linear-gradient(135deg, ${card.color}.50 0%, ${card.color}.100 100%)`,
                 border: `1px solid ${card.color}.200`
@@ -146,14 +129,16 @@ export default function PaymentStats() {
             >
               <CardContent>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  <Box sx={{ 
-                    p: 1, 
-                    borderRadius: 2, 
-                    bgcolor: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
+                  <Box
+                    sx={{
+                      p: 1,
+                      borderRadius: 2,
+                      bgcolor: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
                     {card.icon}
                   </Box>
                   <Box>

@@ -5,11 +5,11 @@ export const paymentsAPI = {
     const res = await axios.get('/api/payments/balance');
     // BE response format: { status: "OK", content: number }
     const balance = res.data?.content;
-    
+
     if (typeof balance !== 'number') {
       throw new Error(`Invalid balance response: ${JSON.stringify(res.data)}`);
     }
-    
+
     return balance;
   },
 
@@ -17,5 +17,3 @@ export const paymentsAPI = {
     await axios.post('/api/payments/balance/refresh');
   }
 };
-
-

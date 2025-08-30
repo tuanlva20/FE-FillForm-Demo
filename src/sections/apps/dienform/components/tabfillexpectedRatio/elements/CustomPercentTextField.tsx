@@ -10,14 +10,7 @@ interface CustomPercentTextFieldProps {
   disabled?: boolean;
 }
 
-const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo(({
-  value,
-  onChange,
-  error,
-  onFocus,
-  sx,
-  disabled
-}) => {
+const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo(({ value, onChange, error, onFocus, sx, disabled }) => {
   // Local state for immediate UI feedback
   const [localValue, setLocalValue] = useState<string>('');
   const [isTyping, setIsTyping] = useState(false);
@@ -29,7 +22,7 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
     if (!isTyping) {
       const numValue = Number(value);
       const displayValue = value === '' || value === undefined || value === null || numValue < 0 ? '0' : String(numValue);
-      
+
       // Only update if the value actually changed to prevent unnecessary re-renders
       if (localValue !== displayValue) {
         setLocalValue(displayValue);
@@ -38,40 +31,43 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
   }, [value, isTyping, localValue]);
 
   // Optimized immediate onChange with smart debouncing
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const inputValue = e.target.value;
-    setLocalValue(inputValue);
-    setIsTyping(true);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const inputValue = e.target.value;
+      setLocalValue(inputValue);
+      setIsTyping(true);
 
-    let val = Number(inputValue);
-    if (isNaN(val) || val < 0) val = 0;
-    
-    // Clear existing timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
+      let val = Number(inputValue);
+      if (isNaN(val) || val < 0) val = 0;
 
-    // Only debounce if the value actually changed
-    if (lastValueRef.current !== val) {
-      lastValueRef.current = val;
-      
-      // Use shorter debounce for better responsiveness
-      timeoutRef.current = setTimeout(() => {
-        onChange(val);
-        setIsTyping(false);
-      }, 100); // Reduced from 150ms to 100ms
-    }
-  }, [onChange]);
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // Only debounce if the value actually changed
+      if (lastValueRef.current !== val) {
+        lastValueRef.current = val;
+
+        // Use shorter debounce for better responsiveness
+        timeoutRef.current = setTimeout(() => {
+          onChange(val);
+          setIsTyping(false);
+        }, 100); // Reduced from 150ms to 100ms
+      }
+    },
+    [onChange]
+  );
 
   const handleBlur = useCallback(() => {
     // Clear any pending timeout
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current);
     }
-    
+
     setIsTyping(false);
     const finalValue = Number(localValue);
-    
+
     // UX improvement: If input is empty or invalid, set to 0
     if (localValue === '' || isNaN(finalValue) || finalValue < 0) {
       setLocalValue('0');
@@ -83,15 +79,18 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
     }
   }, [localValue, onChange]);
 
-  const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    // UX improvement: Clear value when focusing if it's 0, making it easier to input new values
-    if (e.target.value === '0') {
-      e.target.value = '';
-      setLocalValue('');
-      setIsTyping(true);
-    }
-    onFocus?.(e);
-  }, [onFocus]);
+  const handleFocus = useCallback(
+    (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      // UX improvement: Clear value when focusing if it's 0, making it easier to input new values
+      if (e.target.value === '0') {
+        e.target.value = '';
+        setLocalValue('');
+        setIsTyping(true);
+      }
+      onFocus?.(e);
+    },
+    [onFocus]
+  );
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -123,4 +122,4 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
 
 CustomPercentTextField.displayName = 'CustomPercentTextField';
 
-export default CustomPercentTextField; 
+export default CustomPercentTextField;

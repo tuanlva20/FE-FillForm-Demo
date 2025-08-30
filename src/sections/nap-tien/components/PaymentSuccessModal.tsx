@@ -1,16 +1,5 @@
 import { Celebration, CheckCircle } from '@mui/icons-material';
-import {
-    Box,
-    Button,
-    Chip,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
-    Paper,
-    Stack,
-    Typography
-} from '@mui/material';
+import { Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Paper, Stack, Typography } from '@mui/material';
 import { formatAmount } from 'utils/paymentUtils';
 
 interface PaymentSuccessModalProps {
@@ -21,19 +10,17 @@ interface PaymentSuccessModalProps {
   method: string;
 }
 
-export default function PaymentSuccessModal({
-  open,
-  onClose,
-  amount,
-  orderId,
-  method
-}: PaymentSuccessModalProps) {
+export default function PaymentSuccessModal({ open, onClose, amount, orderId, method }: PaymentSuccessModalProps) {
   const getMethodText = (method: string) => {
     switch (method.toLowerCase()) {
-      case 'sepay': return 'SEPAY';
-      case 'vnpay': return 'VNPAY';
-      case 'bank_transfer': return 'Chuyển khoản';
-      default: return method;
+      case 'sepay':
+        return 'SEPAY';
+      case 'vnpay':
+        return 'VNPAY';
+      case 'bank_transfer':
+        return 'Chuyển khoản';
+      default:
+        return method;
     }
   };
 
@@ -62,11 +49,11 @@ export default function PaymentSuccessModal({
       <DialogContent sx={{ textAlign: 'center' }}>
         <Box sx={{ mb: 3 }}>
           <Celebration sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-          
+
           <Typography variant="h4" fontWeight={700} color="primary" gutterBottom>
             {formatAmount(amount.toString())} VND
           </Typography>
-          
+
           <Typography variant="body1" color="text.secondary" gutterBottom>
             đã được nạp thành công vào tài khoản của bạn
           </Typography>
@@ -78,14 +65,9 @@ export default function PaymentSuccessModal({
               <Typography variant="body2" color="text.secondary">
                 Phương thức thanh toán:
               </Typography>
-              <Chip 
-                label={getMethodText(method)} 
-                color="primary" 
-                variant="outlined"
-                size="small"
-              />
+              <Chip label={getMethodText(method)} color="primary" variant="outlined" size="small" />
             </Stack>
-            
+
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2" color="text.secondary">
                 Mã giao dịch:
@@ -94,7 +76,7 @@ export default function PaymentSuccessModal({
                 {orderId}
               </Typography>
             </Stack>
-            
+
             <Stack direction="row" justifyContent="space-between" alignItems="center">
               <Typography variant="body2" color="text.secondary">
                 Thời gian:

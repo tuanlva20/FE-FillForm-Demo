@@ -15,18 +15,7 @@ type DebouncedMultilineTextFieldProps = {
 };
 
 const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = React.memo(
-  ({ 
-    value, 
-    onChange, 
-    rows = 3, 
-    placeholder, 
-    sx, 
-    debounceMs = 200, 
-    disabled, 
-    helperText,
-    onFocus,
-    onBlur
-  }) => {
+  ({ value, onChange, rows = 3, placeholder, sx, debounceMs = 200, disabled, helperText, onFocus, onBlur }) => {
     const [localValue, setLocalValue] = useState<string>(value || '');
     const [isTyping, setIsTyping] = useState(false);
     const timerRef = useRef<number | null>(null);
@@ -47,49 +36,61 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
     }, [value, isTyping]);
 
     // Optimized debounced onChange with better performance
-    const debouncedOnChange = useCallback((newValue: string) => {
-      if (timerRef.current) {
-        window.clearTimeout(timerRef.current);
-      }
-      
-      // Only trigger onChange if value actually changed
-      if (lastValueRef.current !== newValue) {
-        console.log('🔍 DebouncedMultilineTextField: Setting timer for new value:', newValue, 'length:', newValue.length);
-        timerRef.current = window.setTimeout(() => {
-          console.log('🔍 DebouncedMultilineTextField: Timer fired, calling onChange with:', newValue);
-          lastValueRef.current = newValue;
-          onChangeRef.current(newValue);
-          setIsTyping(false);
-        }, debounceMs);
-      }
-    }, [debounceMs]);
+    const debouncedOnChange = useCallback(
+      (newValue: string) => {
+        if (timerRef.current) {
+          window.clearTimeout(timerRef.current);
+        }
+
+        // Only trigger onChange if value actually changed
+        if (lastValueRef.current !== newValue) {
+          console.log('🔍 DebouncedMultilineTextField: Setting timer for new value:', newValue, 'length:', newValue.length);
+          timerRef.current = window.setTimeout(() => {
+            console.log('🔍 DebouncedMultilineTextField: Timer fired, calling onChange with:', newValue);
+            lastValueRef.current = newValue;
+            onChangeRef.current(newValue);
+            setIsTyping(false);
+          }, debounceMs);
+        }
+      },
+      [debounceMs]
+    );
 
     // Optimized change handler
-    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      const newValue = e.target.value;
-      setLocalValue(newValue);
-      setIsTyping(true);
-      debouncedOnChange(newValue);
-    }, [debouncedOnChange]);
+    const handleChange = useCallback(
+      (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const newValue = e.target.value;
+        setLocalValue(newValue);
+        setIsTyping(true);
+        debouncedOnChange(newValue);
+      },
+      [debouncedOnChange]
+    );
 
     // Optimized focus handler
-    const handleFocus = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      onFocus?.(e);
-    }, [onFocus]);
+    const handleFocus = useCallback(
+      (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        onFocus?.(e);
+      },
+      [onFocus]
+    );
 
     // Optimized blur handler
-    const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-      setIsTyping(false);
-      // Ensure final value is synced immediately on blur
-      const finalValue = e.target.value;
-      console.log('🔍 DebouncedMultilineTextField: Blur event, finalValue:', finalValue, 'length:', finalValue.length);
-      if (lastValueRef.current !== finalValue) {
-        console.log('🔍 DebouncedMultilineTextField: Syncing final value on blur:', finalValue);
-        lastValueRef.current = finalValue;
-        onChangeRef.current(finalValue);
-      }
-      onBlur?.(e);
-    }, [onBlur]);
+    const handleBlur = useCallback(
+      (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setIsTyping(false);
+        // Ensure final value is synced immediately on blur
+        const finalValue = e.target.value;
+        console.log('🔍 DebouncedMultilineTextField: Blur event, finalValue:', finalValue, 'length:', finalValue.length);
+        if (lastValueRef.current !== finalValue) {
+          console.log('🔍 DebouncedMultilineTextField: Syncing final value on blur:', finalValue);
+          lastValueRef.current = finalValue;
+          onChangeRef.current(finalValue);
+        }
+        onBlur?.(e);
+      },
+      [onBlur]
+    );
 
     // Cleanup on unmount
     useEffect(() => {
@@ -121,5 +122,3 @@ const DebouncedMultilineTextField: React.FC<DebouncedMultilineTextFieldProps> = 
 DebouncedMultilineTextField.displayName = 'DebouncedMultilineTextField';
 
 export default DebouncedMultilineTextField;
-
-

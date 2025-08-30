@@ -87,40 +87,18 @@ export default function Header() {
               >
                 Trang Chủ
               </Link>
-              <Link
-                className="header-link"
-                color="primary"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="primary" href="#" underline="none">
                 Liên Hệ
               </Link>
-              <Link
-                className="header-link"
-                color="secondary.main"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" href="#" underline="none">
                 Bảng Giá
               </Link>
-              <Link
-                className="header-link"
-                color="secondary.main"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" href="#" underline="none">
                 Tài Liệu Hướng Dẫn
               </Link>
               <Box className="header-button" sx={{ display: 'inline-block' }}>
                 <AnimateButton>
-                  <Button
-                    href="/dashboard/default"
-                    disableElevation
-                    startIcon={<Send2 />}
-                    color="primary"
-                    size="large"
-                    variant="contained"
-                  >
+                  <Button href="/dashboard/default" disableElevation startIcon={<Send2 />} color="primary" size="large" variant="contained">
                     Dùng thử miễn phí
                   </Button>
                 </AnimateButton>

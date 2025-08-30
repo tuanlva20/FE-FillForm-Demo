@@ -38,16 +38,16 @@ export const handleAISuggestionError = (error: any): string => {
     switch (error.code) {
       case 'INVALID_INPUT':
         return `Dữ liệu đầu vào không hợp lệ${error.details?.field ? `: ${error.details.field}` : ''}`;
-      
+
       case 'TOKEN_LIMIT_EXCEEDED':
         return 'Yêu cầu quá lớn. Vui lòng giảm số lượng mẫu hoặc độ phức tạp của form.';
-      
+
       case 'VALIDATION_FAILED':
         return `Lỗi validation${error.details?.constraint ? `: ${error.details.constraint}` : ''}`;
-      
+
       case 'AI_SERVICE_ERROR':
         return 'Dịch vụ AI tạm thời không khả dụng. Vui lòng thử lại sau ít phút.';
-      
+
       default:
         return error.message || 'Lỗi không xác định từ dịch vụ AI';
     }
@@ -56,17 +56,17 @@ export const handleAISuggestionError = (error: any): string => {
   // Nếu error từ axios response
   if (error?.response?.data) {
     const responseData = error.response.data;
-    
+
     // Nếu BE trả về error theo format chuẩn
     if (responseData.error && typeof responseData.error === 'string') {
       return responseData.error;
     }
-    
+
     // Nếu BE trả về error object
     if (responseData.code) {
       return handleAISuggestionError(responseData);
     }
-    
+
     // HTTP status codes
     switch (error.response.status) {
       case 400:
@@ -110,10 +110,7 @@ export const handleAISuggestionError = (error: any): string => {
  * @param formQuestions - Danh sách câu hỏi trong form
  * @returns Object với isValid và error message
  */
-export const validateAISuggestionInput = (
-  sampleCount: number,
-  formQuestions: any[]
-): { isValid: boolean; error?: string } => {
+export const validateAISuggestionInput = (sampleCount: number, formQuestions: any[]): { isValid: boolean; error?: string } => {
   // Kiểm tra số lượng mẫu
   if (!Number.isInteger(sampleCount) || sampleCount <= 0) {
     return { isValid: false, error: 'Số lượng mẫu phải là số nguyên dương' };
@@ -129,7 +126,7 @@ export const validateAISuggestionInput = (
   }
 
   // Kiểm tra có ít nhất 1 câu hỏi có thể generate được
-  const generateableQuestions = formQuestions.filter(q => 
+  const generateableQuestions = formQuestions.filter((q) =>
     ['radio', 'select', 'checkbox', 'text', 'textarea', 'number', 'email', 'phone', 'date', 'time', 'slider', 'rating'].includes(q.type)
   );
 

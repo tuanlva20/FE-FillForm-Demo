@@ -1,4 +1,3 @@
-
 // material-ui
 import Box from '@mui/material/Box';
 import FormControl from '@mui/material/FormControl';
@@ -61,7 +60,7 @@ const DataMappingForm = ({ question, mappingData, onMappingChange }: DataMapping
 
   // Helper function to get column index from column name
   const getColumnIndex = (columnName: string): number => {
-    return mappingData.headers.findIndex(header => header === columnName);
+    return mappingData.headers.findIndex((header) => header === columnName);
   };
 
   return (
@@ -71,9 +70,9 @@ const DataMappingForm = ({ question, mappingData, onMappingChange }: DataMapping
       </Typography>
 
       {isGridQuestion ? (
-        <TableContainer 
-          component={Paper} 
-          sx={{ 
+        <TableContainer
+          component={Paper}
+          sx={{
             borderRadius: 2,
             boxShadow: theme.customShadows.z1,
             '& .MuiTableCell-root': {
@@ -199,4 +198,4 @@ const DataMappingForm = ({ question, mappingData, onMappingChange }: DataMapping
   );
 };
 
-export default DataMappingForm; 
+export default DataMappingForm;

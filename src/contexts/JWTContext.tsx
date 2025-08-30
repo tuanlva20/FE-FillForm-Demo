@@ -55,15 +55,15 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
           dispatch({ type: LOGOUT });
           hasInitializedAuth.current = true;
         }
-              } catch (err: any) {
-          // Handle network errors gracefully
-          if (err?.code === 'ECONNABORTED' || err?.code === 'ERR_NETWORK') {
+      } catch (err: any) {
+        // Handle network errors gracefully
+        if (err?.code === 'ECONNABORTED' || err?.code === 'ERR_NETWORK') {
           logger.warn('🔐 JWTContext: Backend not available, skipping auth initialization');
           dispatch({ type: LOGOUT });
           hasInitializedAuth.current = true;
           return;
         }
-        
+
         logger.error('🔐 JWTContext: Auth initialization error:', err);
         dispatch({ type: LOGOUT });
         hasInitializedAuth.current = true;
@@ -175,7 +175,7 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
             logger.log('🔐 JWTContext: Auth already initialized, skipping rehydrate');
             return state.isLoggedIn;
           }
-          
+
           try {
             const me = await authAPI.getCurrentUser();
             if (me?.success) {

@@ -352,7 +352,7 @@ const MainRoutes = {
                 {
                   path: 'history',
                   element: <DienFormLichSu />
-                },
+                }
               ]
             },
             {

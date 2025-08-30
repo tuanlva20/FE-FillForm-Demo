@@ -159,7 +159,9 @@ export default function ProfilePage() {
                           <Avatar alt={user?.name || 'profile user'} src={user?.avatar || avatar1} />
                           <Stack>
                             <Typography variant="subtitle1">{user?.name || 'User'}</Typography>
-                            <Typography variant="body2" color="secondary">{user?.role || 'User'}</Typography>
+                            <Typography variant="body2" color="secondary">
+                              {user?.role || 'User'}
+                            </Typography>
                           </Stack>
                         </Stack>
                       </Grid>

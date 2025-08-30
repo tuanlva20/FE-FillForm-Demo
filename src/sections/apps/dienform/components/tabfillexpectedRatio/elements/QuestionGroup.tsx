@@ -57,26 +57,29 @@ function normalizeSectionData(rawAdditionalData: unknown): SectionData | undefin
 
 export default function QuestionGroup({ questions, renderQuestion }: QuestionGroupProps) {
   // Group questions by section
-  const groupedQuestions = questions.reduce<GroupedQuestions>((acc, question) => {
-    const sectionData = normalizeSectionData((question as any).additionalData);
+  const groupedQuestions = questions.reduce<GroupedQuestions>(
+    (acc, question) => {
+      const sectionData = normalizeSectionData((question as any).additionalData);
 
-    if (sectionData) {
-      const key = sectionData.section_index;
-      // Skip section with index 0
-      if (key === '0' || key === '0') {
-        acc.noSectionQuestions.push(question);
-      } else {
-        if (!acc.sections.has(key)) {
-          acc.sections.set(key, { sectionData, questions: [] });
+      if (sectionData) {
+        const key = sectionData.section_index;
+        // Skip section with index 0
+        if (key === '0' || key === '0') {
+          acc.noSectionQuestions.push(question);
+        } else {
+          if (!acc.sections.has(key)) {
+            acc.sections.set(key, { sectionData, questions: [] });
+          }
+          acc.sections.get(key)!.questions.push(question);
         }
-        acc.sections.get(key)!.questions.push(question);
+      } else {
+        acc.noSectionQuestions.push(question);
       }
-    } else {
-      acc.noSectionQuestions.push(question);
-    }
 
-    return acc;
-  }, { sections: new Map(), noSectionQuestions: [] });
+      return acc;
+    },
+    { sections: new Map(), noSectionQuestions: [] }
+  );
 
   // Sort sections by numeric section_index when possible
   const sortedSections = Array.from(groupedQuestions.sections.entries()).sort(([a], [b]) => {

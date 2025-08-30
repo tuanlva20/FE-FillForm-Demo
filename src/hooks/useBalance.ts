@@ -21,7 +21,6 @@ export default function useBalance() {
     queryFn: async () => {
       try {
         const amount = await paymentsAPI.getBalance();
-        logger.log('💰 Balance fetched:', amount);
         // Ensure we return a clean number, not accumulated value
         return typeof amount === 'number' ? amount : 0;
       } catch (error) {
@@ -57,7 +56,7 @@ export default function useBalance() {
 
     const handleBalanceUpdate = (payload: any) => {
       logger.log('💸 Raw balance_update received:', payload);
-      
+
       // Handle different payload formats
       let balanceData;
       if (Array.isArray(payload) && payload.length === 2) {
@@ -70,37 +69,39 @@ export default function useBalance() {
         logger.error('❌ Invalid balance_update payload format:', payload);
         return;
       }
-      
+
       if (!balanceData || balanceData.userId !== user.id) {
         logger.log('💸 Balance update not for current user:', balanceData?.userId, 'vs', user.id);
         return;
       }
-      
+
       logger.log('💸 Processing balance update for user:', balanceData);
       const newBalance = typeof balanceData.balance === 'number' ? balanceData.balance : 0;
       const currentBalance = queryClient.getQueryData<number>(QUERY_KEY) || 0;
-      
+
       // Calculate the amount added
       const amountAdded = newBalance - currentBalance;
-      
+
       logger.log('💸 Balance update details:', {
         currentBalance,
         newBalance,
         amountAdded
       });
-      
+
       // Update the balance
       queryClient.setQueryData<number>(QUERY_KEY, newBalance);
-      
-      // Show popup notification if money was added and not in payment confirmation stepper
-      if (amountAdded > 0 && currentStepper !== 'Xác nhận thanh toán') {
+
+      // Show popup notification if money was added
+      // Note: Even during payment confirmation, we want to show the success notification
+      // as the PaymentStepper will handle the UI state appropriately
+      if (amountAdded > 0) {
         showPaymentSuccess(amountAdded);
       }
     };
 
     socket.on('connect', onConnect);
     socket.on('balance_update', handleBalanceUpdate);
-    
+
     // Also listen for raw messages in case the event is emitted differently
     socket.on('message', (message: any) => {
       logger.log('📨 Raw socket message received:', message);
@@ -118,8 +119,7 @@ export default function useBalance() {
 
     // Debug: Listen for all events (Socket.IO v2.4.0 compatible)
     const originalEmit = socket.emit;
-    socket.emit = function(event: string, ...args: any[]) {
-      logger.log('🔍 Socket event emitted:', event, args);
+    socket.emit = function (event: string, ...args: any[]) {
       return originalEmit.apply(this, [event, ...args]);
     };
 
@@ -136,13 +136,12 @@ export default function useBalance() {
 
   const balance = useMemo(() => {
     const finalBalance = data ?? 0;
-    logger.log('💰 Final balance calculated:', finalBalance, 'from data:', data);
-    
+
     // Update previous balance reference
     if (finalBalance !== previousBalanceRef.current) {
       previousBalanceRef.current = finalBalance;
     }
-    
+
     return finalBalance;
   }, [data]);
 
@@ -177,12 +176,10 @@ export default function useBalance() {
       const currentBalance = queryClient.getQueryData<number>(QUERY_KEY) || 0;
       const testAmount = 50000;
       queryClient.setQueryData<number>(QUERY_KEY, currentBalance + testAmount);
-      
+
       if (currentStepper !== 'Xác nhận thanh toán') {
         showPaymentSuccess(testAmount);
       }
     }
   };
 }
-
-

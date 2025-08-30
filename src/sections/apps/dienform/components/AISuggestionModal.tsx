@@ -48,12 +48,7 @@ interface AISuggestionModalProps {
   onSubmit: (request: AISuggestionRequest) => void;
 }
 
-export default function AISuggestionModal({
-  open,
-  onClose,
-  formData,
-  onSubmit
-}: AISuggestionModalProps) {
+export default function AISuggestionModal({ open, onClose, formData, onSubmit }: AISuggestionModalProps) {
   const [sampleCount, setSampleCount] = useState<number>(2);
   const [requirements, setRequirements] = useState<AISuggestionRequest['requirements']>({
     distributionRequirements: []
@@ -65,18 +60,18 @@ export default function AISuggestionModal({
     estimatedCost?: number;
     error?: string;
   } | null>(null);
-  
+
   // State để track validation errors cho distribution requirements
   const [distributionErrors, setDistributionErrors] = useState<Map<string, string>>(new Map());
-  
+
   // State để track việc lấy answerAttribute
   const [isGettingAnswerAttributes, setIsGettingAnswerAttributes] = useState<boolean>(false);
   const [answerAttributes, setAnswerAttributes] = useState<Map<string, any>>(new Map());
-  
+
   // State để track các step của quá trình
   const [validationStep, setValidationStep] = useState<'idle' | 'validating' | 'success' | 'error'>('idle');
   const [processingStep, setProcessingStep] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
-  
+
   // Hook để xử lý polling
   const { pollingState, startPolling, stopPolling, resetPolling } = useAISuggestionPolling();
 
@@ -92,14 +87,14 @@ export default function AISuggestionModal({
   // Validate distribution requirements
   const validateDistributionRequirements = () => {
     const newErrors = new Map<string, string>();
-    
-    requirements.distributionRequirements?.forEach(dist => {
+
+    requirements.distributionRequirements?.forEach((dist) => {
       const validation = validateDistributionPercentages(dist.targetDistribution);
       if (!validation.isValid) {
         newErrors.set(dist.questionId, validation.error || 'Lỗi validation');
       }
     });
-    
+
     setDistributionErrors(newErrors);
     return newErrors.size === 0;
   };
@@ -114,7 +109,7 @@ export default function AISuggestionModal({
     validateDistributionRequirements();
   }, [requirements.distributionRequirements]);
 
-    // Function để lấy answerAttribute cho tất cả câu hỏi trong một request
+  // Function để lấy answerAttribute cho tất cả câu hỏi trong một request
   const getAllAnswerAttributesForForm = async () => {
     try {
       logger.log('Calling getAnswerAttributesWithNewStructure API with payload:', {
@@ -122,29 +117,29 @@ export default function AISuggestionModal({
         sampleCount,
         requirements
       });
-      
+
       // Gọi API để lấy tất cả answerAttribute trong một request với cấu trúc mới
       const response = await getAnswerAttributesWithNewStructure(formData.id, sampleCount, requirements);
-      
+
       logger.log('Received answerAttributes response:', response);
-      
+
       // Kiểm tra response structure - có thể là ACCEPTED, QUEUED hoặc OK
       if (response.status === 'ACCEPTED' || response.status === 'QUEUED') {
         const requestId = response.content?.requestId || response.requestId;
         if (!requestId) {
           throw new Error('Request queued but no requestId received');
         }
-        
+
         // Trường hợp queue-based processing
         logger.log('Request accepted/queued, starting polling with requestId:', requestId);
-        
+
         // Bắt đầu polling
         startPolling(
           requestId,
           (result) => {
             // Polling thành công
             logger.log('Polling completed successfully:', result);
-            
+
             // Tạo request với response từ polling
             const request: AISuggestionRequest = {
               formId: formData.id,
@@ -160,22 +155,22 @@ export default function AISuggestionModal({
                 content: result.content!
               }
             };
-            
+
             logger.log('Submitting request with polling result:', request);
-            
+
             // Gọi onSubmit để xử lý tiếp
             onSubmit(request);
-            
+
             // Hiển thị thông báo thành công
             setValidationResult({
               isValid: true,
               estimatedTokens: validationResult?.estimatedTokens || 0,
               estimatedCost: validationResult?.estimatedCost
             });
-            
+
             // Đánh dấu step xử lý thành công
             setProcessingStep('success');
-            
+
             // Đóng modal sau khi hoàn thành
             setTimeout(() => {
               onClose();
@@ -192,11 +187,10 @@ export default function AISuggestionModal({
             });
           }
         );
-        
       } else if (response.status === 'OK' && response.content && 'questionAnswerAttributes' in response.content) {
         // Trường hợp response trực tiếp (legacy)
         logger.log('Direct response received, no polling needed');
-        
+
         const request: AISuggestionRequest = {
           formId: formData.id,
           sampleCount,
@@ -211,22 +205,22 @@ export default function AISuggestionModal({
             content: response.content as any
           }
         };
-        
+
         logger.log('Submitting request with direct response:', request);
-        
+
         // Gọi onSubmit để xử lý tiếp
         onSubmit(request);
-        
+
         // Hiển thị thông báo thành công
         setValidationResult({
           isValid: true,
           estimatedTokens: validationResult?.estimatedTokens || 0,
           estimatedCost: validationResult?.estimatedCost
         });
-        
+
         // Đánh dấu step xử lý thành công
         setProcessingStep('success');
-        
+
         // Đóng modal sau khi hoàn thành
         setTimeout(() => {
           onClose();
@@ -234,14 +228,13 @@ export default function AISuggestionModal({
       } else {
         throw new Error('Invalid response structure from API');
       }
-      
     } catch (error: any) {
       logger.error('Error getting answerAttributes:', error);
-      
+
       // Không hiển thị lỗi nếu response thành công nhưng có status QUEUED hoặc ACCEPTED
       if (error.response?.status === 200 && (error.response?.data?.status === 'QUEUED' || error.response?.data?.status === 'ACCEPTED')) {
         logger.log('Request queued successfully, starting polling...');
-        
+
         const requestId = error.response.data.content?.requestId;
         if (requestId) {
           startPolling(
@@ -249,7 +242,7 @@ export default function AISuggestionModal({
             (result) => {
               // Polling thành công
               logger.log('Polling completed successfully:', result);
-              
+
               // Tạo request với response từ polling
               const request: AISuggestionRequest = {
                 formId: formData.id,
@@ -265,22 +258,22 @@ export default function AISuggestionModal({
                   content: result.content!
                 }
               };
-              
+
               logger.log('Submitting request with polling result:', request);
-              
+
               // Gọi onSubmit để xử lý tiếp
               onSubmit(request);
-              
+
               // Hiển thị thông báo thành công
               setValidationResult({
                 isValid: true,
                 estimatedTokens: validationResult?.estimatedTokens || 0,
                 estimatedCost: validationResult?.estimatedCost
               });
-              
+
               // Đánh dấu step xử lý thành công
               setProcessingStep('success');
-              
+
               // Đóng modal sau khi hoàn thành
               setTimeout(() => {
                 onClose();
@@ -316,30 +309,28 @@ export default function AISuggestionModal({
     }
   };
 
-
-
-    const handleSubmit = async () => {
+  const handleSubmit = async () => {
     // Reset states
     setValidationStep('validating');
     setProcessingStep('idle');
     setValidationResult(null);
-    
+
     try {
       logger.log('Requirements being sent:', requirements);
       logger.log('DistributionRequirements:', requirements.distributionRequirements);
       const result = await validateAISuggestionRequest(formData.id, sampleCount, requirements);
-      
+
       // Debug response structure
       logger.log('Raw validation result:', result);
       logger.log('Result type:', typeof result);
       logger.log('Result keys:', Object.keys(result));
       logger.log('Result.isValid:', result.isValid);
       logger.log('Result.isValid type:', typeof result.isValid);
-      
+
       // Handle different response structures
       let normalizedResult = result;
       const anyResult = result as any;
-      
+
       // Check if response has success field instead of isValid
       if (anyResult.success !== undefined && result.isValid === undefined) {
         normalizedResult = {
@@ -365,16 +356,16 @@ export default function AISuggestionModal({
         };
         logger.log('Normalized result assuming success:', normalizedResult);
       }
-      
+
       setValidationResult(normalizedResult);
-      
+
       if (normalizedResult.isValid) {
         // Validation thành công - chuyển sang step tiếp theo
         setValidationStep('success');
-        
+
         // Delay nhỏ để user thấy check mark
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
+        await new Promise((resolve) => setTimeout(resolve, 800));
+
         logger.log('Validation successful, calling getAllAnswerAttributesForForm...');
         // Bắt đầu step xử lý answer attributes
         setProcessingStep('processing');
@@ -387,7 +378,7 @@ export default function AISuggestionModal({
       logger.error('Validation error:', error);
       logger.error('Error response:', error.response);
       logger.error('Error data:', error.response?.data);
-      
+
       // Check if it's actually a successful response but axios threw error
       if (error.response?.status === 200 && error.response?.data) {
         logger.log('Handling 200 response that was caught as error');
@@ -398,12 +389,12 @@ export default function AISuggestionModal({
           estimatedCost: data.estimatedCost || data.cost,
           error: data.error || data.message
         };
-        
+
         setValidationResult(normalizedResult);
-        
+
         if (normalizedResult.isValid) {
           setValidationStep('success');
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise((resolve) => setTimeout(resolve, 800));
           setProcessingStep('processing');
           logger.log('Success from catch block, calling getAllAnswerAttributesForForm...');
           await getAllAnswerAttributesForForm();
@@ -420,25 +411,22 @@ export default function AISuggestionModal({
   };
 
   const addDistributionRequirement = (questionId: string) => {
-    const question = formData.questions.find(q => q.id === questionId);
+    const question = formData.questions.find((q) => q.id === questionId);
     if (!question || !question.options) return;
 
     const newDistribution = {
       questionId,
-      targetDistribution: question.options.map(opt => ({
+      targetDistribution: question.options.map((opt) => ({
         optionId: opt.id,
         percentage: 0 // Set giá trị mặc định là 0
       }))
     };
 
-    setRequirements(prev => ({
+    setRequirements((prev) => ({
       ...prev,
-      distributionRequirements: [
-        ...(prev.distributionRequirements || []),
-        newDistribution
-      ]
+      distributionRequirements: [...(prev.distributionRequirements || []), newDistribution]
     }));
-    
+
     // Validate sau khi thêm
     setTimeout(() => {
       validateDistributionRequirements();
@@ -446,13 +434,13 @@ export default function AISuggestionModal({
   };
 
   const removeDistributionRequirement = (questionId: string) => {
-    setRequirements(prev => ({
+    setRequirements((prev) => ({
       ...prev,
-      distributionRequirements: prev.distributionRequirements?.filter(d => d.questionId !== questionId) || []
+      distributionRequirements: prev.distributionRequirements?.filter((d) => d.questionId !== questionId) || []
     }));
-    
+
     // Clear error khi xóa
-    setDistributionErrors(prev => {
+    setDistributionErrors((prev) => {
       const newErrors = new Map(prev);
       newErrors.delete(questionId);
       return newErrors;
@@ -460,22 +448,19 @@ export default function AISuggestionModal({
   };
 
   const updateDistributionPercentage = (questionId: string, optionId: string, percentage: number) => {
-    setRequirements(prev => ({
+    setRequirements((prev) => ({
       ...prev,
-      distributionRequirements: prev.distributionRequirements?.map(dist => {
-        if (dist.questionId !== questionId) return dist;
-        
-        return {
-          ...dist,
-          targetDistribution: dist.targetDistribution.map(target => 
-            target.optionId === optionId 
-              ? { ...target, percentage }
-              : target
-          )
-        };
-      }) || []
+      distributionRequirements:
+        prev.distributionRequirements?.map((dist) => {
+          if (dist.questionId !== questionId) return dist;
+
+          return {
+            ...dist,
+            targetDistribution: dist.targetDistribution.map((target) => (target.optionId === optionId ? { ...target, percentage } : target))
+          };
+        }) || []
     }));
-    
+
     // Validate sau khi update
     setTimeout(() => {
       validateDistributionRequirements();
@@ -483,10 +468,8 @@ export default function AISuggestionModal({
   };
 
   const addRelationship = () => {
-    const numericQuestions = formData.questions.filter(q => 
-      q.type === 'number' || q.type === 'slider' || q.type === 'rating'
-    );
-    
+    const numericQuestions = formData.questions.filter((q) => q.type === 'number' || q.type === 'slider' || q.type === 'rating');
+
     if (numericQuestions.length < 2) return;
 
     const newRelationship = {
@@ -496,35 +479,28 @@ export default function AISuggestionModal({
       relationshipType: 'positive' as const
     };
 
-    setRequirements(prev => ({
+    setRequirements((prev) => ({
       ...prev,
-      relationships: [
-        ...(prev.relationships || []),
-        newRelationship
-      ]
+      relationships: [...(prev.relationships || []), newRelationship]
     }));
   };
 
   const removeRelationship = (index: number) => {
-    setRequirements(prev => ({
+    setRequirements((prev) => ({
       ...prev,
       relationships: prev.relationships?.filter((_, i) => i !== index)
     }));
   };
 
-  const numericQuestions = formData.questions.filter(q => 
-    q.type === 'number' || q.type === 'slider' || q.type === 'rating'
-  );
+  const numericQuestions = formData.questions.filter((q) => q.type === 'number' || q.type === 'slider' || q.type === 'rating');
 
-  const choiceQuestions = formData.questions.filter(q => 
-    q.type === 'radio' || q.type === 'select' || q.type === 'checkbox'
-  );
+  const choiceQuestions = formData.questions.filter((q) => q.type === 'radio' || q.type === 'select' || q.type === 'checkbox');
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="sm" 
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
       fullWidth
       PaperProps={{
         sx: {
@@ -534,40 +510,44 @@ export default function AISuggestionModal({
         }
       }}
     >
-            <DialogTitle sx={{ pb: 3, background: '#673AB7', color: 'white' }}>
+      <DialogTitle sx={{ pb: 3, background: '#673AB7', color: 'white' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ 
-            p: 1, 
-            borderRadius: 2, 
-            background: 'rgba(255,255,255,0.15)',
-            color: 'white'
-          }}>
+          <Box
+            sx={{
+              p: 1,
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.15)',
+              color: 'white'
+            }}
+          >
             <SmartToyIcon sx={{ fontSize: 24 }} />
           </Box>
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6" component="div" sx={{ fontWeight: 600, mb: 0.5 }}>
-          AI Gợi ý - {formData.name}
-        </Typography>
+              AI Gợi ý - {formData.name}
+            </Typography>
             <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.875rem' }}>
-          Nhập thông số để tạo dữ liệu mẫu thông minh
-        </Typography>
+              Nhập thông số để tạo dữ liệu mẫu thông minh
+            </Typography>
           </Box>
         </Box>
       </DialogTitle>
-      
+
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2 }}>
-                    {/* Số mẫu */}
-          <Box sx={{ 
-            background: '#F9F9F9', 
-            borderRadius: 2, 
-            p: 3,
-            border: '1px solid #F0F0F0'
-          }}>
+          {/* Số mẫu */}
+          <Box
+            sx={{
+              background: '#F9F9F9',
+              borderRadius: 2,
+              p: 3,
+              border: '1px solid #F0F0F0'
+            }}
+          >
             <Typography variant="subtitle1" sx={{ mb: 3, fontWeight: 600, color: '#673AB7' }}>
               Số lượng mẫu <span style={{ color: '#F44336' }}>*</span>
             </Typography>
-            
+
             <Grid container spacing={3} alignItems="center">
               {/* Left side - Counter */}
               <Grid item xs={12} md={6}>
@@ -593,7 +573,7 @@ export default function AISuggestionModal({
                   >
                     <RemoveIcon />
                   </IconButton>
-                  
+
                   <TextField
                     type="number"
                     value={sampleCount}
@@ -605,7 +585,7 @@ export default function AISuggestionModal({
                     }}
                     inputProps={{ min: 1, max: 1000 }}
                     disabled={isValidating}
-                    sx={{ 
+                    sx={{
                       width: 100,
                       '& .MuiOutlinedInput-root': {
                         textAlign: 'center',
@@ -629,7 +609,7 @@ export default function AISuggestionModal({
                       }
                     }}
                   />
-                  
+
                   <IconButton
                     onClick={() => setSampleCount(Math.min(1000, sampleCount + 1))}
                     disabled={sampleCount >= 1000 || isValidating}
@@ -653,7 +633,7 @@ export default function AISuggestionModal({
                   </IconButton>
                 </Box>
               </Grid>
-              
+
               {/* Right side - Quick select and info */}
               <Grid item xs={12} md={6}>
                 <Stack spacing={2}>
@@ -669,7 +649,7 @@ export default function AISuggestionModal({
                           label={count}
                           onClick={() => setSampleCount(count)}
                           disabled={isValidating}
-                          variant={sampleCount === count ? "filled" : "outlined"}
+                          variant={sampleCount === count ? 'filled' : 'outlined'}
                           sx={{
                             backgroundColor: sampleCount === count ? '#673AB7' : 'white',
                             color: sampleCount === count ? 'white' : '#9575CD',
@@ -683,14 +663,16 @@ export default function AISuggestionModal({
                       ))}
                     </Box>
                   </Box>
-                  
+
                   {/* Info box */}
-                  <Box sx={{ 
-                    background: 'white', 
-                    borderRadius: 1, 
-                    p: 2, 
-                    border: '1px solid #E8E8E8'
-                  }}>
+                  <Box
+                    sx={{
+                      background: 'white',
+                      borderRadius: 1,
+                      p: 2,
+                      border: '1px solid #E8E8E8'
+                    }}
+                  >
                     <Typography variant="caption" sx={{ color: '#9575CD', display: 'block', lineHeight: 1.4 }}>
                       💡 <strong>Gợi ý:</strong> Với {sampleCount} mẫu, AI sẽ tạo dữ liệu đa dạng và phù hợp với yêu cầu của bạn.
                     </Typography>
@@ -716,7 +698,7 @@ export default function AISuggestionModal({
                   <Typography variant="body2" color="textSecondary">
                     Áp dụng cho các câu hỏi số liệu
                   </Typography>
-                  
+
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
                       <TextField
@@ -725,13 +707,15 @@ export default function AISuggestionModal({
                         fullWidth
                         size="small"
                         value={requirements.statisticalRequirements?.mean || ''}
-                        onChange={(e) => setRequirements(prev => ({
-                          ...prev,
-                          statisticalRequirements: {
-                            ...prev.statisticalRequirements,
-                            mean: e.target.value ? Number(e.target.value) : undefined
-                          }
-                        }))}
+                        onChange={(e) =>
+                          setRequirements((prev) => ({
+                            ...prev,
+                            statisticalRequirements: {
+                              ...prev.statisticalRequirements,
+                              mean: e.target.value ? Number(e.target.value) : undefined
+                            }
+                          }))
+                        }
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -741,13 +725,15 @@ export default function AISuggestionModal({
                         fullWidth
                         size="small"
                         value={requirements.statisticalRequirements?.standardDeviation || ''}
-                        onChange={(e) => setRequirements(prev => ({
-                          ...prev,
-                          statisticalRequirements: {
-                            ...prev.statisticalRequirements,
-                            standardDeviation: e.target.value ? Number(e.target.value) : undefined
-                          }
-                        }))}
+                        onChange={(e) =>
+                          setRequirements((prev) => ({
+                            ...prev,
+                            statisticalRequirements: {
+                              ...prev.statisticalRequirements,
+                              standardDeviation: e.target.value ? Number(e.target.value) : undefined
+                            }
+                          }))
+                        }
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -757,13 +743,15 @@ export default function AISuggestionModal({
                         fullWidth
                         size="small"
                         value={requirements.statisticalRequirements?.minValue || ''}
-                        onChange={(e) => setRequirements(prev => ({
-                          ...prev,
-                          statisticalRequirements: {
-                            ...prev.statisticalRequirements,
-                            minValue: e.target.value ? Number(e.target.value) : undefined
-                          }
-                        }))}
+                        onChange={(e) =>
+                          setRequirements((prev) => ({
+                            ...prev,
+                            statisticalRequirements: {
+                              ...prev.statisticalRequirements,
+                              minValue: e.target.value ? Number(e.target.value) : undefined
+                            }
+                          }))
+                        }
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -773,13 +761,15 @@ export default function AISuggestionModal({
                         fullWidth
                         size="small"
                         value={requirements.statisticalRequirements?.maxValue || ''}
-                        onChange={(e) => setRequirements(prev => ({
-                          ...prev,
-                          statisticalRequirements: {
-                            ...prev.statisticalRequirements,
-                            maxValue: e.target.value ? Number(e.target.value) : undefined
-                          }
-                        }))}
+                        onChange={(e) =>
+                          setRequirements((prev) => ({
+                            ...prev,
+                            statisticalRequirements: {
+                              ...prev.statisticalRequirements,
+                              maxValue: e.target.value ? Number(e.target.value) : undefined
+                            }
+                          }))
+                        }
                       />
                     </Grid>
                   </Grid>
@@ -809,7 +799,7 @@ export default function AISuggestionModal({
                       Thêm mối quan hệ
                     </Button>
                   </Box>
-                  
+
                   {requirements.relationships?.map((relationship, index) => (
                     <Box key={index} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                       <Grid container spacing={2} alignItems="center">
@@ -818,15 +808,19 @@ export default function AISuggestionModal({
                             <InputLabel>Biến 1</InputLabel>
                             <Select
                               value={relationship.variable1}
-                              onChange={(e) => setRequirements(prev => ({
-                                ...prev,
-                                relationships: prev.relationships?.map((rel, i) => 
-                                  i === index ? { ...rel, variable1: e.target.value } : rel
-                                )
-                              }))}
+                              onChange={(e) =>
+                                setRequirements((prev) => ({
+                                  ...prev,
+                                  relationships: prev.relationships?.map((rel, i) =>
+                                    i === index ? { ...rel, variable1: e.target.value } : rel
+                                  )
+                                }))
+                              }
                             >
-                              {numericQuestions.map(q => (
-                                <MenuItem key={q.id} value={q.id}>{q.title}</MenuItem>
+                              {numericQuestions.map((q) => (
+                                <MenuItem key={q.id} value={q.id}>
+                                  {q.title}
+                                </MenuItem>
                               ))}
                             </Select>
                           </FormControl>
@@ -836,15 +830,19 @@ export default function AISuggestionModal({
                             <InputLabel>Biến 2</InputLabel>
                             <Select
                               value={relationship.variable2}
-                              onChange={(e) => setRequirements(prev => ({
-                                ...prev,
-                                relationships: prev.relationships?.map((rel, i) => 
-                                  i === index ? { ...rel, variable2: e.target.value } : rel
-                                )
-                              }))}
+                              onChange={(e) =>
+                                setRequirements((prev) => ({
+                                  ...prev,
+                                  relationships: prev.relationships?.map((rel, i) =>
+                                    i === index ? { ...rel, variable2: e.target.value } : rel
+                                  )
+                                }))
+                              }
                             >
-                              {numericQuestions.map(q => (
-                                <MenuItem key={q.id} value={q.id}>{q.title}</MenuItem>
+                              {numericQuestions.map((q) => (
+                                <MenuItem key={q.id} value={q.id}>
+                                  {q.title}
+                                </MenuItem>
                               ))}
                             </Select>
                           </FormControl>
@@ -853,12 +851,14 @@ export default function AISuggestionModal({
                           <Typography variant="caption">Mức độ tương quan: {relationship.correlation}</Typography>
                           <Slider
                             value={relationship.correlation || 0}
-                            onChange={(_, value) => setRequirements(prev => ({
-                              ...prev,
-                              relationships: prev.relationships?.map((rel, i) => 
-                                i === index ? { ...rel, correlation: value as number } : rel
-                              )
-                            }))}
+                            onChange={(_, value) =>
+                              setRequirements((prev) => ({
+                                ...prev,
+                                relationships: prev.relationships?.map((rel, i) =>
+                                  i === index ? { ...rel, correlation: value as number } : rel
+                                )
+                              }))
+                            }
                             min={-1}
                             max={1}
                             step={0.1}
@@ -866,12 +866,7 @@ export default function AISuggestionModal({
                           />
                         </Grid>
                         <Grid item xs={2}>
-                          <Button
-                            variant="outlined"
-                            size="small"
-                            color="error"
-                            onClick={() => removeRelationship(index)}
-                          >
+                          <Button variant="outlined" size="small" color="error" onClick={() => removeRelationship(index)}>
                             Xóa
                           </Button>
                         </Grid>
@@ -894,40 +889,34 @@ export default function AISuggestionModal({
                   <Typography variant="body2" color="textSecondary">
                     Chọn câu hỏi để thiết lập phân bố mong muốn
                   </Typography>
-                  
+
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {choiceQuestions.map(question => (
+                    {choiceQuestions.map((question) => (
                       <Button
                         key={question.id}
                         variant="outlined"
                         size="small"
                         onClick={() => addDistributionRequirement(question.id)}
-                        disabled={requirements.distributionRequirements?.some(d => d.questionId === question.id)}
+                        disabled={requirements.distributionRequirements?.some((d) => d.questionId === question.id)}
                       >
                         {question.title}
                       </Button>
                     ))}
                   </Stack>
-                
+
                   {requirements.distributionRequirements?.map((dist) => {
-                    const question = formData.questions.find(q => q.id === dist.questionId);
+                    const question = formData.questions.find((q) => q.id === dist.questionId);
                     return (
                       <Box key={dist.questionId} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle2">
-                            {question?.title}
-                          </Typography>
-                          <Button
-                            size="small"
-                            color="error"
-                            onClick={() => removeDistributionRequirement(dist.questionId)}
-                          >
+                          <Typography variant="subtitle2">{question?.title}</Typography>
+                          <Button size="small" color="error" onClick={() => removeDistributionRequirement(dist.questionId)}>
                             Xóa
                           </Button>
                         </Box>
                         <Stack spacing={1}>
                           {dist.targetDistribution.map((target) => {
-                            const option = question?.options?.find(opt => opt.id === target.optionId);
+                            const option = question?.options?.find((opt) => opt.id === target.optionId);
                             return (
                               <Box key={target.optionId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Typography variant="body2" sx={{ minWidth: 120 }}>
@@ -937,11 +926,7 @@ export default function AISuggestionModal({
                                   type="number"
                                   size="small"
                                   value={target.percentage}
-                                  onChange={(e) => updateDistributionPercentage(
-                                    dist.questionId, 
-                                    target.optionId, 
-                                    Number(e.target.value)
-                                  )}
+                                  onChange={(e) => updateDistributionPercentage(dist.questionId, target.optionId, Number(e.target.value))}
                                   inputProps={{ min: 0, max: 100 }}
                                   sx={{ width: 80 }}
                                   error={distributionErrors.has(dist.questionId)}
@@ -951,13 +936,11 @@ export default function AISuggestionModal({
                             );
                           })}
                         </Stack>
-                        
+
                         {/* Error message cho distribution */}
                         {distributionErrors.has(dist.questionId) && (
                           <Alert severity="error" sx={{ mt: 1 }}>
-                            <Typography variant="body2">
-                              {distributionErrors.get(dist.questionId)}
-                            </Typography>
+                            <Typography variant="body2">{distributionErrors.get(dist.questionId)}</Typography>
                           </Alert>
                         )}
                       </Box>
@@ -973,24 +956,40 @@ export default function AISuggestionModal({
             <Box sx={{ mt: 2 }}>
               {/* Step 1: Validation */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                {validationStep === 'validating' && (
-                  <CircularProgress size={24} sx={{ color: '#673AB7' }} />
-                )}
-                {validationStep === 'success' && (
-                  <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
-                )}
+                {validationStep === 'validating' && <CircularProgress size={24} sx={{ color: '#673AB7' }} />}
+                {validationStep === 'success' && <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />}
                 {validationStep === 'error' && (
-                  <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#F44336', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>!</Typography>
+                  <Box
+                    sx={{
+                      width: 24,
+                      height: 24,
+                      borderRadius: '50%',
+                      backgroundColor: '#F44336',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      !
+                    </Typography>
                   </Box>
                 )}
-                
-                <Typography variant="body2" sx={{ 
-                  color: validationStep === 'success' ? '#4CAF50' : 
-                         validationStep === 'error' ? '#F44336' : 
-                         validationStep === 'validating' ? '#673AB7' : '#757575',
-                  fontWeight: validationStep === 'validating' || validationStep === 'success' ? 600 : 400
-                }}>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color:
+                      validationStep === 'success'
+                        ? '#4CAF50'
+                        : validationStep === 'error'
+                          ? '#F44336'
+                          : validationStep === 'validating'
+                            ? '#673AB7'
+                            : '#757575',
+                    fontWeight: validationStep === 'validating' || validationStep === 'success' ? 600 : 400
+                  }}
+                >
                   {validationStep === 'validating' && 'Đang kiểm tra yêu cầu...'}
                   {validationStep === 'success' && 'Kiểm tra yêu cầu thành công'}
                   {validationStep === 'error' && 'Kiểm tra yêu cầu thất bại'}
@@ -1000,44 +999,62 @@ export default function AISuggestionModal({
               {/* Step 2: Processing - chỉ hiện khi step 1 thành công */}
               {(validationStep === 'success' || processingStep !== 'idle' || pollingState.isPolling) && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  {(processingStep === 'processing' || pollingState.isPolling) && (
-                    <CircularProgress size={24} sx={{ color: '#673AB7' }} />
-                  )}
-                  {processingStep === 'success' && (
-                    <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />
-                  )}
+                  {(processingStep === 'processing' || pollingState.isPolling) && <CircularProgress size={24} sx={{ color: '#673AB7' }} />}
+                  {processingStep === 'success' && <CheckCircleIcon sx={{ color: '#4CAF50', fontSize: 24 }} />}
                   {processingStep === 'error' && (
-                    <Box sx={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: '#F44336', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>!</Typography>
+                    <Box
+                      sx={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: '50%',
+                        backgroundColor: '#F44336',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: 'white', fontWeight: 'bold' }}>
+                        !
+                      </Typography>
                     </Box>
                   )}
-                  
-                  <Typography variant="body2" sx={{ 
-                    color: processingStep === 'success' ? '#4CAF50' : 
-                           processingStep === 'error' ? '#F44336' : 
-                           (processingStep === 'processing' || pollingState.isPolling) ? '#673AB7' : '#757575',
-                    fontWeight: (processingStep === 'processing' || pollingState.isPolling) || processingStep === 'success' ? 600 : 400
-                  }}>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color:
+                        processingStep === 'success'
+                          ? '#4CAF50'
+                          : processingStep === 'error'
+                            ? '#F44336'
+                            : processingStep === 'processing' || pollingState.isPolling
+                              ? '#673AB7'
+                              : '#757575',
+                      fontWeight: processingStep === 'processing' || pollingState.isPolling || processingStep === 'success' ? 600 : 400
+                    }}
+                  >
                     {pollingState.isPolling && pollingState.status === 'QUEUED' && 'Đang chờ xử lý...'}
                     {pollingState.isPolling && pollingState.status === 'PROCESSING' && 'AI đang phân tích dữ liệu form...'}
                     {processingStep === 'processing' && !pollingState.isPolling && 'Đang xử lý câu trả lời cho toàn bộ form...'}
                     {processingStep === 'success' && 'Xử lý câu trả lời thành công'}
                     {processingStep === 'error' && 'Xử lý câu trả lời thất bại'}
                   </Typography>
-                  
+
                   {/* Hiển thị progress bar nếu đang polling */}
                   {pollingState.isPolling && pollingState.progress && (
                     <Box sx={{ width: '100%', mt: 1 }}>
-                      <Box sx={{ 
-                        width: `${pollingState.progress}%`, 
-                        height: 4, 
-                        backgroundColor: '#673AB7', 
-                        borderRadius: 2,
-                        transition: 'width 0.3s ease'
-                      }} />
+                      <Box
+                        sx={{
+                          width: `${pollingState.progress}%`,
+                          height: 4,
+                          backgroundColor: '#673AB7',
+                          borderRadius: 2,
+                          transition: 'width 0.3s ease'
+                        }}
+                      />
                     </Box>
                   )}
-                  
+
                   {/* Hiển thị thông tin thời gian chờ */}
                   {pollingState.isPolling && pollingState.estimatedWaitTime && (
                     <Typography variant="caption" sx={{ color: '#757575', mt: 0.5 }}>
@@ -1052,18 +1069,14 @@ export default function AISuggestionModal({
           {/* Error message */}
           {(validationResult && !validationResult.isValid) || (pollingState.status === 'FAILED' && pollingState.error) ? (
             <Alert severity="error" sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                {pollingState.error || validationResult?.error}
-              </Typography>
+              <Typography variant="body2">{pollingState.error || validationResult?.error}</Typography>
             </Alert>
           ) : null}
 
           {/* Success message */}
           {validationResult && validationResult.isValid && (processingStep === 'success' || pollingState.status === 'COMPLETED') && (
             <Alert severity="success" sx={{ mt: 2 }}>
-              <Typography variant="h6">
-                Tạo dữ liệu mẫu thành công!
-              </Typography>
+              <Typography variant="h6">Tạo dữ liệu mẫu thành công!</Typography>
               <Typography variant="body2">
                 Đã tạo dữ liệu mẫu cho các câu hỏi thành công! Ước tính: {validationResult.estimatedTokens.toLocaleString()} tokens
               </Typography>
@@ -1073,8 +1086,8 @@ export default function AISuggestionModal({
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
-        <Button 
-          onClick={onClose} 
+        <Button
+          onClick={onClose}
           variant="outlined"
           startIcon={<CloseIcon />}
           sx={{
@@ -1091,7 +1104,13 @@ export default function AISuggestionModal({
         <Button
           onClick={handleSubmit}
           variant="contained"
-          startIcon={validationStep === 'validating' || processingStep === 'processing' || pollingState.isPolling ? <CircularProgress size={16} color="inherit" /> : <AutoAwesomeIcon />}
+          startIcon={
+            validationStep === 'validating' || processingStep === 'processing' || pollingState.isPolling ? (
+              <CircularProgress size={16} color="inherit" />
+            ) : (
+              <AutoAwesomeIcon />
+            )
+          }
           disabled={validationStep === 'validating' || processingStep === 'processing' || pollingState.isPolling || !isFormValid}
           sx={{
             backgroundColor: '#673AB7',
@@ -1104,9 +1123,11 @@ export default function AISuggestionModal({
             }
           }}
         >
-          {validationStep === 'validating' ? 'Đang kiểm tra...' : 
-           processingStep === 'processing' || pollingState.isPolling ? 'Đang xử lý...' : 
-           'Tạo dữ liệu mẫu'}
+          {validationStep === 'validating'
+            ? 'Đang kiểm tra...'
+            : processingStep === 'processing' || pollingState.isPolling
+              ? 'Đang xử lý...'
+              : 'Tạo dữ liệu mẫu'}
         </Button>
       </DialogActions>
     </Dialog>

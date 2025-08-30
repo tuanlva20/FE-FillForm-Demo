@@ -18,12 +18,14 @@ export default function HuongDanMaHoa() {
             </li>
             <li>
               <Typography variant="body2">
-                <strong>Nhiều lựa chọn (Checkbox)</strong>: ngăn cách các số bằng dấu <code>|</code>. Ví dụ: chọn đáp án 1 và 3 → nhập: <code>1|3</code>.
+                <strong>Nhiều lựa chọn (Checkbox)</strong>: ngăn cách các số bằng dấu <code>|</code>. Ví dụ: chọn đáp án 1 và 3 → nhập:{' '}
+                <code>1|3</code>.
               </Typography>
             </li>
             <li>
               <Typography variant="body2">
-                <strong>Đáp án “Khác” có nhập chữ/số</strong>: dùng dạng <code>mã-ghi_chu</code>. Ví dụ: đáp án “Khác” là 7, nhập “1234” → <code>7-1234</code>. Nếu chọn nhiều + “Khác”: ví dụ <code>1|3|7-ghi_chu</code>.
+                <strong>Đáp án “Khác” có nhập chữ/số</strong>: dùng dạng <code>mã-ghi_chu</code>. Ví dụ: đáp án “Khác” là 7, nhập “1234” →{' '}
+                <code>7-1234</code>. Nếu chọn nhiều + “Khác”: ví dụ <code>1|3|7-ghi_chu</code>.
               </Typography>
             </li>
             <li>
@@ -33,7 +35,8 @@ export default function HuongDanMaHoa() {
             </li>
             <li>
               <Typography variant="body2">
-                <strong>Câu hỏi dạng lưới (Grid)</strong>: mỗi mục/hàng là một cột trong Sheet. Radio: một số (như trên). Checkbox: nhiều số, ngăn cách <code>|</code>.
+                <strong>Câu hỏi dạng lưới (Grid)</strong>: mỗi mục/hàng là một cột trong Sheet. Radio: một số (như trên). Checkbox: nhiều
+                số, ngăn cách <code>|</code>.
               </Typography>
             </li>
             <li>
@@ -50,5 +53,3 @@ export default function HuongDanMaHoa() {
     </Accordion>
   );
 }
-
-

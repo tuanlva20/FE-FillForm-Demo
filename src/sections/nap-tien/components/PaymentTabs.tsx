@@ -1,14 +1,11 @@
 import { Box } from '@mui/material';
-import { useState } from 'react';
 import SEPAYTab from './SEPAYTab';
 
-export default function PaymentTabs() {
-  const [activeTab, setActiveTab] = useState(0);
+interface PaymentTabsProps {
+  resetKey?: number;
+}
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setActiveTab(newValue);
-  };
-
+export default function PaymentTabs({ resetKey = 0 }: PaymentTabsProps) {
   return (
     <Box>
       {/* <Tabs
@@ -24,12 +21,12 @@ export default function PaymentTabs() {
           }
         }}
       > */}
-        {/* <Tab label="Chuyển khoản & QR" />
+      {/* <Tab label="Chuyển khoản & QR" />
         <Tab label="VNPAY" /> */}
-        {/* <Tab label="Chuyển khoản QR" /> */}
+      {/* <Tab label="Chuyển khoản QR" /> */}
       {/* </Tabs> */}
-      <SEPAYTab />
-      
+      <SEPAYTab resetKey={resetKey} />
+
       {/* {activeTab === 0 && <BankTransferTab />}
       {activeTab === 1 && <VNPayTab />} */}
       {/* {activeTab === 2 && <SEPAYTab />} */}

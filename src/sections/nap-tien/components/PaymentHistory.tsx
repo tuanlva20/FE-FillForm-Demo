@@ -1,21 +1,21 @@
 import { Refresh as RefreshIcon } from '@mui/icons-material';
 import {
-    Alert,
-    Box,
-    Chip,
-    CircularProgress,
-    IconButton,
-    Pagination,
-    Paper,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Tooltip,
-    Typography
+  Alert,
+  Box,
+  Chip,
+  CircularProgress,
+  IconButton,
+  Pagination,
+  Paper,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Typography
 } from '@mui/material';
 import { getPaymentHistory } from 'api/payment';
 import { useEffect, useState } from 'react';
@@ -36,13 +36,13 @@ export default function PaymentHistory({ maxHeight = 400 }: PaymentHistoryProps)
   const fetchHistory = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await getPaymentHistory({
         page,
-        limit: 10,
+        limit: 10
       });
-      
+
       if (response.success) {
         setTransactions(response.data || []);
         setTotalPages(response.totalPages || 1);
@@ -63,28 +63,40 @@ export default function PaymentHistory({ maxHeight = 400 }: PaymentHistoryProps)
 
   const getStatusColor = (status: PaymentTransaction['status']) => {
     switch (status) {
-      case 'completed': return 'success';
-      case 'failed': return 'error';
-      case 'pending': return 'warning';
-      default: return 'default';
+      case 'completed':
+        return 'success';
+      case 'failed':
+        return 'error';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'default';
     }
   };
 
   const getStatusText = (status: PaymentTransaction['status']) => {
     switch (status) {
-      case 'completed': return 'Thành công';
-      case 'failed': return 'Thất bại';
-      case 'pending': return 'Đang xử lý';
-      default: return 'Không xác định';
+      case 'completed':
+        return 'Thành công';
+      case 'failed':
+        return 'Thất bại';
+      case 'pending':
+        return 'Đang xử lý';
+      default:
+        return 'Không xác định';
     }
   };
 
   const getMethodText = (method: string) => {
     switch (method.toLowerCase()) {
-      case 'sepay': return 'SEPAY';
-      case 'vnpay': return 'VNPAY';
-      case 'bank_transfer': return 'Chuyển khoản';
-      default: return method;
+      case 'sepay':
+        return 'SEPAY';
+      case 'vnpay':
+        return 'VNPAY';
+      case 'bank_transfer':
+        return 'Chuyển khoản';
+      default:
+        return method;
     }
   };
 
@@ -109,7 +121,7 @@ export default function PaymentHistory({ maxHeight = 400 }: PaymentHistoryProps)
         <Typography variant="h6" fontWeight={600}>
           Lịch sử thanh toán
         </Typography>
-        
+
         <Tooltip title="Làm mới">
           <IconButton onClick={fetchHistory} disabled={loading}>
             <RefreshIcon />
@@ -137,17 +149,19 @@ export default function PaymentHistory({ maxHeight = 400 }: PaymentHistoryProps)
                 <TableRow>
                   <TableCell sx={{ fontWeight: 600 }}>Thời gian</TableCell>
                   <TableCell sx={{ fontWeight: 600 }}>Phương thức</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="right">Số tiền</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="center">Trạng thái</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">
+                    Số tiền
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="center">
+                    Trạng thái
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id} hover>
                     <TableCell>
-                      <Typography variant="body2">
-                        {formatDate(transaction.createdAt)}
-                      </Typography>
+                      <Typography variant="body2">{formatDate(transaction.createdAt)}</Typography>
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" fontWeight={500}>
@@ -175,13 +189,7 @@ export default function PaymentHistory({ maxHeight = 400 }: PaymentHistoryProps)
 
           {totalPages > 1 && (
             <Box sx={{ mt: 2, display: 'flex', justifyContent: 'center' }}>
-              <Pagination
-                count={totalPages}
-                page={page}
-                onChange={(_, newPage) => setPage(newPage)}
-                size="small"
-                color="primary"
-              />
+              <Pagination count={totalPages} page={page} onChange={(_, newPage) => setPage(newPage)} size="small" color="primary" />
             </Box>
           )}
         </>

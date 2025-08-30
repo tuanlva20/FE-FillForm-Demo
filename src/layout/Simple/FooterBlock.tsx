@@ -48,81 +48,95 @@ export default function FooterBlock({ isFull }: showProps) {
         }
       }}
     >
-            <Container maxWidth="lg" sx={{ position: 'relative' }}>
-          <Stack spacing={3} direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center">
-            {/* Logo */}
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Logo />
-            </Box>
+      <Container maxWidth="lg" sx={{ position: 'relative' }}>
+        <Stack spacing={3} direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems="center">
+          {/* Logo */}
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Logo />
+          </Box>
 
-            {/* Quick Links */}
-            <Stack spacing={1}>
-              <Typography variant="subtitle1" color="text.primary">Link nhanh</Typography>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 3 }} alignItems="center">
-                <FooterLink href="#" underline="none">
-                  Liên hệ
-                </FooterLink>
-                <FooterLink href="#" underline="none">
-                  Bảng giá
-                </FooterLink>
-                <FooterLink href="#" underline="none">
-                  Tài liệu hướng dẫn
-                </FooterLink>
-              </Stack>
-            </Stack>
-
-            {/* Contact Info */}
-            <Stack spacing={2} alignItems={{ xs: 'center', md: 'flex-end' }}>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ 
-                color: 'text.primary',
-                transition: 'all 0.3s ease-in-out',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateX(5px)',
-                  color: 'primary.main'
-                }
-              }}>
-                <Mobile variant="Bold" size={18} />
-                <Typography variant="body2">0911.222.390</Typography>
-              </Stack>
-              <Stack direction="row" spacing={1} alignItems="center" sx={{ 
-                color: 'text.primary',
-                transition: 'all 0.3s ease-in-out',
-                cursor: 'pointer',
-                '&:hover': { 
-                  transform: 'translateX(5px)',
-                  color: 'primary.main'
-                }
-              }}>
-                <Sms variant="Bold" size={18} />
-                <Typography variant="body2">khaosat.dev@gmail.com</Typography>
-              </Stack>
+          {/* Quick Links */}
+          <Stack spacing={1}>
+            <Typography variant="subtitle1" color="text.primary">
+              Link nhanh
+            </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 1.5, sm: 3 }} alignItems="center">
+              <FooterLink href="#" underline="none">
+                Liên hệ
+              </FooterLink>
+              <FooterLink href="#" underline="none">
+                Bảng giá
+              </FooterLink>
+              <FooterLink href="#" underline="none">
+                Tài liệu hướng dẫn
+              </FooterLink>
             </Stack>
           </Stack>
 
-          {/* Copyright */}
-          <Box 
-            sx={{ 
-              mt: 3, 
-              pt: 2, 
-              borderTop: '1px solid',
-              borderColor: 'divider'
-            }}
-          >
-            <Typography 
-              variant="body2" 
-              color="text.secondary" 
-              sx={{ 
-                textAlign: 'center',
-                fontStyle: 'italic'
+          {/* Contact Info */}
+          <Stack spacing={2} alignItems={{ xs: 'center', md: 'flex-end' }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{
+                color: 'text.primary',
+                transition: 'all 0.3s ease-in-out',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateX(5px)',
+                  color: 'primary.main'
+                }
               }}
             >
-              &copy; 2025 <Link href="https://khaosat.tech" target="_blank" underline="none">
-                khaosat.tech
-              </Link>. All rights reserved.
-            </Typography>
-          </Box>
-        </Container>
+              <Mobile variant="Bold" size={18} />
+              <Typography variant="body2">0911.222.390</Typography>
+            </Stack>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{
+                color: 'text.primary',
+                transition: 'all 0.3s ease-in-out',
+                cursor: 'pointer',
+                '&:hover': {
+                  transform: 'translateX(5px)',
+                  color: 'primary.main'
+                }
+              }}
+            >
+              <Sms variant="Bold" size={18} />
+              <Typography variant="body2">khaosat.dev@gmail.com</Typography>
+            </Stack>
+          </Stack>
+        </Stack>
+
+        {/* Copyright */}
+        <Box
+          sx={{
+            mt: 3,
+            pt: 2,
+            borderTop: '1px solid',
+            borderColor: 'divider'
+          }}
+        >
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              textAlign: 'center',
+              fontStyle: 'italic'
+            }}
+          >
+            &copy; 2025{' '}
+            <Link href="https://khaosat.tech" target="_blank" underline="none">
+              khaosat.tech
+            </Link>
+            . All rights reserved.
+          </Typography>
+        </Box>
+      </Container>
     </Box>
   );
 }

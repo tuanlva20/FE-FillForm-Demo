@@ -1,6 +1,6 @@
 import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
-import { } from 'react-router-dom';
+import {} from 'react-router-dom';
 
 // material-ui
 import Button from '@mui/material/Button';
@@ -48,15 +48,19 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
     <>
       <Formik
         initialValues={{
-          email: "",
-          password: "",
+          email: '',
+          password: '',
           submit: null
         }}
         validationSchema={Yup.object().shape({
           email: Yup.string().email('Phải là một email hợp lệ').max(255).required('Email là bắt buộc'),
           password: Yup.string()
             .required('Mật khẩu là bắt buộc')
-            .test('no-leading-trailing-whitespace', 'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng', (value) => value === value.trim())
+            .test(
+              'no-leading-trailing-whitespace',
+              'Mật khẩu không thể bắt đầu hoặc kết thúc bằng khoảng trắng',
+              (value) => value === value.trim()
+            )
         })}
         onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
           try {

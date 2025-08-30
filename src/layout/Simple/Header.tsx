@@ -91,49 +91,21 @@ export default function Header({ layout = 'landing', ...others }: Props) {
                 '& .header-link': { fontWeight: 500, '&:hover': { color: 'primary.main' } }
               }}
             >
-              <Link
-                className="header-link"
-                color="secondary.main"
-                component={RouterLink}
-                to="/"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" component={RouterLink} to="/" underline="none">
                 Trang Chủ
               </Link>
-              <Link
-                className="header-link"
-                color="secondary.main"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" href="#" underline="none">
                 Liên Hệ
               </Link>
-              <Link
-                className="header-link"
-                color="secondary.main"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" href="#" underline="none">
                 Bảng Giá
               </Link>
-              <Link
-                className="header-link"
-                color="secondary.main"
-                href="#"
-                underline="none"
-              >
+              <Link className="header-link" color="secondary.main" href="#" underline="none">
                 Tài Liệu Hướng Dẫn
               </Link>
               <Box sx={{ display: 'inline-block' }}>
                 <AnimateButton>
-                  <Button
-                    href="/dashboard/default"
-                    disableElevation
-                    startIcon={<Send2 />}
-                    color="primary"
-                    size="large"
-                    variant="contained"
-                  >
+                  <Button href="/dashboard/default" disableElevation startIcon={<Send2 />} color="primary" size="large" variant="contained">
                     Dùng thử miễn phí
                   </Button>
                 </AnimateButton>
@@ -151,12 +123,7 @@ export default function Header({ layout = 'landing', ...others }: Props) {
                 <Logo to="/" />
               </Box>
               <Stack direction="row" sx={{ gap: 2 }}>
-                <IconButton
-                  size="large"
-                  color="secondary"
-                  onClick={drawerToggler(true)}
-                  sx={{ p: 1 }}
-                >
+                <IconButton size="large" color="secondary" onClick={drawerToggler(true)} sx={{ p: 1 }}>
                   <HambergerMenu />
                 </IconButton>
               </Stack>

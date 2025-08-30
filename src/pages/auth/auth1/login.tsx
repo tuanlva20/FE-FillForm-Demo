@@ -34,7 +34,8 @@ export default function Login() {
           <Grid container spacing={1}>
             <Grid size={12}>
               <AuthSocButton>
-                <CardMedia component="img" src={imgFacebook} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng nhập với Facebook
+                <CardMedia component="img" src={imgFacebook} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng nhập với
+                Facebook
               </AuthSocButton>
             </Grid>
             {/* <Grid size={12}>

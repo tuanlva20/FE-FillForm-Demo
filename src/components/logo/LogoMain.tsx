@@ -9,12 +9,5 @@ import logo from '../../assets/images/logo-khaosat.png';
 export default function LogoMain() {
   const theme = useTheme();
 
-  return (
-    <img 
-      src={logo} 
-      alt="KHAOSAT.TECH Logo" 
-      height="auto"
-      style={{ maxHeight: '40px' }}
-    />
-  );
+  return <img src={logo} alt="KHAOSAT.TECH Logo" height="auto" style={{ maxHeight: '40px' }} />;
 }

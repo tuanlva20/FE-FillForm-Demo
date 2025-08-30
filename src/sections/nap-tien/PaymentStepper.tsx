@@ -1,12 +1,11 @@
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { Alert, Box, Button, CircularProgress, LinearProgress, Paper, Step, StepLabel, Stepper } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, LinearProgress, Paper } from '@mui/material';
 import { useEffect, useMemo, useState } from 'react';
 import { usePayment } from '../../contexts/PaymentContext';
+import useBalance from '../../hooks/useBalance';
 import { useWebSocket } from '../../hooks/useWebSocket';
 import PaymentTabs from './components/PaymentTabs';
 import SpecialNoticeBox from './components/SpecialNoticeBox';
-
-const steps = ['Chuyển khoản & QR', 'Xác nhận thanh toán'];
 
 export default function PaymentStepper() {
   const [activeStep, setActiveStep] = useState(0);
@@ -14,7 +13,10 @@ export default function PaymentStepper() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
-  const { setCurrentStepper } = usePayment();
+  const [autoPaymentSuccess, setAutoPaymentSuccess] = useState(false);
+  const [formKey, setFormKey] = useState(0); // Key để force re-render PaymentTabs
+  const { setCurrentStepper, showPaymentSuccess } = usePayment();
+  const { refresh: refreshBalance } = useBalance();
 
   // Optional: if later we have current order id, we can subscribe by id
   const currentOrderId = useMemo<string | null>(() => null, []);
@@ -27,29 +29,51 @@ export default function PaymentStepper() {
     actualAmount?: number;
   };
 
+  // Auto-start listening for payment updates when component mounts
   useEffect(() => {
     if (!handlePaymentUpdate) return;
 
+    console.log('Starting to listen for payment updates...');
+    
     const off = handlePaymentUpdate((data: PaymentUpdateData) => {
-      if (!isProcessing) return;
-
+      console.log('Payment update received:', data);
+      
       if (data.status === 'completed') {
+        // Refresh balance to get updated amount
+        refreshBalance();
+        
+        // Show success notification with the amount
+        const amount = data.actualAmount || data.amount;
+        showPaymentSuccess(amount);
+        
+        // Set success state regardless of processing state
         setIsProcessing(false);
         setIsSuccess(true);
         setErrorMessage(null);
         setWarningMessage(null);
+        setAutoPaymentSuccess(true);
+        
+        // Reset form after successful payment
+        setTimeout(() => {
+          setFormKey(prev => prev + 1);
+          setAutoPaymentSuccess(false);
+          setIsSuccess(false);
+        }, 2000); // Reset after 2 seconds
+        
+        console.log('Payment completed successfully. Amount:', amount);
       } else if (data.status === 'failed' || data.status === 'expired' || data.status === 'mismatch') {
         setIsProcessing(false);
         setIsSuccess(false);
         setErrorMessage('Thanh toán chưa thành công. Vui lòng kiểm tra lại.');
         setWarningMessage(null);
+        console.log('Payment failed:', data.status);
       }
     });
 
     return () => {
       if (typeof off === 'function') off();
     };
-  }, [handlePaymentUpdate, isProcessing]);
+  }, [handlePaymentUpdate, refreshBalance, showPaymentSuccess]);
 
   useEffect(() => {
     if (!currentOrderId) return;
@@ -57,18 +81,6 @@ export default function PaymentStepper() {
     subscribeToPayment(currentOrderId);
     return () => unsubscribeFromPayment(currentOrderId);
   }, [currentOrderId, subscribeToPayment, unsubscribeFromPayment]);
-
-  // 5-minute timeout fallback: show warning if still processing
-  useEffect(() => {
-    if (activeStep !== 1 || !isProcessing) return;
-    const timeoutId = setTimeout(() => {
-      setIsProcessing(false);
-      setIsSuccess(false);
-      setErrorMessage(null);
-      setWarningMessage('Không thể xác nhận thanh toán tự động. Vui lòng liên hệ bộ phận hỗ trợ!');
-    }, 5 * 60 * 1000);
-    return () => clearTimeout(timeoutId);
-  }, [activeStep, isProcessing]);
 
   // Clear stepper when component unmounts
   useEffect(() => {
@@ -81,28 +93,47 @@ export default function PaymentStepper() {
     setIsSuccess(false);
     setErrorMessage(null);
     setWarningMessage(null);
+    setAutoPaymentSuccess(false);
     setIsProcessing(true);
     setActiveStep(1);
     setCurrentStepper('Xác nhận thanh toán');
   };
 
+  const handleResetForm = () => {
+    setFormKey(prev => prev + 1);
+    setAutoPaymentSuccess(false);
+    setIsSuccess(false);
+    setErrorMessage(null);
+    setWarningMessage(null);
+    setActiveStep(0);
+    setCurrentStepper(null);
+  };
+
   return (
     <Paper sx={{ maxWidth: 800, mx: 'auto', mt: 4, p: { xs: 2, md: 4 } }} elevation={2}>
       {isProcessing && <LinearProgress sx={{ mb: 2 }} />}
-      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 3 }}>
-        {steps.map((label) => (
-          <Step key={label}>
-            <StepLabel>{label}</StepLabel>
-          </Step>
-        ))}
-      </Stepper>
       <Box>
         {activeStep === 0 && (
           <>
             <SpecialNoticeBox />
             <Box mt={2}>
-              <PaymentTabs />
+              <PaymentTabs key={formKey} resetKey={formKey} />
             </Box>
+            {autoPaymentSuccess && (
+              <Box mt={2}>
+                <Alert 
+                  severity="success" 
+                  sx={{ width: '100%' }}
+                  action={
+                    <Button color="inherit" size="small" onClick={handleResetForm}>
+                      Tạo mới
+                    </Button>
+                  }
+                >
+                  Thanh toán đã được xác nhận tự động! Số dư đã được cập nhật. Form sẽ được tạo mới trong giây lát.
+                </Alert>
+              </Box>
+            )}
           </>
         )}
         {activeStep === 1 && (
@@ -117,12 +148,13 @@ export default function PaymentStepper() {
               <>
                 <CheckCircleOutlineIcon color="success" sx={{ fontSize: 56 }} />
                 <Alert severity="success" sx={{ width: '100%', maxWidth: 520 }}>
-                  Nạp tiền thành công! Số dư sẽ được cập nhật trong giây lát.
+                  Nạp tiền thành công! Số dư đã được cập nhật tự động.
                 </Alert>
-                <Button variant="contained" color="success" onClick={() => {
-                  setActiveStep(0);
-                  setCurrentStepper(null);
-                }}>
+                <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleResetForm}
+                >
                   Hoàn tất
                 </Button>
               </>
@@ -132,10 +164,10 @@ export default function PaymentStepper() {
                 <Alert severity="warning" sx={{ width: '100%', maxWidth: 520 }}>
                   {warningMessage}
                 </Alert>
-                <Button variant="outlined" onClick={() => {
-                  setActiveStep(0);
-                  setCurrentStepper(null);
-                }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleResetForm}
+                >
                   Quay lại
                 </Button>
               </>
@@ -145,10 +177,10 @@ export default function PaymentStepper() {
                 <Alert severity="error" sx={{ width: '100%', maxWidth: 520 }}>
                   {errorMessage}
                 </Alert>
-                <Button variant="outlined" onClick={() => {
-                  setActiveStep(0);
-                  setCurrentStepper(null);
-                }}>
+                <Button
+                  variant="outlined"
+                  onClick={handleResetForm}
+                >
                   Quay lại
                 </Button>
               </>
@@ -158,18 +190,14 @@ export default function PaymentStepper() {
         {/* {activeStep === 2 && <PaymentHistory />}
         {activeStep === 3 && <PaymentStats />} */}
       </Box>
-      <Box sx={{ display: 'flex', flexDirection: 'row', pt: 3 }}>
+      {/* <Box sx={{ display: 'flex', flexDirection: 'row', pt: 3 }}>
         <Box sx={{ flex: '1 1 auto' }} />
         {activeStep === 0 && (
-          <Button
-            variant="contained"
-            onClick={handleConfirmPaid}
-            disabled={isProcessing}
-          >
+          <Button variant="contained" onClick={handleConfirmPaid} disabled={isProcessing}>
             Tôi đã thanh toán
           </Button>
         )}
-      </Box>
+      </Box> */}
     </Paper>
   );
-} 
+}

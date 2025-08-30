@@ -74,11 +74,11 @@ export default function UserList() {
   };
 
   return (
-    <Box 
-      sx={{ 
+    <Box
+      sx={{
         p: drawerOpen ? 1.25 : 0.5,
-        px: drawerOpen ? 3 : 1.25, 
-        borderTop: '2px solid ', 
+        px: drawerOpen ? 3 : 1.25,
+        borderTop: '2px solid ',
         borderTopColor: 'divider',
         minHeight: drawerOpen ? 'auto' : 64,
         display: 'flex',
@@ -106,13 +106,13 @@ export default function UserList() {
             ) : undefined
           }
           sx={{
-            ...(!drawerOpen && { 
-              display: 'flex', 
+            ...(!drawerOpen && {
+              display: 'flex',
               justifyContent: 'center',
               flexDirection: 'column',
               alignItems: 'center'
             }),
-            '& .MuiListItemSecondaryAction-root': { 
+            '& .MuiListItemSecondaryAction-root': {
               right: !drawerOpen ? 8 : -16,
               top: !drawerOpen ? 8 : '50%',
               transform: !drawerOpen ? 'none' : 'translateY(-50%)'
@@ -131,14 +131,10 @@ export default function UserList() {
               }}
             />
           </ListItemAvatar>
-          
+
           {drawerOpen && (
             <>
-              <ListItemText
-                primary={user?.name || 'User'}
-                secondary={user?.role || 'User'}
-                sx={{ ml: 1 }}
-              />
+              <ListItemText primary={user?.name || 'User'} secondary={user?.role || 'User'} sx={{ ml: 1 }} />
             </>
           )}
         </ListItem>
@@ -155,7 +151,9 @@ export default function UserList() {
       >
         <Box sx={{ px: 1.5, py: 1 }}>
           <Typography variant="subtitle1">{user?.name || 'User'}</Typography>
-          <Typography variant="caption" color="text.secondary">{user?.role || 'User'}</Typography>
+          <Typography variant="caption" color="text.secondary">
+            {user?.role || 'User'}
+          </Typography>
         </Box>
         <Divider />
         {/* <MenuItem component={Link} to="/apps/profiles/user/personal" onClick={handleClose}>

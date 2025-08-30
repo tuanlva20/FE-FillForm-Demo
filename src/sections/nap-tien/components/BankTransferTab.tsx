@@ -12,8 +12,6 @@ const BANK_INFO = {
   content: 'TS 1520398'
 };
 
-
-
 export default function BankTransferTab() {
   const [snackbar, setSnackbar] = useState<string | null>(null);
   const [amount, setAmount] = useState('');
@@ -42,16 +40,12 @@ export default function BankTransferTab() {
         <Typography variant="h6" textAlign="center" color="primary">
           Tên tài khoản: {BANK_INFO.accountName}
         </Typography>
-        
+
         <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
           <Typography variant="h6" color="primary">
             Nội dung: {BANK_INFO.content}
           </Typography>
-          <IconButton 
-            size="small" 
-            onClick={() => handleCopy(BANK_INFO.content, 'Nội dung')}
-            color="primary"
-          >
+          <IconButton size="small" onClick={() => handleCopy(BANK_INFO.content, 'Nội dung')} color="primary">
             <ContentCopyIcon fontSize="small" />
           </IconButton>
         </Stack>
@@ -63,28 +57,30 @@ export default function BankTransferTab() {
               size="medium"
               value={amount}
               onChange={handleAmountChange}
-              inputProps={{ 
-                inputMode: 'numeric', 
+              inputProps={{
+                inputMode: 'numeric',
                 pattern: '[0-9,]*',
-                min: 10000 
+                min: 10000
               }}
               sx={{ mb: 2, width: 200 }}
               placeholder="Tối thiểu 10,000"
               helperText={!isValidAmount && amount ? 'Số tiền tối thiểu là 10,000 VND' : ''}
               error={!isValidAmount && amount.length > 0}
             />
-            
-            <Box sx={{ 
-              width: 200, 
-              height: 200, 
-              bgcolor: '#f5f5f5', 
-              borderRadius: 2, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              border: '1px solid #e0e0e0',
-              mb: 1
-            }}>
+
+            <Box
+              sx={{
+                width: 200,
+                height: 200,
+                bgcolor: '#f5f5f5',
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #e0e0e0',
+                mb: 1
+              }}
+            >
               {qrValue ? (
                 <QRCode value={qrValue} size={180} />
               ) : (
@@ -93,7 +89,7 @@ export default function BankTransferTab() {
                 </Typography>
               )}
             </Box>
-            
+
             <Typography variant="body2" textAlign="center" color="primary" fontWeight={600}>
               {BANK_INFO.bank}
             </Typography>
@@ -101,37 +97,44 @@ export default function BankTransferTab() {
               Chi nhánh: {BANK_INFO.branch}
             </Typography>
           </Box>
-          
+
           <Box>
             <Stack spacing={2}>
               <Typography variant="h6" color="primary" fontWeight={600}>
                 Thông tin tài khoản
               </Typography>
-              
+
               <Stack spacing={1}>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body2" fontWeight={600}>Ngân hàng:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    Ngân hàng:
+                  </Typography>
                   <Typography variant="body2">{BANK_INFO.bank}</Typography>
                 </Stack>
-                
+
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body2" fontWeight={600}>Tên tài khoản:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    Tên tài khoản:
+                  </Typography>
                   <Typography variant="body2">{BANK_INFO.accountName}</Typography>
                 </Stack>
-                
+
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body2" fontWeight={600}>Số tài khoản:</Typography>
-                  <Typography variant="body2" fontFamily="monospace">{BANK_INFO.accountNumber}</Typography>
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleCopy(BANK_INFO.accountNumber, 'Số tài khoản')}
-                  >
+                  <Typography variant="body2" fontWeight={600}>
+                    Số tài khoản:
+                  </Typography>
+                  <Typography variant="body2" fontFamily="monospace">
+                    {BANK_INFO.accountNumber}
+                  </Typography>
+                  <IconButton size="small" onClick={() => handleCopy(BANK_INFO.accountNumber, 'Số tài khoản')}>
                     <ContentCopyIcon fontSize="small" />
                   </IconButton>
                 </Stack>
-                
+
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Typography variant="body2" fontWeight={600}>Chi nhánh:</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    Chi nhánh:
+                  </Typography>
                   <Typography variant="body2">{BANK_INFO.branch}</Typography>
                 </Stack>
               </Stack>

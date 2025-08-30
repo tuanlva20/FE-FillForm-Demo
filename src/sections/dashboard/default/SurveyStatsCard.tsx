@@ -28,15 +28,15 @@ interface SurveyStatsCardProps {
 
 // ==============================|| DASHBOARD - SURVEY STATS CARD ||============================== //
 
-export default function SurveyStatsCard({ 
-  title, 
-  count, 
-  percentage, 
-  isLoss, 
-  color = 'primary', 
-  extra, 
+export default function SurveyStatsCard({
+  title,
+  count,
+  percentage,
+  isLoss,
+  color = 'primary',
+  extra,
   icon,
-  description 
+  description
 }: SurveyStatsCardProps) {
   const theme = useTheme();
 
@@ -131,9 +131,9 @@ export default function SurveyStatsCard({
         <Grid size={12}>
           <Stack spacing={1}>
             <Stack direction="row" alignItems="baseline" spacing={1}>
-              <Typography 
-                variant="h2" 
-                sx={{ 
+              <Typography
+                variant="h2"
+                sx={{
                   color: colors.main,
                   fontWeight: 700,
                   fontSize: '2.5rem'
@@ -155,11 +155,7 @@ export default function SurveyStatsCard({
                     fontWeight: 600
                   }}
                 >
-                  {!isLoss ? (
-                    <ArrowUp size={16} style={{ marginRight: 4 }} />
-                  ) : (
-                    <ArrowDown size={16} style={{ marginRight: 4 }} />
-                  )}
+                  {!isLoss ? <ArrowUp size={16} style={{ marginRight: 4 }} /> : <ArrowDown size={16} style={{ marginRight: 4 }} />}
                   {Math.abs(percentage)}%
                 </Box>
               )}
@@ -201,4 +197,4 @@ export default function SurveyStatsCard({
       </Grid>
     </MainCard>
   );
-} 
+}

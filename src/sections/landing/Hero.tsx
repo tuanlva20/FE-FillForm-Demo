@@ -38,7 +38,7 @@ export default function HeroPage() {
       y: 0,
       opacity: 1,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100
       }
     }
@@ -53,19 +53,19 @@ export default function HeroPage() {
       transition: {
         duration: 6,
         repeat: Infinity,
-        ease: "easeInOut"
+        ease: 'easeInOut'
       }
     }
   };
 
   return (
-    <Box 
-      sx={{ 
-        minHeight: '100vh', 
-        position: 'relative', 
-        pb: 12.5, 
-        pt: 10, 
-        display: 'flex', 
+    <Box
+      sx={{
+        minHeight: '100vh',
+        position: 'relative',
+        pb: 12.5,
+        pt: 10,
+        display: 'flex',
         alignItems: 'center',
         background: `linear-gradient(135deg, 
           ${theme.palette.background.default} 0%, 
@@ -144,11 +144,7 @@ export default function HeroPage() {
       <Container sx={{ position: 'relative', zIndex: 1 }}>
         <Grid container spacing={2} sx={{ alignItems: 'center', justifyContent: 'center', pt: { md: 0, xs: 10 }, pb: { md: 0, xs: 22 } }}>
           <Grid size={{ xs: 12, md: 10 }}>
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
+            <motion.div variants={containerVariants} initial="hidden" animate="visible">
               <Grid container spacing={3} sx={{ textAlign: 'center' }}>
                 <Grid size={12}>
                   <motion.div variants={itemVariants}>
@@ -162,7 +158,7 @@ export default function HeroPage() {
                         textShadow: `0 0 20px ${theme.palette.primary.main}30`
                       }}
                     >
-                      KHÁM PHÁ CÔNG CỤ{' '}<br/>
+                      KHÁM PHÁ CÔNG CỤ <br />
                       <Typography
                         variant="h1"
                         component="span"
@@ -182,11 +178,11 @@ export default function HeroPage() {
                       >
                         KHẢO SÁT TỰ ĐỘNG
                       </Typography>{' '}
-                        HÀNG ĐẦU
+                      HÀNG ĐẦU
                     </Typography>
                   </motion.div>
                 </Grid>
-                
+
                 <Grid size={12}>
                   <motion.div variants={itemVariants}>
                     <Typography
@@ -254,10 +250,10 @@ export default function HeroPage() {
                             mb: 2
                           }}
                         >
-                          <Box component="span" sx={{ fontWeight: 'bold'}}>
+                          <Box component="span" sx={{ fontWeight: 'bold' }}>
                             🤖 KHAOSAT.TECH
-                          </Box> {' '}
-                           giúp tự động điền form khảo sát{' '}
+                          </Box>{' '}
+                          giúp tự động điền form khảo sát{' '}
                           <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                             Bằng AI
                           </Box>
@@ -291,18 +287,19 @@ export default function HeroPage() {
                           ,{' '}
                           <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                             Giảng Viên
-                          </Box>
-                          {' '}thực hiện:<br />
+                          </Box>{' '}
+                          thực hiện:
+                          <br />
                           🎓{' '}
-                          <Box component="span" sx={{ fontWeight: 'bold'}}>
+                          <Box component="span" sx={{ fontWeight: 'bold' }}>
                             Khóa luận tốt nghiệp
                           </Box>
                           ,{' '}
-                          <Box component="span" sx={{ fontWeight: 'bold'}}>
+                          <Box component="span" sx={{ fontWeight: 'bold' }}>
                             Luận văn Thạc sĩ – Tiến sĩ
                           </Box>
                           ,{' '}
-                          <Box component="span" sx={{ fontWeight: 'bold'}}>
+                          <Box component="span" sx={{ fontWeight: 'bold' }}>
                             Nghiên cứu khoa học
                           </Box>
                           .
@@ -332,23 +329,20 @@ export default function HeroPage() {
                           }
                         }}
                       >
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Typography variant="h4" sx={{ color: 'primary.main', fontSize: '1.4rem', lineHeight: 1.2 }}>
                             ⭐ 4.8/5
-                            <Box component="span" sx={{ fontSize: '75%', fontWeight: 400, margin: 0.625, color: 'text.secondary', display: 'block' }}>
+                            <Box
+                              component="span"
+                              sx={{ fontSize: '75%', fontWeight: 400, margin: 0.625, color: 'text.secondary', display: 'block' }}
+                            >
                               đánh giá
                             </Box>
                           </Typography>
                         </motion.div>
                       </Grid>
                       <Grid sx={{ textAlign: 'center' }}>
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           <Typography variant="h4" sx={{ fontSize: '1.4rem', lineHeight: 1.2 }}>
                             Hơn{' '}
                             <Box
@@ -363,7 +357,10 @@ export default function HeroPage() {
                             >
                               5.000+
                             </Box>
-                            <Box component="span" sx={{ fontSize: '75%', fontWeight: 400, margin: 0.625, color: 'text.secondary', display: 'block' }}>
+                            <Box
+                              component="span"
+                              sx={{ fontSize: '75%', fontWeight: 400, margin: 0.625, color: 'text.secondary', display: 'block' }}
+                            >
                               khảo sát đã triển khai
                             </Box>
                           </Typography>
@@ -378,10 +375,7 @@ export default function HeroPage() {
                     <Grid container spacing={2} sx={{ justifyContent: 'center' }}>
                       <Grid>
                         <AnimateButton>
-                          <motion.div
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
+                          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                             <Button
                               component={RouterLink}
                               to="/dashboard/default"
@@ -398,7 +392,7 @@ export default function HeroPage() {
                                 border: `1px solid ${theme.palette.primary.main}30`,
                                 '&:hover': {
                                   background: `linear-gradient(45deg, ${theme.palette.primary.darker}, ${theme.palette.primary.main})`,
-                                  boxShadow: `0 6px 25px ${theme.palette.primary.main}60`,
+                                  boxShadow: `0 6px 25px ${theme.palette.primary.main}60`
                                 }
                               }}
                             >
@@ -409,14 +403,11 @@ export default function HeroPage() {
                       </Grid>
                       <Grid>
                         <AnimateButton>
-                          <motion.div
-                            whileHover={{ scale: 1.05, y: -2 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <Button 
-                              component={RouterLink} 
-                              to="/demo" 
-                              size="large" 
+                          <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                            <Button
+                              component={RouterLink}
+                              to="/demo"
+                              size="large"
                               variant="outlined"
                               startIcon={<Flash color="currentColor" />}
                               sx={{
@@ -429,8 +420,8 @@ export default function HeroPage() {
                                 textTransform: 'none',
                                 borderWidth: '2px',
                                 background: `${theme.palette.warning.main}05`,
-                                '& .MuiButton-startIcon': { 
-                                  color: 'primary.main' 
+                                '& .MuiButton-startIcon': {
+                                  color: 'primary.main'
                                 },
                                 '&:hover': {
                                   color: 'primary.main',
@@ -438,8 +429,8 @@ export default function HeroPage() {
                                   backgroundColor: `${theme.palette.warning.main}15`,
                                   boxShadow: `0 4px 20px ${theme.palette.warning.main}30`,
                                   borderWidth: '2px',
-                                  '& .MuiButton-startIcon': { 
-                                    color: 'primary.main' 
+                                  '& .MuiButton-startIcon': {
+                                    color: 'primary.main'
                                   }
                                 }
                               }}

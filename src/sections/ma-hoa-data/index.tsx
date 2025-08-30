@@ -33,7 +33,7 @@ export default function MaHoaDataPage() {
     const title: string = data?.errorMessage || 'Dữ liệu không hợp lệ';
     // Support both shapes: { errorDetails: { rowErrors: [...] } } or { errorDetails: [...] }
     const details = data?.errorDetails;
-    const rowErrors = Array.isArray(details?.rowErrors) ? details.rowErrors : (Array.isArray(details) ? details : []);
+    const rowErrors = Array.isArray(details?.rowErrors) ? details.rowErrors : Array.isArray(details) ? details : [];
     if (!Array.isArray(rowErrors) || rowErrors.length === 0) {
       return { title, description: <Typography variant="body2">{title}</Typography> };
     }
@@ -49,7 +49,8 @@ export default function MaHoaDataPage() {
                 Lỗi tại hàng <strong>{row?.rowNumber}</strong>
                 {!hasMany && cells[0] ? (
                   <>
-                    {' '}– Cột <strong>'{cells[0].columnName}'</strong>: Đáp án <strong>'{cells[0].providedValue}'</strong>{' '}không tồn tại!
+                    {' '}
+                    – Cột <strong>'{cells[0].columnName}'</strong>: Đáp án <strong>'{cells[0].providedValue}'</strong> không tồn tại!
                   </>
                 ) : null}
               </Typography>
@@ -58,8 +59,7 @@ export default function MaHoaDataPage() {
                   {cells.map((cell: any, i: number) => (
                     <li key={`cell-${i}`}>
                       <Typography variant="body2">
-                        Cột <strong>'{cell.columnName}'</strong>: Đáp án <strong>'{cell.providedValue}'</strong>{' '}không tồn tại!
-                      
+                        Cột <strong>'{cell.columnName}'</strong>: Đáp án <strong>'{cell.providedValue}'</strong> không tồn tại!
                       </Typography>
                     </li>
                   ))}
@@ -105,9 +105,7 @@ export default function MaHoaDataPage() {
     setErrorAlert(null);
     try {
       // Build payload: if user selected default value, only send links
-      const payload = selectedFormId
-        ? { formId: selectedFormId, sheetLink: dataLink }
-        : { formLink, sheetLink: dataLink };
+      const payload = selectedFormId ? { formId: selectedFormId, sheetLink: dataLink } : { formLink, sheetLink: dataLink };
 
       const { blob, filename } = await encryptAndDownload(payload as any);
       const url = window.URL.createObjectURL(blob);
@@ -149,9 +147,7 @@ export default function MaHoaDataPage() {
                   <AlertTitle variant="h6" sx={{ fontWeight: 500, lineHeight: 1.3, mb: 0.25 }}>
                     {errorAlert.title}
                   </AlertTitle>
-                  <Box sx={{ '& ul': { m: 0, pl: 2 }, '& li': { mb: 0.5 } }}>
-                    {errorAlert.description}
-                  </Box>
+                  <Box sx={{ '& ul': { m: 0, pl: 2 }, '& li': { mb: 0.5 } }}>{errorAlert.description}</Box>
                 </Alert>
               </Grid>
             )}
@@ -183,15 +179,15 @@ export default function MaHoaDataPage() {
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="form-link">Link Form</InputLabel>
                 <LinkInput
-                id="form-link"
-                value={formLink}
+                  id="form-link"
+                  value={formLink}
                   size="medium"
                   onChange={setFormLink}
                   placeholder="https://docs.google.com/forms/.../viewform"
                   disabled={false}
                   readOnly={isUsingFormId}
-              />
-            </Stack>
+                />
+              </Stack>
             </Grid>
 
             {/* Row 2: Link Data */}
@@ -199,13 +195,13 @@ export default function MaHoaDataPage() {
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="data-link">Link Data của bạn</InputLabel>
                 <LinkInput
-                id="data-link"
-                value={dataLink}
+                  id="data-link"
+                  value={dataLink}
                   size="medium"
                   onChange={setDataLink}
                   placeholder="https://docs.google.com/spreadsheets/d/.../edit"
-              />
-            </Stack>
+                />
+              </Stack>
             </Grid>
 
             {/* Hướng dẫn mã hóa */}
@@ -215,20 +211,14 @@ export default function MaHoaDataPage() {
 
             {/* Row 3: Action */}
             <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
-              <Button
-                variant="outlined"
-                color="secondary"
-                size="large"
-                startIcon={<RefreshIcon/>}
-                onClick={handleReset}
-              >
+              <Button variant="outlined" color="secondary" size="large" startIcon={<RefreshIcon />} onClick={handleReset}>
                 Reset
               </Button>
               <Button
                 variant="contained"
                 color="primary"
                 size="large"
-                startIcon={<ConvertToSthIcon/>}
+                startIcon={<ConvertToSthIcon />}
                 disabled={!canSubmit}
                 onClick={handleSubmit}
               >
@@ -241,4 +231,4 @@ export default function MaHoaDataPage() {
       {/* Danh sách mã hóa được bỏ theo yêu cầu */}
     </Grid>
   );
-} 
+}

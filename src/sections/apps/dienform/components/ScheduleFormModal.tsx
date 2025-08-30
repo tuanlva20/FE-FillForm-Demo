@@ -40,13 +40,13 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
   const [timeRange, setTimeRange] = useState('1-2h, 21-22h');
   const [startDate, setStartDate] = useState(new Date('2025-02-12'));
   const [selectedDay, setSelectedDay] = useState(12);
-  
+
   // Handle counter buttons
   const handleIntervalChange = (isMin: boolean, increase: boolean) => {
     if (isMin) {
-      setMinInterval(prev => increase ? prev + 1 : Math.max(1, prev - 1));
+      setMinInterval((prev) => (increase ? prev + 1 : Math.max(1, prev - 1)));
     } else {
-      setMaxInterval(prev => increase ? prev + 1 : Math.max(minInterval + 1, prev - 1));
+      setMaxInterval((prev) => (increase ? prev + 1 : Math.max(minInterval + 1, prev - 1)));
     }
   };
 
@@ -56,12 +56,7 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
   };
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Typography variant="h4" component="div">
           Hẹn giờ điền Form
@@ -70,12 +65,7 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
       <DialogContent sx={{ pt: 1 }}>
         <FormGroup>
           <FormControlLabel
-            control={
-              <Switch
-                checked={scheduleEnabled}
-                onChange={() => setScheduleEnabled(!scheduleEnabled)}
-              />
-            }
+            control={<Switch checked={scheduleEnabled} onChange={() => setScheduleEnabled(!scheduleEnabled)} />}
             label="Bật/Tắt Hẹn giờ điền"
           />
         </FormGroup>
@@ -84,24 +74,14 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
           <>
             <FormGroup sx={{ mt: 2 }}>
               <FormControlLabel
-                control={
-                  <Switch
-                    checked={varyByTime}
-                    onChange={() => setVaryByTime(!varyByTime)}
-                  />
-                }
+                control={<Switch checked={varyByTime} onChange={() => setVaryByTime(!varyByTime)} />}
                 label="Thay số lượng khảo sát tùy vào thời gian hiện tại trong ngày"
               />
             </FormGroup>
 
             {varyByTime && (
               <Box sx={{ mt: 1, mb: 3 }}>
-                <Select
-                  fullWidth
-                  value={timezone}
-                  displayEmpty
-                  renderValue={(value) => value}
-                >
+                <Select fullWidth value={timezone} displayEmpty renderValue={(value) => value}>
                   <MenuItem value="No">No</MenuItem>
                   <MenuItem value="Yes, Timezone: GMT-12">Yes, Timezone: GMT-12</MenuItem>
                   <MenuItem value="Yes, Timezone: GMT-11">Yes, Timezone: GMT-11</MenuItem>
@@ -132,36 +112,30 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
                     p: 0
                   }}
                 >
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleIntervalChange(true, false)}
-                    sx={{ borderRadius: 0 }}
-                  >
+                  <IconButton size="small" onClick={() => handleIntervalChange(true, false)} sx={{ borderRadius: 0 }}>
                     <Minus size={16} />
                   </IconButton>
                   <OutlinedInput
                     value={minInterval}
-                    sx={{ 
-                      width: '100%', 
-                      border: 'none', 
+                    sx={{
+                      width: '100%',
+                      border: 'none',
                       '& fieldset': { border: 'none' },
                       '& input': { textAlign: 'center', p: 0.5 }
                     }}
                     readOnly
                   />
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleIntervalChange(true, true)}
-                    sx={{ borderRadius: 0 }}
-                  >
+                  <IconButton size="small" onClick={() => handleIntervalChange(true, true)} sx={{ borderRadius: 0 }}>
                     <Add size={16} />
                   </IconButton>
                 </Box>
                 <Typography sx={{ textAlign: 'center' }}>phút</Typography>
               </Grid>
-              
+
               <Grid size={2}>
-                <Typography variant="h5" sx={{ textAlign: 'center', lineHeight: '42px' }}>đến</Typography>
+                <Typography variant="h5" sx={{ textAlign: 'center', lineHeight: '42px' }}>
+                  đến
+                </Typography>
               </Grid>
 
               <Grid size={5}>
@@ -174,8 +148,8 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
                     p: 0
                   }}
                 >
-                  <IconButton 
-                    size="small" 
+                  <IconButton
+                    size="small"
                     onClick={() => handleIntervalChange(false, false)}
                     sx={{ borderRadius: 0 }}
                     disabled={maxInterval <= minInterval + 1}
@@ -184,19 +158,15 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
                   </IconButton>
                   <OutlinedInput
                     value={maxInterval}
-                    sx={{ 
-                      width: '100%', 
-                      border: 'none', 
+                    sx={{
+                      width: '100%',
+                      border: 'none',
                       '& fieldset': { border: 'none' },
                       '& input': { textAlign: 'center', p: 0.5 }
                     }}
                     readOnly
                   />
-                  <IconButton 
-                    size="small" 
-                    onClick={() => handleIntervalChange(false, true)}
-                    sx={{ borderRadius: 0 }}
-                  >
+                  <IconButton size="small" onClick={() => handleIntervalChange(false, true)} sx={{ borderRadius: 0 }}>
                     <Add size={16} />
                   </IconButton>
                 </Box>
@@ -208,12 +178,7 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
               <Typography variant="body1" sx={{ mb: 1 }}>
                 Khoảng thời gian điền trong ngày:
               </Typography>
-              <Select
-                fullWidth
-                value={timeRange}
-                displayEmpty
-                renderValue={(value) => value}
-              >
+              <Select fullWidth value={timeRange} displayEmpty renderValue={(value) => value}>
                 <MenuItem value="1-2h, 21-22h">1-2h, 21-22h</MenuItem>
                 <MenuItem value="2-3h, 22-23h">2-3h, 22-23h</MenuItem>
                 <MenuItem value="3-4h, 23-24h">3-4h, 23-24h</MenuItem>
@@ -236,7 +201,7 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
                   }}
                   format="dd/MM/yyyy"
                   slotProps={{
-                    textField: { 
+                    textField: {
                       fullWidth: true,
                       InputProps: {
                         startAdornment: (
@@ -257,16 +222,18 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
               <Grid container spacing={1}>
                 {/* Calendar days would go here */}
                 <Grid size={1}>
-                  <Box sx={{ 
-                    width: 30,
-                    height: 30,
-                    borderRadius: '50%',
-                    bgcolor: selectedDay === 12 ? 'primary.main' : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: selectedDay === 12 ? 'white' : 'inherit'
-                  }}>
+                  <Box
+                    sx={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: '50%',
+                      bgcolor: selectedDay === 12 ? 'primary.main' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: selectedDay === 12 ? 'white' : 'inherit'
+                    }}
+                  >
                     12
                   </Box>
                 </Grid>
@@ -276,18 +243,10 @@ export default function ScheduleFormModal({ open, onClose, formId }: ScheduleFor
         )}
       </DialogContent>
       <DialogActions sx={{ p: 3 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSave}
-        >
+        <Button variant="contained" color="primary" onClick={handleSave}>
           Lưu thay đổi
         </Button>
-        <Button
-          variant="contained"
-          color="error"
-          onClick={onClose}
-        >
+        <Button variant="contained" color="error" onClick={onClose}>
           Đóng
         </Button>
       </DialogActions>

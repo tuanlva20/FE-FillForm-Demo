@@ -7,6 +7,7 @@ import router from 'routes';
 import ThemeCustomization from 'themes';
 
 import Locales from 'components/Locales'; // Re-enabled with simplified implementation
+import PaymentSuccessPopup from 'components/PaymentSuccessPopup';
 import RTLLayout from 'components/RTLLayout';
 import ScrollTop from 'components/ScrollTop';
 import Notistack from 'components/third-party/Notistack';
@@ -26,9 +27,9 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
-      retry: 1,
-    },
-  },
+      retry: 1
+    }
+  }
 });
 
 export default function App() {
@@ -45,7 +46,7 @@ export default function App() {
                     <PaymentProvider>
                       <Notistack>
                         <RouterProvider router={router} />
-                        {/* <PaymentSuccessPopup /> */}
+                        <PaymentSuccessPopup />
                         {/* <Customization /> */}
                         {/* <Snackbar /> */}
                       </Notistack>

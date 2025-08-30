@@ -5,9 +5,9 @@ let socketInstance: any = null;
 
 export function getSocket(): any {
   if (socketInstance) return socketInstance;
-  
+
   const baseUrl = import.meta.env.VITE_APP_SOCKET_URL || import.meta.env.VITE_APP_API_URL;
-  
+
   // Don't create socket if no URL is configured
   if (!baseUrl) {
     logger.log('⚠️ WebSocket URL not configured, skipping socket creation');
@@ -15,7 +15,7 @@ export function getSocket(): any {
   }
 
   logger.log('🔌 Creating socket connection to:', baseUrl);
-  
+
   // Socket.IO v2.4.0 configuration for netty-socketio compatibility
   socketInstance = io(baseUrl, {
     path: '/socket.io',
@@ -73,5 +73,3 @@ export function closeSocket() {
     socketInstance = null;
   }
 }
-
-

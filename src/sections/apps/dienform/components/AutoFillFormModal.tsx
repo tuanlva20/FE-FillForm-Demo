@@ -48,7 +48,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     pricePerSurvey: 450,
     isHumanLike: true,
     startDate: new Date() as Date | null,
-    endDate: new Date() as Date | null,
+    endDate: new Date() as Date | null
   });
 
   const [errors, setErrors] = useState<{
@@ -69,7 +69,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   // Ensure endDate is always set when component mounts or startDate changes
   useEffect(() => {
     if (!formValues.endDate && formValues.startDate) {
-      setFormValues(prev => ({
+      setFormValues((prev) => ({
         ...prev,
         endDate: formValues.startDate
       }));
@@ -80,7 +80,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   useEffect(() => {
     if (formValues.startDate && !formValues.endDate) {
       logger.log('AutoFillFormModal - Setting endDate to startDate:', formValues.startDate);
-      setFormValues(prev => ({
+      setFormValues((prev) => ({
         ...prev,
         endDate: formValues.startDate
       }));
@@ -100,13 +100,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   // Handle submission count change directly through input field
   const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value) || 0;
-    
+
     if (value < 1) {
-      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+      setErrors({ ...errors, submissionCount: 'Số lượng phải lớn hơn 0' });
     } else {
-      setErrors({...errors, submissionCount: undefined});
+      setErrors({ ...errors, submissionCount: undefined });
     }
-    
+
     setFormValues({
       ...formValues,
       submissionCount: value
@@ -140,10 +140,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       });
       return;
     }
-    
+
     // Clear start date error if validation passes
     const newErrors = { ...errors, startDate: undefined };
-    
+
     // Re-validate end date if it exists and new start date is after it
     if (newValue && formValues.endDate && newValue > formValues.endDate) {
       newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
@@ -151,7 +151,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       // Clear end date error if it becomes valid
       newErrors.endDate = undefined;
     }
-    
+
     setErrors(newErrors);
     setFormValues({
       ...formValues,
@@ -171,7 +171,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       });
       return;
     }
-    
+
     // Validate end date must be after start date
     if (newValue && formValues.startDate && newValue < formValues.startDate) {
       setErrors({
@@ -180,13 +180,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       });
       return;
     }
-    
+
     // Clear error if validation passes
     setErrors({
       ...errors,
       endDate: undefined
     });
-    
+
     setFormValues({
       ...formValues,
       endDate: newValue
@@ -197,7 +197,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   const handleSubmit = () => {
     // Validate form before submitting
     if (formValues.submissionCount <= 0) {
-      setErrors({...errors, submissionCount: 'Số lượng phải lớn hơn 0'});
+      setErrors({ ...errors, submissionCount: 'Số lượng phải lớn hơn 0' });
       return;
     }
 
@@ -209,7 +209,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         startDate = new Date(startDate);
         startDate.setHours(0, 0, 0, 0);
       }
-      
+
       // Set time to end of day for end date (23:59:59)
       let endDate = formValues.endDate;
       logger.log('handleSubmit - formValues.endDate:', formValues.endDate);
@@ -220,10 +220,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       } else {
         logger.log('handleSubmit - endDate is null/undefined');
       }
-      
+
       // Ensure endDate is always provided if startDate exists
       const finalEndDate = endDate || startDate;
-      
+
       // Debug logging
       logger.log('AutoFillFormModal - Submitting with values:', {
         submissionCount: formValues.submissionCount,
@@ -236,7 +236,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         endDateISO: endDate?.toISOString(),
         finalEndDateISO: finalEndDate?.toISOString()
       });
-      
+
       onSubmit({
         submissionCount: formValues.submissionCount,
         pricePerSurvey: formValues.pricePerSurvey,
@@ -245,7 +245,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         endDate: finalEndDate || undefined
       });
     }
-    
+
     // Close the modal
     onClose();
   };
@@ -256,12 +256,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   };
 
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose}
-      maxWidth="sm"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
           <DocumentText size={24} variant="Bulk" />
@@ -284,7 +279,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 </Typography>
               </Stack>
             </Grid>
-            
+
             <Grid size={12}>
               <Divider sx={{ my: 1 }} />
             </Grid>
@@ -303,21 +298,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 {/* Base price */}
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="body1">Giá cơ bản mỗi khảo sát:</Typography>
-                  <Typography variant="h6">
-                    350đ
-                  </Typography>
+                  <Typography variant="h6">350đ</Typography>
                 </Stack>
 
                 {/* Human-like toggle */}
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <FormControlLabel
-                    control={
-                      <Switch 
-                        checked={formValues.isHumanLike} 
-                        onChange={handleSwitchChange} 
-                        name="isHumanLike" 
-                      />
-                    }
+                    control={<Switch checked={formValues.isHumanLike} onChange={handleSwitchChange} name="isHumanLike" />}
                     label={
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Timer1 size={20} />
@@ -334,7 +321,9 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
 
                 {/* Final price per survey */}
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <Typography variant="body1" fontWeight={500}>Tổng giá mỗi khảo sát:</Typography>
+                  <Typography variant="body1" fontWeight={500}>
+                    Tổng giá mỗi khảo sát:
+                  </Typography>
                   <Typography variant="h6" color="success.main" fontWeight={500}>
                     {formValues.pricePerSurvey}đ
                   </Typography>
@@ -347,7 +336,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               <Stack spacing={1}>
                 <InputLabel>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <AddIcon/>
+                    <AddIcon />
                     <Typography>Số lượng khảo sát cần tăng</Typography>
                   </Stack>
                 </InputLabel>
@@ -384,8 +373,8 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                       slotProps={{
                         textField: {
                           fullWidth: true,
-                          id: "start-date",
-                          placeholder: "DD-MM-YYYY",
+                          id: 'start-date',
+                          placeholder: 'DD-MM-YYYY',
                           error: !!errors.startDate,
                           helperText: errors.startDate
                         }
@@ -415,10 +404,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                       slotProps={{
                         textField: {
                           fullWidth: true,
-                          id: "end-date",
+                          id: 'end-date',
                           error: !!errors.endDate,
                           helperText: errors.endDate,
-                          placeholder: "DD-MM-YYYY"
+                          placeholder: 'DD-MM-YYYY'
                         }
                       }}
                     />
@@ -429,11 +418,11 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
 
             {/* Total cost */}
             <Grid size={12}>
-              <Stack 
-                direction="row" 
-                justifyContent="space-between" 
+              <Stack
+                direction="row"
+                justifyContent="space-between"
                 alignItems="center"
-                sx={{ 
+                sx={{
                   bgcolor: 'success.lighter',
                   p: 2,
                   borderRadius: 2,
@@ -444,11 +433,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   <Money size={24} variant="Bulk" />
                   <Typography variant="h4">Tổng chi phí:</Typography>
                 </Stack>
-                <Typography 
-                  variant="h4" 
-                  color="success.dark"
-                  fontWeight="bold"
-                >
+                <Typography variant="h4" color="success.dark" fontWeight="bold">
                   {calculateTotalCost()}đ
                 </Typography>
               </Stack>
@@ -457,26 +442,16 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         </Box>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3 }}>
-        <Button 
-          variant="outlined" 
-          color="error" 
-          onClick={onClose}
-          startIcon={<CloseCircle />}
-          sx={{ borderRadius: '100px' }}
-        >
+        <Button variant="outlined" color="error" onClick={onClose} startIcon={<CloseCircle />} sx={{ borderRadius: '100px' }}>
           Đóng
         </Button>
-        <Button 
-          variant="contained" 
-          color="primary" 
+        <Button
+          variant="contained"
+          color="primary"
           onClick={handleSubmit}
           endIcon={<Send2 />}
           sx={{ borderRadius: '100px' }}
-          disabled={
-            formValues.submissionCount <= 0 || 
-            !!errors.endDate || 
-            !!errors.startDate
-          }
+          disabled={formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
         >
           Bắt Đầu Điền Form
         </Button>

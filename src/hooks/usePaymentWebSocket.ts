@@ -7,7 +7,7 @@ export const usePaymentWebSocket = () => {
 
   useEffect(() => {
     const wsUrl = import.meta.env.VITE_APP_SOCKET_URL;
-    
+
     if (!wsUrl) {
       console.log('WebSocket URL not configured, skipping connection');
       return;
@@ -18,7 +18,7 @@ export const usePaymentWebSocket = () => {
 
       wsRef.current.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        
+
         if (data.type === 'PAYMENT_SUCCESS') {
           enqueueSnackbar('Thanh toán thành công! Số dư đã được cập nhật.', {
             variant: 'success'

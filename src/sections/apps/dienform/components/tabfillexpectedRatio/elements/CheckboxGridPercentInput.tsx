@@ -24,10 +24,11 @@ interface Props {
 const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChange, value }) => {
   // Rows & Columns - memoized để tránh recalculate
   const { rows, columns } = useMemo(() => {
-    const rows = (question.options || []).filter(opt => opt.value && opt.value.startsWith('row'));
+    const rows = (question.options || []).filter((opt) => opt.value && opt.value.startsWith('row'));
     const seen = new Set();
-    const columns = (question.options || [])
-      .filter(opt => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value));
+    const columns = (question.options || []).filter(
+      (opt) => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+    );
     return { rows, columns };
   }, [question.options]);
 
@@ -35,7 +36,7 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
   const [values, setValues] = useState<Record<string, Record<string, number>>>({});
   // State lưu lỗi tổng phần trăm
   const [rowErrors, setRowErrors] = useState<Record<string, boolean>>({});
-  
+
   // Refs for optimization
   const onChangeRef = useRef(onChange);
   const debounceTimeoutRef = useRef<NodeJS.Timeout>();
@@ -53,17 +54,20 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
   }, [value]); // Removed values dependency to prevent infinite loops
 
   // Memoized validation function with stable reference
-  const validateRow = useCallback((rowId: string, rowVals: Record<string, number>) => {
-    const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
-    return Math.abs(total - 100) > 0.01; // Use small epsilon for floating point comparison
-  }, [columns]);
+  const validateRow = useCallback(
+    (rowId: string, rowVals: Record<string, number>) => {
+      const total = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
+      return Math.abs(total - 100) > 0.01; // Use small epsilon for floating point comparison
+    },
+    [columns]
+  );
 
   // Optimized validation effect with reduced re-renders
   useEffect(() => {
     const errors: Record<string, boolean> = {};
     let hasChanges = false;
 
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const rowVals = values[row.id] || {};
       const error = validateRow(row.id, rowVals);
       if (rowErrors[row.id] !== error) {
@@ -79,25 +83,25 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
 
   // Optimized input handler without additional debouncing
   const handleInput = useCallback((rowId: string, colId: string, percent: number) => {
-    setValues(prev => {
-      const next = { 
-        ...prev, 
-        [rowId]: { 
-          ...prev[rowId], 
-          [colId]: percent 
-        } 
+    setValues((prev) => {
+      const next = {
+        ...prev,
+        [rowId]: {
+          ...prev[rowId],
+          [colId]: percent
+        }
       };
-      
+
       // Clear previous timeout
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
-      
+
       // Single debounce at grid level (CustomPercentTextField already handles input debouncing)
       debounceTimeoutRef.current = setTimeout(() => {
         onChangeRef.current?.(next);
       }, 50); // Reduced timeout since CustomPercentTextField already debounces
-      
+
       return next;
     });
   }, []); // Empty dependency array since we use refs
@@ -114,7 +118,7 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
   // Memoized row totals calculation
   const rowTotals = useMemo(() => {
     const totals: Record<string, number> = {};
-    rows.forEach(row => {
+    rows.forEach((row) => {
       const rowVals = values[row.id] || {};
       totals[row.id] = columns.reduce((sum, col) => sum + (Number(rowVals[col.id]) || 0), 0);
     });
@@ -130,7 +134,7 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
           <TableHead>
             <TableRow>
               <TableCell />
-              {columns.map(col => (
+              {columns.map((col) => (
                 <TableCell key={col.id} align="center">
                   {col.title}
                 </TableCell>
@@ -138,10 +142,10 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map(row => {
+            {rows.map((row) => {
               const total = rowTotals[row.id];
               const hasError = rowErrors[row.id];
-              
+
               return (
                 <TableRow key={row.id}>
                   <TableCell>
@@ -152,11 +156,11 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
                       </Typography>
                     )}
                   </TableCell>
-                  {columns.map(col => (
+                  {columns.map((col) => (
                     <TableCell key={col.id} align="center">
                       <CustomPercentTextField
                         value={values[row.id]?.[col.id] ?? ''}
-                        onChange={val => handleInput(row.id, col.id, val)}
+                        onChange={(val) => handleInput(row.id, col.id, val)}
                         error={hasError}
                       />
                     </TableCell>
@@ -178,4 +182,4 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
 
 CheckboxGridPercentInput.displayName = 'CheckboxGridPercentInput';
 
-export default CheckboxGridPercentInput; 
+export default CheckboxGridPercentInput;

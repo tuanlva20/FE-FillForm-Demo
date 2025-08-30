@@ -11,9 +11,9 @@ import { GuardProps } from 'types/auth';
 
 // Danh sách các routes public không cần authentication
 const PUBLIC_ROUTES = [
-  '/',           // Landing page
-  '/login',      // Login page
-  '/register',   // Register page  
+  '/', // Landing page
+  '/login', // Login page
+  '/register', // Register page
   '/forgot-password',
   '/reset-password',
   '/check-mail',
@@ -21,7 +21,7 @@ const PUBLIC_ROUTES = [
   '/auth/login',
   '/auth/register',
   '/auth/forgot-password',
-  '/auth/reset-password', 
+  '/auth/reset-password',
   '/auth/check-mail',
   '/auth/code-verification',
   '/maintenance',
@@ -34,15 +34,15 @@ export default function AuthGuard({ children }: GuardProps) {
   const { isLoggedIn, isInitialized } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // If auth context is not yet initialized, show loader
   if (!isInitialized) {
     return <Loader />;
   }
-  
+
   // Determine route visibility
   const pathname = location.pathname || '';
-  const isPublicRoute = PUBLIC_ROUTES.some(route => {
+  const isPublicRoute = PUBLIC_ROUTES.some((route) => {
     if (route === '/') {
       return pathname === '/';
     }

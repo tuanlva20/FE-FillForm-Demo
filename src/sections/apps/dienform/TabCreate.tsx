@@ -46,12 +46,12 @@ export default function TabCreate() {
   // Validate Google Form link
   const validateGoogleFormLink = (link: string): boolean => {
     if (!link.trim()) return true; // Allow empty for initial state
-    
+
     try {
       const url = new URL(link);
       const isGoogleForms = url.hostname === 'docs.google.com' && url.pathname.includes('/forms/');
       const isViewForm = url.pathname.includes('/viewform') || url.searchParams.has('usp');
-      
+
       return isGoogleForms && isViewForm;
     } catch {
       return false;
@@ -61,10 +61,10 @@ export default function TabCreate() {
   const handleFormLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setFormLink(value);
-    
+
     // Clear previous errors
     setError(null);
-    
+
     // Validate link format
     if (value.trim() && !validateGoogleFormLink(value)) {
       setLinkError('Link không hợp lệ. Vui lòng sử dụng link trả lời của Google Form (dạng /viewform)');
@@ -86,7 +86,7 @@ export default function TabCreate() {
 
     setLoading(true);
     setError(null);
-    
+
     try {
       await createForm({
         name: formName,
@@ -97,9 +97,9 @@ export default function TabCreate() {
       setFormName('');
       setFormLink('');
       setLinkError(null);
-      
+
       // Trigger refresh for form list
-      setRefreshList(prev => !prev);
+      setRefreshList((prev) => !prev);
     } catch (err) {
       setError('Đã có lỗi xảy ra khi tạo form. Vui lòng thử lại sau.');
       console.error('Form creation error:', err);
@@ -131,11 +131,11 @@ export default function TabCreate() {
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="ten-form">Tên form</InputLabel>
-                <TextField 
-                  fullWidth 
-                  id="ten-form" 
-                  placeholder="Điền tên form (Không bắt buộc)" 
-                  autoFocus 
+                <TextField
+                  fullWidth
+                  id="ten-form"
+                  placeholder="Điền tên form (Không bắt buộc)"
+                  autoFocus
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
                   error={false}
@@ -145,10 +145,10 @@ export default function TabCreate() {
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-edit-form">Link trả lời của form</InputLabel>
-                <TextField 
-                  fullWidth 
-                  id="link-edit-form" 
-                  placeholder="Điền link trả lời của form (hướng dẫn bên dưới)..." 
+                <TextField
+                  fullWidth
+                  id="link-edit-form"
+                  placeholder="Điền link trả lời của form (hướng dẫn bên dưới)..."
                   value={formLink}
                   onChange={handleFormLinkChange}
                   error={!!linkError || (!!error && !formLink)}
@@ -165,9 +165,9 @@ export default function TabCreate() {
             )}
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack direction="row" sx={{ gap: 1, justifyContent: 'flex-end', alignItems: 'center' }}>
-                <Button 
-                  variant="contained" 
-                  color="primary" 
+                <Button
+                  variant="contained"
+                  color="primary"
                   onClick={handleCreateForm}
                   disabled={loading || !!linkError}
                   startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
@@ -185,7 +185,7 @@ export default function TabCreate() {
       <Grid size={{ xs: 12, md: 7 }}>
         <MainCard title="Hướng dẫn" sx={MAINCARD_STYLE}>
           <Grid container>
-            <Stack sx={{width: '100%', gap: 2 }}>
+            <Stack sx={{ width: '100%', gap: 2 }}>
               <Stack sx={{ gap: 1.25 }}>
                 <Chip
                   variant="outlined"
@@ -208,7 +208,8 @@ export default function TabCreate() {
                   Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
                   <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời</strong>
                   <br />
-                  Sau đó nhấn <strong>Sao chép đường liên kết của người trả lời</strong> và dán vào <strong>"Link trả lời của form"</strong>. Thiết lập này giúp hệ thống truy cập được (tránh lỗi không thể truy cập/accessible).
+                  Sau đó nhấn <strong>Sao chép đường liên kết của người trả lời</strong> và dán vào <strong>"Link trả lời của form"</strong>
+                  . Thiết lập này giúp hệ thống truy cập được (tránh lỗi không thể truy cập/accessible).
                 </Typography>
                 <Box
                   component="img"
@@ -248,8 +249,15 @@ export default function TabCreate() {
                   Mở tab <strong>Cài đặt</strong> của Google Form và thiết lập như ảnh bên dưới để hệ thống có thể tự động gửi trả lời:
                 </Typography>
                 <Box component="ul" sx={{ pl: 3, m: 0, color: 'text.secondary' }}>
-                  <Box component="li"><Typography variant="body2">Trong <strong>Thu thập địa chỉ email</strong> chọn <strong>Không thu thập</strong> hoặc <strong>Thông tin về người trả lời</strong></Typography></Box>
-                  <Box component="li"><Typography variant="body2">Tắt giới hạn 1 lần trả lời</Typography></Box>
+                  <Box component="li">
+                    <Typography variant="body2">
+                      Trong <strong>Thu thập địa chỉ email</strong> chọn <strong>Không thu thập</strong> hoặc{' '}
+                      <strong>Thông tin về người trả lời</strong>
+                    </Typography>
+                  </Box>
+                  <Box component="li">
+                    <Typography variant="body2">Tắt giới hạn 1 lần trả lời</Typography>
+                  </Box>
                 </Box>
                 <Box
                   component="img"

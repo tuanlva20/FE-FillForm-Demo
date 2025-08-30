@@ -21,14 +21,14 @@ export default function VNPayTab() {
 
   const handleVNPayPayment = async () => {
     if (!isValidAmount) return;
-    
+
     setIsLoading(true);
     try {
       const response = await createVNPayPayment({
         amount: numericAmount,
         description: `Nạp tiền SmartFill - ${numericAmount.toLocaleString('vi-VN')} VND`
       });
-      
+
       if (response.success && response.qrCode) {
         setQrCode(response.qrCode);
         enqueueSnackbar('QR code VNPAY đã được tạo thành công!', {
@@ -55,28 +55,32 @@ export default function VNPayTab() {
         {/* Header với VNPAY Logo và Title */}
         <Box display="flex" alignItems="flex-start" gap={3}>
           {/* VNPAY QR Logo */}
-          <Box sx={{ 
-            width: 80, 
-            height: 80, 
-            bgcolor: '#f8f9fa', 
-            borderRadius: 2, 
-            display: 'flex', 
-            flexDirection: 'column',
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            border: '1px solid #e9ecef',
-            flexShrink: 0
-          }}>
-            <Box sx={{ 
-              width: 40, 
-              height: 40, 
-              bgcolor: '#0055a4', 
-              borderRadius: 1,
+          <Box
+            sx={{
+              width: 80,
+              height: 80,
+              bgcolor: '#f8f9fa',
+              borderRadius: 2,
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              mb: 0.5
-            }}>
+              border: '1px solid #e9ecef',
+              flexShrink: 0
+            }}
+          >
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                bgcolor: '#0055a4',
+                borderRadius: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                mb: 0.5
+              }}
+            >
               <Typography variant="caption" color="white" fontWeight={600} fontSize={8}>
                 QR
               </Typography>
@@ -101,11 +105,13 @@ export default function VNPayTab() {
         </Box>
 
         {/* Divider */}
-        <Box sx={{ 
-          height: 1, 
-          bgcolor: '#e9ecef', 
-          width: '100%' 
-        }} />
+        <Box
+          sx={{
+            height: 1,
+            bgcolor: '#e9ecef',
+            width: '100%'
+          }}
+        />
 
         {/* Instructions */}
         <Typography variant="body2" color="text.secondary" lineHeight={1.6}>
@@ -113,17 +119,19 @@ export default function VNPayTab() {
         </Typography>
 
         {/* QR Code Placeholder */}
-        <Box sx={{ 
-          width: 200, 
-          height: 200, 
-          bgcolor: '#f8f9fa', 
-          borderRadius: 2, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          border: '1px solid #e9ecef',
-          mx: 'auto'
-        }}>
+        <Box
+          sx={{
+            width: 200,
+            height: 200,
+            bgcolor: '#f8f9fa',
+            borderRadius: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid #e9ecef',
+            mx: 'auto'
+          }}
+        >
           {qrCode ? (
             <QRCode value={qrCode} size={180} />
           ) : (
@@ -140,10 +148,10 @@ export default function VNPayTab() {
             size="medium"
             value={amount}
             onChange={handleAmountChange}
-            inputProps={{ 
-              inputMode: 'numeric', 
+            inputProps={{
+              inputMode: 'numeric',
               pattern: '[0-9,]*',
-              min: 10000 
+              min: 10000
             }}
             sx={{ flex: 1 }}
             placeholder="Tối thiểu 10,000"
@@ -151,13 +159,13 @@ export default function VNPayTab() {
             error={!isValidAmount && amount.length > 0}
             variant="outlined"
           />
-          
+
           <Button
             variant="contained"
             color="primary"
             onClick={handleVNPayPayment}
             disabled={!isValidAmount || isLoading}
-            sx={{ 
+            sx={{
               minWidth: 140,
               height: 56,
               textTransform: 'none',

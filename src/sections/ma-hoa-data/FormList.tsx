@@ -74,11 +74,7 @@ export default function MaHoaDataFormList() {
                 </TableCell>
                 <TableCell>{row.createdAt}</TableCell>
                 <TableCell>
-                  <Chip
-                    label={(statusMap[row.status]?.label) || row.status}
-                    color={(statusMap[row.status]?.color) as any}
-                    size="small"
-                  />
+                  <Chip label={statusMap[row.status]?.label || row.status} color={statusMap[row.status]?.color as any} size="small" />
                 </TableCell>
                 <TableCell align="center">
                   <Stack direction="row" spacing={1} justifyContent="center">

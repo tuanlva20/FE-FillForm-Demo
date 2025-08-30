@@ -50,9 +50,7 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
       case 'IN_PROCESS':
         return 'Đang thực thi';
       case 'QUEUED':
-        return fillRequest?.queuePosition 
-          ? `Đang chờ... (Vị trí: ${fillRequest.queuePosition})`
-          : 'Đang chờ...';
+        return fillRequest?.queuePosition ? `Đang chờ... (Vị trí: ${fillRequest.queuePosition})` : 'Đang chờ...';
       case 'FAILED':
         return 'Không thành công';
       default:
@@ -65,18 +63,15 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
   }
 
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth="md"
-      fullWidth
-    >
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Chi tiết yêu cầu điền form</DialogTitle>
       <DialogContent dividers>
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Tên form:</Typography>
-            <Typography variant="body1" gutterBottom>{formName}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {formName}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Trạng thái:</Typography>
@@ -86,49 +81,69 @@ export default function FormDetailModal({ open, onClose, fillRequest, formName }
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Số lượng cần điền:</Typography>
-            <Typography variant="body1" gutterBottom>{fillRequest.surveyCount}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {fillRequest.surveyCount}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Số lượng đã điền:</Typography>
-            <Typography variant="body1" gutterBottom>{fillRequest.completedSurvey || 0}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {fillRequest.completedSurvey || 0}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Giá mỗi lượt điền:</Typography>
-            <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.pricePerSurvey)}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {formatCurrency(fillRequest.pricePerSurvey)}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Tổng giá:</Typography>
-            <Typography variant="body1" gutterBottom>{formatCurrency(fillRequest.totalPrice)}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {formatCurrency(fillRequest.totalPrice)}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Ngày tạo:</Typography>
-            <Typography variant="body1" gutterBottom>{formatDate(fillRequest.createdAt)}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {formatDate(fillRequest.createdAt)}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Hẹn giờ:</Typography>
-            <Typography variant="body1" gutterBottom>{fillRequest.scheduledTime ? formatDate(fillRequest.scheduledTime) : 'Không'}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {fillRequest.scheduledTime ? formatDate(fillRequest.scheduledTime) : 'Không'}
+            </Typography>
           </Grid>
           <Grid item xs={12} md={6}>
             <Typography variant="subtitle2">Điền tự nhiên như người dùng:</Typography>
-            <Typography variant="body1" gutterBottom>{fillRequest.humanLike ? 'Có' : 'Không'}</Typography>
+            <Typography variant="body1" gutterBottom>
+              {fillRequest.humanLike ? 'Có' : 'Không'}
+            </Typography>
           </Grid>
           {fillRequest.startDate && (
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2">Ngày bắt đầu:</Typography>
-              <Typography variant="body1" gutterBottom>{formatDate(fillRequest.startDate)}</Typography>
+              <Typography variant="body1" gutterBottom>
+                {formatDate(fillRequest.startDate)}
+              </Typography>
             </Grid>
           )}
           {fillRequest.endDate && (
             <Grid item xs={12} md={6}>
               <Typography variant="subtitle2">Ngày kết thúc:</Typography>
-              <Typography variant="body1" gutterBottom>{formatDate(fillRequest.endDate)}</Typography>
+              <Typography variant="body1" gutterBottom>
+                {formatDate(fillRequest.endDate)}
+              </Typography>
             </Grid>
           )}
         </Grid>
-        
+
         {fillRequest.answerDistributions && fillRequest.answerDistributions.length > 0 && (
           <>
-            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>Phân bố câu trả lời</Typography>
+            <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+              Phân bố câu trả lời
+            </Typography>
             <TableContainer>
               <Table size="small">
                 <TableHead>

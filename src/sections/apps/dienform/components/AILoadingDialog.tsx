@@ -1,13 +1,13 @@
 /**
  * AI Loading Dialog Component
- * 
+ *
  * A reusable, modern loading dialog with futuristic animations for AI processing operations.
  * Features gradient background, rotating ring, pulsing AI icon, and bouncing progress indicators.
- * 
+ *
  * @component
  * @example
  * ```tsx
- * <AILoadingDialog 
+ * <AILoadingDialog
  *   open={isLoading}
  *   title="AI đang xử lý dữ liệu"
  *   subtitle="Đang phân tích và tạo kết quả..."
@@ -15,13 +15,7 @@
  * ```
  */
 import SmartToyIcon from '@mui/icons-material/SmartToy';
-import {
-  Box,
-  Dialog,
-  DialogContent,
-  Stack,
-  Typography
-} from '@mui/material';
+import { Box, Dialog, DialogContent, Stack, Typography } from '@mui/material';
 
 interface AILoadingDialogProps {
   /** Controls whether the dialog is open */
@@ -36,8 +30,8 @@ interface AILoadingDialogProps {
 
 export default function AILoadingDialog({
   open,
-  title = "Đang xử lý điền dữ liệu",
-  subtitle = "Vui lòng chờ trong giây lát...",
+  title = 'Đang xử lý điền dữ liệu',
+  subtitle = 'Vui lòng chờ trong giây lát...',
   disableEscapeKeyDown = true
 }: AILoadingDialogProps) {
   return (
@@ -108,9 +102,9 @@ export default function AILoadingDialog({
 
           {/* Modern Typography */}
           <Stack spacing={1}>
-            <Typography 
-              variant="h6" 
-              sx={{ 
+            <Typography
+              variant="h6"
+              sx={{
                 fontWeight: 600,
                 letterSpacing: '0.5px',
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)'
@@ -118,9 +112,9 @@ export default function AILoadingDialog({
             >
               {title}
             </Typography>
-            <Typography 
-              variant="body2" 
-              sx={{ 
+            <Typography
+              variant="body2"
+              sx={{
                 opacity: 0.9,
                 fontSize: '0.875rem',
                 letterSpacing: '0.25px'

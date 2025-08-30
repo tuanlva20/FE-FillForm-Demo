@@ -46,7 +46,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
   const [forms, setForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Pagination state
   const [pageSize, setPageSize] = useState<number>(10);
   const [pageIndex, setPageIndex] = useState<number>(0);
@@ -55,7 +55,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
   const fetchForms = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await getFormList(pageIndex, pageSize);
       setForms(response.content);
@@ -108,10 +108,10 @@ export default function FormList({ refreshTrigger }: FormListProps) {
       globalFilter: '',
       expanded: {},
       columnSizing: {},
-      columnSizingInfo: { 
-        startOffset: null, 
-        columnSizingStart: [], 
-        isResizingColumn: false, 
+      columnSizingInfo: {
+        startOffset: null,
+        columnSizingStart: [],
+        isResizingColumn: false,
         deltaOffset: null,
         deltaPercentage: null,
         startSize: null
@@ -126,9 +126,9 @@ export default function FormList({ refreshTrigger }: FormListProps) {
       <MainCard title="Danh sách Form đã tạo" content={false} sx={MAINCARD_STYLE}>
         {error && (
           <Box sx={{ p: 2 }}>
-            <Alert 
-              severity="error" 
-              sx={{ 
+            <Alert
+              severity="error"
+              sx={{
                 alignItems: 'center',
                 '& .MuiAlert-icon': {
                   marginRight: 1,
@@ -141,7 +141,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
             </Alert>
           </Box>
         )}
-        
+
         <TableContainer>
           <Table>
             <TableHead>
@@ -195,22 +195,11 @@ export default function FormList({ refreshTrigger }: FormListProps) {
 
         <Divider />
         <Box sx={{ p: 2 }}>
-          <TablePagination
-            setPageSize={setPageSize}
-            setPageIndex={setPageIndex}
-            getState={getTableState}
-            getPageCount={() => totalPages}
-          />
+          <TablePagination setPageSize={setPageSize} setPageIndex={setPageIndex} getState={getTableState} getPageCount={() => totalPages} />
         </Box>
       </MainCard>
 
-      <AlertFormDelete
-        id={deleteFormId}
-        title={deleteFormName}
-        open={open}
-        handleClose={handleClose}
-        handleConfirm={handleDeleteConfirm}
-      />
+      <AlertFormDelete id={deleteFormId} title={deleteFormName} open={open} handleClose={handleClose} handleConfirm={handleDeleteConfirm} />
     </>
   );
 }

@@ -1,26 +1,22 @@
-
 import QrCodeIcon from '@mui/icons-material/QrCode';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Divider,
-  Paper,
-  Stack,
-  TextField,
-  Typography
-} from '@mui/material';
+import { Alert, Box, Button, CircularProgress, Divider, Paper, Stack, TextField, Typography } from '@mui/material';
 import { checkSEPAYPaymentStatus, createSEPAYOrder } from 'api/payment';
+import { usePayment } from 'contexts/PaymentContext';
+import useBalance from 'hooks/useBalance';
 import { useWebSocket } from 'hooks/useWebSocket';
 import { useSnackbar } from 'notistack';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SEPAYPaymentStatus } from 'types/payment';
 import { formatAmount, parseAmount, validateAmount } from 'utils/paymentUtils';
+import { getSocket } from 'utils/socket';
 import PaymentSuccessModal from './PaymentSuccessModal';
 
-export default function SEPAYTab() {
+interface SEPAYTabProps {
+  resetKey?: number;
+}
+
+export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
   const [amount, setAmount] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -35,15 +31,154 @@ export default function SEPAYTab() {
     orderId: string;
     method: string;
   } | null>(null);
-  
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const initialBalanceRef = useRef<number>(0);
+
   const { enqueueSnackbar } = useSnackbar();
-  const { 
-    isConnected, 
-    handlePaymentUpdate, 
-    subscribeToPayment, 
-    unsubscribeFromPayment,
-    connectionError
-  } = useWebSocket();
+  const { showPaymentSuccess } = usePayment();
+  const { balance, refresh } = useBalance();
+  
+  // Reset form when resetKey changes
+  useEffect(() => {
+    setAmount('');
+    setOrderId(null);
+    setQrCodeUrl(null);
+    setIsLoading(false);
+    setQrCodeLoading(false);
+    setQrCodeError(null);
+    setPaymentStatus(null);
+    setExpiresAt(null);
+    setShowSuccessModal(false);
+    setSuccessData(null);
+    setIsConfirmingPayment(false);
+    
+    // Auto-generate QR code with default amount after reset
+    setTimeout(() => {
+      setAmount('50.000'); // Default amount with format
+      // Note: handleCreateQR will be called when amount changes
+    }, 100);
+  }, [resetKey]);
+
+  // Debug: Log balance changes
+  useEffect(() => {
+  }, [balance]);
+
+  // Set default amount when component mounts
+  useEffect(() => {
+    if (!amount && !orderId && !qrCodeUrl) {
+      console.log('🔄 Setting default amount on component mount');
+      setAmount('50.000');
+    }
+  }, [amount, orderId, qrCodeUrl]);
+
+  // Auto-create QR code when amount is set after reset
+  useEffect(() => {
+    if (amount && amount !== '' && !orderId && !qrCodeUrl && resetKey > 0) {
+      console.log('🔄 Auto-creating QR code for amount:', amount);
+      handleCreateQR();
+    }
+  }, [amount, orderId, qrCodeUrl, resetKey]);
+
+  // Auto-start payment confirmation when QR code is generated
+  useEffect(() => {
+    if (qrCodeUrl && !isConfirmingPayment && !showSuccessModal) {
+      console.log('🔄 Auto-starting payment confirmation for QR code');
+      setIsConfirmingPayment(true);
+      initialBalanceRef.current = balance; 
+    }
+  }, [qrCodeUrl, isConfirmingPayment, showSuccessModal, balance, enqueueSnackbar]);
+
+  // Debug: Force refresh balance when confirming payment
+  useEffect(() => {
+    if (isConfirmingPayment && orderId) {
+      console.log('🔄 Force refreshing balance...');
+      
+      // Use the refresh function from useBalance hook
+      const refreshBalance = async () => {
+        try {
+          await refresh();
+          console.log('🔄 Balance refreshed via hook');
+        } catch (error) {
+          console.error('❌ Error refreshing balance:', error);
+        }
+      };
+      
+      // Refresh immediately and then every 2 seconds
+      refreshBalance();
+      const interval = setInterval(refreshBalance, 2000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [isConfirmingPayment, orderId, refresh]);
+
+  // Direct socket listener for balance updates
+  useEffect(() => {
+    if (!isConfirmingPayment || !orderId) return;
+
+    const handleDirectBalanceUpdate = (payload: any) => {
+      console.log('🔌 Direct balance update received:', payload);
+      
+      // Handle different payload formats
+      let balanceData;
+      if (Array.isArray(payload) && payload.length === 2) {
+        // Format: ["balance_update", {...}]
+        balanceData = payload[1];
+      } else if (typeof payload === 'object') {
+        // Format: {...}
+        balanceData = payload;
+      } else {
+        console.error('❌ Invalid balance_update payload format:', payload);
+        return;
+      }
+
+      if (balanceData && typeof balanceData.balance === 'number') {
+        const newBalance = balanceData.balance;
+        const amountAdded = newBalance - initialBalanceRef.current;
+        
+        console.log('💰 Direct balance update:', {
+          newBalance,
+          initialBalance: initialBalanceRef.current,
+          amountAdded
+        });
+
+        if (amountAdded > 0) {
+          
+          // Auto-confirm payment if user hasn't clicked "Tôi đã thanh toán"
+          if (isConfirmingPayment) {
+            console.log('✅ Auto-confirming payment due to balance increase');
+            setSuccessData({
+              amount: amountAdded,
+              orderId: orderId || 'auto-confirmed',
+              method: 'SEPAY QR'
+            });
+            setShowSuccessModal(true);
+            setIsConfirmingPayment(false);
+          }
+          
+          // Force refresh balance from server to ensure consistency
+          refresh().then(() => {
+            console.log('🔄 Balance refreshed after socket update');
+          });
+          
+          showPaymentSuccess(amountAdded);
+          setIsConfirmingPayment(false);
+          resetForm();
+          initialBalanceRef.current = 0;
+        }
+      }
+    };
+
+    // Get socket instance
+    const socket = (window as any).socket || getSocket();
+    if (socket) {
+      socket.on('balance_update', handleDirectBalanceUpdate);
+      
+      return () => {
+        socket.off('balance_update', handleDirectBalanceUpdate);
+      };
+    }
+  }, [isConfirmingPayment, orderId, showPaymentSuccess, refresh]);
+  const { isConnected, handlePaymentUpdate, subscribeToPayment, unsubscribeFromPayment, connectionError } = useWebSocket();
 
   const numericAmount = parseAmount(amount);
   const isValidAmount = validateAmount(numericAmount);
@@ -60,8 +195,6 @@ export default function SEPAYTab() {
     }
   }, [qrCodeLoading, qrCodeUrl, qrCodeError]);
 
-
-
   // Handle payment updates via WebSocket
   useEffect(() => {
     if (!orderId) return;
@@ -69,7 +202,7 @@ export default function SEPAYTab() {
     const cleanup = handlePaymentUpdate((data) => {
       if (data.orderId === orderId) {
         setPaymentStatus(data.status);
-        
+
         if (data.status === 'completed') {
           setSuccessData({
             amount: data.amount,
@@ -79,9 +212,11 @@ export default function SEPAYTab() {
           setShowSuccessModal(true);
           resetForm();
         } else if (data.status === 'failed') {
-          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error' });
+          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 1000 });
+          setIsConfirmingPayment(false);
         } else if (data.status === 'expired') {
-          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning' });
+          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 1000 });
+          setIsConfirmingPayment(false);
         }
       }
     });
@@ -103,7 +238,7 @@ export default function SEPAYTab() {
       try {
         const status = await checkSEPAYPaymentStatus(orderId);
         setPaymentStatus(status.status);
-        
+
         if (status.status === 'completed') {
           setSuccessData({
             amount: status.amount,
@@ -113,9 +248,11 @@ export default function SEPAYTab() {
           setShowSuccessModal(true);
           resetForm();
         } else if (status.status === 'failed') {
-          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error' });
+          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 1000 });
+          setIsConfirmingPayment(false);
         } else if (status.status === 'expired') {
-          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning' });
+          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 1000 });
+          setIsConfirmingPayment(false);
         }
       } catch (error) {
         console.error('Error checking payment status:', error);
@@ -125,6 +262,52 @@ export default function SEPAYTab() {
     return () => clearInterval(interval);
   }, [orderId, paymentStatus, enqueueSnackbar, isConnected]);
 
+  // Listen for balance updates from socket
+  useEffect(() => {
+    if (!isConfirmingPayment || !orderId) return;
+
+    // Store initial balance when starting confirmation
+    if (initialBalanceRef.current === 0) {
+      initialBalanceRef.current = balance;
+      console.log('🔍 Initial balance set:', balance);
+    }
+
+    // Check for balance increase
+    const checkBalanceUpdate = () => {
+      // console.log('🔍 Checking balance update:', {
+      //   currentBalance: balance,
+      //   initialBalance: initialBalanceRef.current,
+      //   difference: balance - initialBalanceRef.current
+      // });
+      
+      if (balance > initialBalanceRef.current) {
+        const amountAdded = balance - initialBalanceRef.current;
+        // Show success popup with the actual amount added
+        showPaymentSuccess(amountAdded);
+        setIsConfirmingPayment(false);
+        resetForm();
+        initialBalanceRef.current = 0; // Reset for next payment
+      }
+    };
+
+    // Check balance every 0.6 seconds while confirming payment
+    const interval = setInterval(checkBalanceUpdate, 600);
+
+    // Timeout after 5 minutes (300 seconds) of confirmation
+    const timeout = setTimeout(() => {
+      if (isConfirmingPayment) {
+        enqueueSnackbar('Hết thời gian xác nhận thanh toán. Vui lòng thử lại.', { variant: 'warning', autoHideDuration: 1000 });
+        setIsConfirmingPayment(false);
+        resetForm();
+      }
+    }, 300000); // 5 minutes
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [isConfirmingPayment, orderId, balance, showPaymentSuccess, enqueueSnackbar]);
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatAmount(e.target.value);
     setAmount(formatted);
@@ -132,25 +315,27 @@ export default function SEPAYTab() {
 
   const handleCreateQR = async () => {
     if (!isValidAmount) return;
-    
+
     setIsLoading(true);
     try {
       const response = await createSEPAYOrder({
         amount: numericAmount,
         description: `Nạp tiền - ${numericAmount.toLocaleString('vi-VN')} VND`
       });
-      
+
       // Kiểm tra response có đầy đủ thông tin cần thiết không
       // BE trả về response.content thay vì response trực tiếp
       const responseData = response?.content || response;
-      
-      const hasRequiredFields = Boolean(responseData && 
-        responseData.success === true && 
-        responseData.qrCodeUrl && 
-        responseData.orderId && 
-        typeof responseData.amount === 'number' && 
-        responseData.expiresAt);
-      
+
+      const hasRequiredFields = Boolean(
+        responseData &&
+          responseData.success === true &&
+          responseData.qrCodeUrl &&
+          responseData.orderId &&
+          typeof responseData.amount === 'number' &&
+          responseData.expiresAt
+      );
+
       if (hasRequiredFields) {
         setOrderId(responseData.orderId);
         setQrCodeUrl(responseData.qrCodeUrl);
@@ -158,7 +343,7 @@ export default function SEPAYTab() {
         setPaymentStatus('pending');
         setQrCodeLoading(true);
         setQrCodeError(null);
-        
+
         // Preload QR code image để tăng tốc độ
         const img = new Image();
         img.onload = () => {
@@ -169,21 +354,26 @@ export default function SEPAYTab() {
           setQrCodeError('Không thể tải mã QR. Vui lòng thử lại.');
         };
         img.src = responseData.qrCodeUrl;
-        
-        enqueueSnackbar('Mã QR đã được tạo thành công!', { variant: 'success' });
+
+        enqueueSnackbar('Mã QR đã được tạo thành công!', { variant: 'success', autoHideDuration: 1000 });
       } else {
         const errorMessage = responseData?.message || 'Không thể tạo mã QR';
-        enqueueSnackbar(errorMessage, { variant: 'error' });
+        enqueueSnackbar(errorMessage, { variant: 'error', autoHideDuration: 1000 });
       }
     } catch (error) {
       console.error('SEPAY payment error:', error);
-      enqueueSnackbar('Có lỗi xảy ra khi tạo giao dịch', { variant: 'error' });
+      enqueueSnackbar('Có lỗi xảy ra khi tạo giao dịch', { variant: 'error', autoHideDuration: 1000 });
     } finally {
       setIsLoading(false);
     }
   };
 
-
+  // handleConfirmPayment function no longer needed since button is hidden
+  // const handleConfirmPayment = () => {
+  //   setIsConfirmingPayment(true);
+  //   initialBalanceRef.current = balance; // Set initial balance when user confirms
+  //   enqueueSnackbar('Đang xác nhận thanh toán...', { variant: 'info' });
+  // };
 
   const resetForm = () => {
     setAmount('');
@@ -193,6 +383,8 @@ export default function SEPAYTab() {
     setQrCodeError(null);
     setPaymentStatus(null);
     setExpiresAt(null);
+    setIsConfirmingPayment(false);
+    initialBalanceRef.current = 0; // Reset initial balance
   };
 
   const handleCloseSuccessModal = () => {
@@ -201,11 +393,11 @@ export default function SEPAYTab() {
   };
 
   return (
-    <Paper 
-      variant="outlined" 
-      sx={{ 
-        p: 4, 
-        maxWidth: 600, 
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 4,
+        maxWidth: 600,
         mx: 'auto',
         borderRadius: 2,
         boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
@@ -216,12 +408,12 @@ export default function SEPAYTab() {
       <Stack spacing={4}>
         {/* Header */}
         <Box textAlign="center">
-          <Typography 
-            variant="h3" 
-            fontWeight={700} 
-            color="text.primary" 
+          <Typography
+            variant="h3"
+            fontWeight={700}
+            color="text.primary"
             gutterBottom
-            sx={{ 
+            sx={{
               // fontSize: { xs: '1.5rem', sm: '1.75rem' },
               lineHeight: 1.3,
               mb: 1.5
@@ -229,12 +421,12 @@ export default function SEPAYTab() {
           >
             Nạp tiền bằng QR
           </Typography>
-          <Typography 
-            variant="body2" 
+          <Typography
+            variant="body2"
             color="text.secondary"
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.125rem' },
-              fontWeight: 400,
+              fontWeight: 400
               // lineHeight: 1.5
             }}
           >
@@ -246,26 +438,21 @@ export default function SEPAYTab() {
 
         {/* Amount Input */}
         <Stack spacing={2}>
-          <Typography 
-            variant="h6" 
-            fontWeight={600}
-            color="text.primary"
-            sx={{ fontSize: '1.25rem' }}
-          >
+          <Typography variant="h6" fontWeight={600} color="text.primary" sx={{ fontSize: '1.25rem' }}>
             Nhập số tiền
           </Typography>
-          
+
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-end">
             <TextField
               label="Số tiền (VND)"
               value={amount}
               onChange={handleAmountChange}
-              inputProps={{ 
-                inputMode: 'numeric', 
+              inputProps={{
+                inputMode: 'numeric',
                 pattern: '[0-9,]*',
-                min: 10000 
+                min: 10000
               }}
-              sx={{ 
+              sx={{
                 flex: 1,
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
@@ -282,7 +469,7 @@ export default function SEPAYTab() {
               variant="outlined"
               disabled={!!orderId}
             />
-            
+
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained"
@@ -290,7 +477,7 @@ export default function SEPAYTab() {
                 startIcon={<QrCodeIcon />}
                 onClick={handleCreateQR}
                 disabled={!isValidAmount || isLoading || !!orderId}
-                sx={{ 
+                sx={{
                   minWidth: 140,
                   height: 48,
                   textTransform: 'none',
@@ -303,22 +490,18 @@ export default function SEPAYTab() {
                   }
                 }}
               >
-                {isLoading ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  'Tạo Mã QR'
-                )}
+                {isLoading ? <CircularProgress size={20} color="inherit" /> : 'Tạo Mã QR'}
               </Button>
-              
+
               <Button
                 variant="outlined"
                 color="secondary"
                 startIcon={<RefreshIcon />}
                 onClick={resetForm}
                 disabled={isLoading || !amount}
-                sx={{ 
+                sx={{
                   height: 48,
-                  textTransform: 'none', 
+                  textTransform: 'none',
                   fontWeight: 600,
                   borderRadius: 2,
                   fontSize: '0.95rem'
@@ -334,33 +517,27 @@ export default function SEPAYTab() {
         {qrCodeUrl && (
           <Box>
             <Stack spacing={3} alignItems="center">
-              <Typography 
-                variant="h6" 
-                fontWeight={600} 
-                textAlign="center"
-                color="text.primary"
-                sx={{ fontSize: '1.375rem' }}
-              >
+              <Typography variant="h6" fontWeight={600} textAlign="center" color="text.primary" sx={{ fontSize: '1.375rem' }}>
                 Mã QR Thanh Toán
               </Typography>
-              
-              <Box sx={{ 
-                position: 'relative',
-                p: 3,
-                bgcolor: 'background.paper',
-                borderRadius: 3,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                border: '1px solid',
-                borderColor: 'divider',
-                minHeight: 260,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                {qrCodeLoading && (
-                  <CircularProgress size={60} />
-                )}
-                
+
+              <Box
+                sx={{
+                  position: 'relative',
+                  p: 3,
+                  bgcolor: 'background.paper',
+                  borderRadius: 3,
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  minHeight: 260,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {qrCodeLoading && <CircularProgress size={60} />}
+
                 {qrCodeError && (
                   <Box textAlign="center">
                     <Typography color="error" variant="body2" gutterBottom>
@@ -379,7 +556,7 @@ export default function SEPAYTab() {
                     </Button>
                   </Box>
                 )}
-                
+
                 {!qrCodeLoading && !qrCodeError && (
                   <Box
                     component="img"
@@ -406,50 +583,75 @@ export default function SEPAYTab() {
                     }}
                   />
                 )}
-                
-
               </Box>
 
               {/* Order Info */}
               <Stack spacing={2} alignItems="center" sx={{ width: '100%' }}>
-                <Box sx={{ 
-                  p: 2, 
-                  bgcolor: 'background.default', 
-                  borderRadius: 2, 
-                  width: '100%',
-                  border: '1px solid',
-                  borderColor: 'divider'
-                }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    bgcolor: 'background.default',
+                    borderRadius: 2,
+                    width: '100%',
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
                   <Stack spacing={1}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
-                  Nội dung thanh toán: <strong>{orderId}</strong>
-                </Typography>
-                    
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
+                      Nội dung thanh toán: <strong>{orderId}</strong>
+                    </Typography>
+
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
                       Số tiền: <strong>{numericAmount.toLocaleString('vi-VN')} VND</strong>
                     </Typography>
-                
-                {expiresAt && (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
+
+                    {expiresAt && (
+                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
                         Hết hạn: <strong>{new Date(expiresAt).toLocaleString('vi-VN')}</strong>
-                  </Typography>
-                )}
+                      </Typography>
+                    )}
                   </Stack>
                 </Box>
 
-                {/* WebSocket Status */}
+                {/* Confirm Payment Button - Hidden because system auto-confirms */}
+                {/* <Button
+                  variant="contained"
+                  color="success"
+                  onClick={handleConfirmPayment}
+                  disabled={isConfirmingPayment}
+                  sx={{
+                    minWidth: 200,
+                    height: 48,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    fontSize: '1rem',
+                    borderRadius: 2,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    '&:hover': {
+                      boxShadow: '0 6px 20px rgba(0,0,0,0.2)'
+                    }
+                  }}
+                >
+                  {isConfirmingPayment ? (
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <CircularProgress size={20} color="inherit" />
+                      <span>Đang xác nhận...</span>
+                    </Stack>
+                  ) : (
+                    'Tôi đã thanh toán'
+                  )}
+                </Button> */}
               </Stack>
-
-              {/* Action Buttons */}
             </Stack>
           </Box>
         )}
 
         {/* Instructions */}
         {!qrCodeUrl && (
-          <Alert 
-            severity="info" 
-            sx={{ 
+          <Alert
+            severity="info"
+            sx={{
               borderRadius: 2,
               '& .MuiAlert-message': {
                 fontSize: '0.95rem',
@@ -465,9 +667,9 @@ export default function SEPAYTab() {
 
         {/* WebSocket Status Alert */}
         {connectionError && (
-          <Alert 
-            severity="warning" 
-            sx={{ 
+          <Alert
+            severity="warning"
+            sx={{
               borderRadius: 2,
               '& .MuiAlert-message': {
                 fontSize: '0.95rem',
@@ -481,29 +683,11 @@ export default function SEPAYTab() {
           </Alert>
         )}
 
-        {/* Payment Status Info */}
-        {/* {paymentStatus === 'pending' && (
-          <Alert 
-            severity="info" 
-            sx={{ 
-              borderRadius: 2,
-              '& .MuiAlert-message': {
-                fontSize: '0.95rem',
-                lineHeight: 1.5
-              }
-            }}
-          >
-            <Typography variant="body2" sx={{ fontSize: '0.95rem' }}>
-              <strong>Đang chờ thanh toán:</strong> Vui lòng quét mã QR và hoàn tất thanh toán trong ứng dụng SEPAY.
-            </Typography>
-          </Alert>
-        )} */}
-
         {/* QR Code Instructions */}
         {qrCodeUrl && !qrCodeLoading && !qrCodeError && (
-          <Alert 
-            severity="success" 
-            sx={{ 
+          <Alert
+            severity="success"
+            sx={{
               borderRadius: 2,
               '& .MuiAlert-message': {
                 fontSize: '0.95rem',
@@ -525,7 +709,7 @@ export default function SEPAYTab() {
                 Quét mã QR bên trên và xác nhận thanh toán
               </Typography>
               <Typography component="li" variant="body2" sx={{ fontSize: '0.9rem' }}>
-                Hệ thống sẽ tự động cập nhật trạng thái khi thanh toán thành công
+                Sau khi thanh toán xong, hệ thống sẽ tự động xác nhận và cập nhật số dư
               </Typography>
             </Box>
           </Alert>

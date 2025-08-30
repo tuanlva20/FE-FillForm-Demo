@@ -73,14 +73,10 @@ export default function AlertSnackbarWithProgress({ open, message, onClose, seve
               height: 4,
               borderRadius: 2,
               background:
-                severity === 'success' ? '#e7f6ec' :
-                severity === 'info' ? '#e8f4fd' :
-                severity === 'warning' ? '#fff7e6' : '#ffeaea',
+                severity === 'success' ? '#e7f6ec' : severity === 'info' ? '#e8f4fd' : severity === 'warning' ? '#fff7e6' : '#ffeaea',
               '& .MuiLinearProgress-bar': {
                 background:
-                  severity === 'success' ? '#4caf50' :
-                  severity === 'info' ? '#2196f3' :
-                  severity === 'warning' ? '#ff9800' : '#f44336'
+                  severity === 'success' ? '#4caf50' : severity === 'info' ? '#2196f3' : severity === 'warning' ? '#ff9800' : '#f44336'
               }
             }}
           />
@@ -88,4 +84,4 @@ export default function AlertSnackbarWithProgress({ open, message, onClose, seve
       </Alert>
     </MuiSnackbar>
   );
-} 
+}

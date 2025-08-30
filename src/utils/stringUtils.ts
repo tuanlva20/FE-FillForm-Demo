@@ -45,5 +45,3 @@ export function fuzzyScore(a: string, b: string): number {
   const pr = partialRatio(a, b);
   return Math.max(ts, pr);
 }
-
-

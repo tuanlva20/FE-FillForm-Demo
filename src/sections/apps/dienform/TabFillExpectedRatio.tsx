@@ -78,101 +78,102 @@ export default function TabFillExpectedRatio() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedForm, setSelectedForm] = useState<FormDetailResponse | null>(null);
   const [formLink, setFormLink] = useState<string>('');
-  
+
   // State for question options percentages
   const [questionOptions, setQuestionOptions] = useState<Map<string, Map<string, number>>>(new Map());
-  
+
   // State for tracking custom data checkboxes and text
-  const [customData, setCustomData] = useState<Map<string, { useCustomData: boolean, data: string }>>(new Map());
-  
+  const [customData, setCustomData] = useState<Map<string, { useCustomData: boolean; data: string }>>(new Map());
+
   // State for tracking date input requirements
-  const [dateInputs, setDateInputs] = useState<Map<string, { useCustomData: boolean, data: string }>>(new Map());
-  
+  const [dateInputs, setDateInputs] = useState<Map<string, { useCustomData: boolean; data: string }>>(new Map());
+
   // State for tracking Other option free text per question
   const [otherOptionInputs, setOtherOptionInputs] = useState<Map<string, string>>(new Map());
-  
+
   // State for balance errors
   const [balanceErrors, setBalanceErrors] = useState<Map<string, string>>(new Map());
-  
+
   // State for modals
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
   const [selectedFillRequest, setSelectedFillRequest] = useState<FillRequestDTO | null>(null);
-  
+
   // State for loading
   const [loading, setLoading] = useState<boolean>(false);
   const [formDetailLoading, setFormDetailLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   // Thêm state cho alert popup
   const [alertPopup, setAlertPopup] = useState<{ open: boolean; message: string }>({ open: false, message: '' });
-  
+
   // Snackbar for prominent success/error display
   const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
   const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
-  
+
   // State to track if edit mode is active
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isEditingFillRequest, setIsEditingFillRequest] = useState<boolean>(false);
-  
+
   // Thêm state lưu giá trị grid cho từng câu hỏi
   type GridValues = Map<string, Map<string, Map<string, number>>>; // questionId -> rowId -> optionId -> percentage
   const [gridValues, setGridValues] = useState<GridValues>(new Map());
-  
+
   // Thêm state lưu trạng thái loading cho AI gợi ý
   const [isAiLoading, setIsAiLoading] = useState(false);
-  
+
   // State cho AI Suggestion Modal
   const [isAISuggestionModalOpen, setIsAISuggestionModalOpen] = useState(false);
-  
+
   // State for AI data filling loading dialog
   const [isAiDataFillingLoading, setIsAiDataFillingLoading] = useState(false);
-  
+
   // State for testing section feature
   const [showSectionTest, setShowSectionTest] = useState(false);
   const [showSimpleTest, setShowSimpleTest] = useState(false);
-  
+
   // Pagination state
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
-  const getTableState = () => ({
-    pagination: { pageIndex, pageSize },
-    columnVisibility: {},
-    columnOrder: [],
-    columnPinning: { left: [], right: [] },
-    rowSelection: {},
-    sorting: [],
-    columnFilters: [],
-    globalFilter: '',
-    expanded: {},
-    columnSizing: {},
-    columnSizingInfo: { 
-      startOffset: null, 
-      columnSizingStart: [], 
-      isResizingColumn: false, 
-      deltaOffset: null,
-      deltaPercentage: null,
-      startSize: null
-    },
-    rowPinning: { top: [], bottom: [] },
-    grouping: []
-  } as any);
-  
+  const getTableState = () =>
+    ({
+      pagination: { pageIndex, pageSize },
+      columnVisibility: {},
+      columnOrder: [],
+      columnPinning: { left: [], right: [] },
+      rowSelection: {},
+      sorting: [],
+      columnFilters: [],
+      globalFilter: '',
+      expanded: {},
+      columnSizing: {},
+      columnSizingInfo: {
+        startOffset: null,
+        columnSizingStart: [],
+        isResizingColumn: false,
+        deltaOffset: null,
+        deltaPercentage: null,
+        startSize: null
+      },
+      rowPinning: { top: [], bottom: [] },
+      grouping: []
+    }) as any;
+
   // Check if there are any grid validation errors
   const hasGridErrors = useMemo(() => {
     if (!selectedForm) return false;
-    
-    return selectedForm.questions.some(question => {
+
+    return selectedForm.questions.some((question) => {
       if (question.type !== 'multiple_choice_grid' && question.type !== 'checkbox_grid') {
         return false;
       }
-      
+
       const grid = gridValues.get(question.id);
       if (!grid) return false;
-      
+
       // Check if any row has total != 100%
-      return Array.from(grid.values()).some(colMap => {
+      return Array.from(grid.values()).some((colMap) => {
         const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
         return total !== 100;
       });
@@ -184,7 +185,7 @@ export default function TabFillExpectedRatio() {
     const fetchForms = async () => {
       setLoading(true);
       setError(null);
-      
+
       try {
         const list = await getAllUserForms();
         setForms(Array.isArray(list) ? list : []);
@@ -195,38 +196,38 @@ export default function TabFillExpectedRatio() {
         setLoading(false);
       }
     };
-    
+
     fetchForms();
   }, []);
-  
+
   // Load form details when form is selected
   useEffect(() => {
     if (!selectedFormId) return;
-    
+
     const fetchFormDetails = async () => {
       setFormDetailLoading(true);
       setError(null);
-      
+
       try {
         const formDetails = await getFormDetail(selectedFormId);
         setSelectedForm(formDetails);
         setFormLink(formDetails.editLink);
-        
+
         // Initialize question options percentages
         const newQuestionOptions = new Map<string, Map<string, number>>();
-        const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
-        const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
-        
-        formDetails.questions.forEach(question => {
+        const newCustomData = new Map<string, { useCustomData: boolean; data: string }>();
+        const newDateInputs = new Map<string, { useCustomData: boolean; data: string }>();
+
+        formDetails.questions.forEach((question) => {
           const optionsMap = new Map<string, number>();
-          
-          question.options.forEach(option => {
+
+          question.options.forEach((option) => {
             // Set default percentage to 0
             optionsMap.set(option.id, 0);
           });
-          
+
           newQuestionOptions.set(question.id, optionsMap);
-          
+
           // Initialize custom data state for text fields
           if (question.type === 'text') {
             newCustomData.set(question.id, { useCustomData: false, data: '' });
@@ -239,7 +240,7 @@ export default function TabFillExpectedRatio() {
         });
         // Reset grid values for grid questions
         const newGridValues = new Map<string, Map<string, Map<string, number>>>();
-        formDetails.questions.forEach(question => {
+        formDetails.questions.forEach((question) => {
           if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
             newGridValues.set(question.id, new Map());
           }
@@ -258,31 +259,25 @@ export default function TabFillExpectedRatio() {
         setFormDetailLoading(false);
       }
     };
-    
+
     fetchFormDetails();
   }, [selectedFormId]);
 
   // Realtime updates for fill requests of selected form
   useFillRequestRealtime(selectedFormId, setSelectedForm);
-  
+
   // Validate that percentages for each question add up to exactly 100%
   const validatePercentages = (options: Map<string, Map<string, number>>) => {
     const newErrors = new Map<string, string>();
-    
+
     options.forEach((optionMap, questionId) => {
-      const qType = selectedForm?.questions.find(q => q.id === questionId)?.type;
+      const qType = selectedForm?.questions.find((q) => q.id === questionId)?.type;
       // Bỏ validate cho các loại không phải grid, không phải text/date/time
-      if (
-        qType === 'text' ||
-        qType === 'date' ||
-        qType === 'time' ||
-        qType === 'multiple_choice_grid' ||
-        qType === 'checkbox_grid'
-      ) {
+      if (qType === 'text' || qType === 'date' || qType === 'time' || qType === 'multiple_choice_grid' || qType === 'checkbox_grid') {
         return;
       }
       let totalPercentage = 0;
-      optionMap.forEach(percentage => {
+      optionMap.forEach((percentage) => {
         totalPercentage += percentage || 0; // Add 0 if percentage is undefined or null
       });
       // Round to handle floating point precision issues
@@ -303,7 +298,7 @@ export default function TabFillExpectedRatio() {
       validatePercentages(opts);
     };
   }, [selectedForm]);
-  
+
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
     const formId = event.target.value as string;
@@ -320,48 +315,48 @@ export default function TabFillExpectedRatio() {
     setOtherOptionInputs(new Map());
     setPageIndex(0);
   };
-  
+
   // Handle option percentage change
   const handlePercentageChange = (questionId: string, optionId: string, value: number) => {
     // Don't allow negative values
     if (value < 0) return;
-    
+
     setIsEditing(true);
     const newQuestionOptions = new Map(questionOptions);
-    
+
     if (newQuestionOptions.has(questionId)) {
       const optionMap = new Map(newQuestionOptions.get(questionId));
       optionMap.set(optionId, value);
       newQuestionOptions.set(questionId, optionMap);
       setQuestionOptions(newQuestionOptions);
-      
+
       // Validate percentages immediately for realtime alert updates
       validatePercentagesDebounced(newQuestionOptions);
     }
   };
-  
+
   // Handle custom data toggle change
   const handleCustomDataToggle = (questionId: string, checked: boolean) => {
     setIsEditing(true);
     const newCustomData = new Map(customData);
-    
+
     if (newCustomData.has(questionId)) {
       const currentData = newCustomData.get(questionId)!;
       newCustomData.set(questionId, { ...currentData, useCustomData: checked });
       setCustomData(newCustomData);
     }
   };
-  
+
   // Handle custom data text change - optimized to prevent unnecessary re-renders
   const handleCustomDataChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    setCustomData(prev => {
+    setCustomData((prev) => {
       const currentData = prev.get(questionId);
       if (!currentData) return prev;
-      
+
       // Only update if value actually changed
       if (currentData.data === value) return prev;
-      
+
       const newCustomData = new Map(prev);
       newCustomData.set(questionId, { ...currentData, data: value });
       return newCustomData;
@@ -372,191 +367,194 @@ export default function TabFillExpectedRatio() {
   const handleDateInputToggle = (questionId: string, checked: boolean) => {
     setIsEditing(true);
     const newDateInputs = new Map(dateInputs);
-    
+
     if (newDateInputs.has(questionId)) {
       const currentData = newDateInputs.get(questionId)!;
       newDateInputs.set(questionId, { ...currentData, useCustomData: checked });
       setDateInputs(newDateInputs);
     }
   };
-  
+
   // Handle date input data change - optimized to prevent unnecessary re-renders
   const handleDateInputChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    setDateInputs(prev => {
+    setDateInputs((prev) => {
       const currentData = prev.get(questionId);
       if (!currentData) return prev;
-      
+
       // Only update if value actually changed
       if (currentData.data === value) return prev;
-      
+
       const newDateInputs = new Map(prev);
       newDateInputs.set(questionId, { ...currentData, data: value });
       return newDateInputs;
     });
   }, []);
-  
+
   // Open the auto fill form modal
   const handleOpenAutoFillModal = () => {
     setIsAutoFillModalOpen(true);
   };
-  
+
   // Open the schedule form modal
   const handleOpenScheduleModal = (formId: string) => {
     setSelectedDetailFormId(parseInt(formId) || null);
     setIsScheduleModalOpen(true);
   };
-  
+
   // Open the form detail modal
   const handleOpenDetailModal = (formId: string) => {
     logger.log('handleOpenDetailModal called with ID:', formId);
-    
+
     if (!selectedForm) return;
-    
+
     // Find the fill request with the given ID - use direct string comparison
-    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId);
-    
+    const fillRequest = selectedForm.fillRequests.find((req) => req.id === formId);
+
     logger.log('Found fillRequest:', fillRequest);
-    
+
     if (fillRequest) {
       setSelectedFillRequest(fillRequest);
       setIsDetailModalOpen(true);
     }
   };
-  
+
   // Handle edit fill request - loads answer distributions back into the form
   const handleEditFillRequest = (formId: string) => {
     logger.log('handleEditFillRequest called with ID:', formId);
-    logger.log('Available fillRequests:', selectedForm?.fillRequests?.map(req => ({
-      id: req.id,
-      hasAnswerDistributions: !!req.answerDistributions,
-      answerDistributionsLength: req.answerDistributions?.length || 0
-    })));
-    
+    logger.log(
+      'Available fillRequests:',
+      selectedForm?.fillRequests?.map((req) => ({
+        id: req.id,
+        hasAnswerDistributions: !!req.answerDistributions,
+        answerDistributionsLength: req.answerDistributions?.length || 0
+      }))
+    );
+
     if (!selectedForm) return;
-    
+
     // Find the fill request with the given ID - use direct string comparison
-    const fillRequest = selectedForm.fillRequests.find(req => req.id === formId);
-    
+    const fillRequest = selectedForm.fillRequests.find((req) => req.id === formId);
+
     logger.log('Found fillRequest:', fillRequest);
     logger.log('answerDistributions:', fillRequest?.answerDistributions);
     logger.log('answerDistributions length:', fillRequest?.answerDistributions?.length);
-    
+
     if (!fillRequest || !fillRequest.answerDistributions || fillRequest.answerDistributions.length === 0) {
       logger.log('Early return: no fillRequest or no answerDistributions or empty answerDistributions');
       return;
     }
-    
+
     // Set to editing mode
     setIsEditing(true);
     setIsEditingFillRequest(true);
-    
+
     // Create new question options map with values from the fill request
     const newQuestionOptions = new Map<string, Map<string, number>>();
-    const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
-    const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
+    const newCustomData = new Map<string, { useCustomData: boolean; data: string }>();
+    const newDateInputs = new Map<string, { useCustomData: boolean; data: string }>();
     const newGridValues = new Map<string, Map<string, Map<string, number>>>();
-    
+
     // First initialize all options to 0
-    selectedForm.questions.forEach(question => {
+    selectedForm.questions.forEach((question) => {
       const optionsMap = new Map<string, number>();
-      
-      question.options.forEach(option => {
+
+      question.options.forEach((option) => {
         optionsMap.set(option.id, 0);
       });
-      
+
       newQuestionOptions.set(question.id, optionsMap);
-      
+
       if (question.type === 'text') {
         newCustomData.set(question.id, { useCustomData: false, data: '' });
       }
-      
+
       if (question.type === 'date') {
         newDateInputs.set(question.id, { useCustomData: false, data: '' });
       }
-      
+
       if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
         // Initialize with empty map - will be populated later
         newGridValues.set(question.id, new Map());
         logger.log(`Initialized empty grid for question ${question.id} (${question.type})`);
       }
     });
-    
+
     // Group distributions by question and sort by positionIndex
     const distributionsByQuestion = new Map<string, any[]>();
-    fillRequest.answerDistributions.forEach(dist => {
+    fillRequest.answerDistributions.forEach((dist) => {
       if (!distributionsByQuestion.has(dist.questionId)) {
         distributionsByQuestion.set(dist.questionId, []);
       }
       distributionsByQuestion.get(dist.questionId)!.push(dist);
     });
-    
+
     // Sort each question's distributions by positionIndex
     distributionsByQuestion.forEach((dists, questionId) => {
       dists.sort((a, b) => (a.positionIndex || 0) - (b.positionIndex || 0));
     });
-    
+
     // Process each question's distributions
     distributionsByQuestion.forEach((dists, questionId) => {
-      const question = selectedForm.questions.find(q => q.id === questionId);
+      const question = selectedForm.questions.find((q) => q.id === questionId);
       if (!question) return;
-      
+
       logger.log(`Processing question ${questionId} (${question.type}):`, dists);
-      
+
       if (question.type === 'text') {
         // For text questions, collect all valueStrings and join them
         const textLines = dists
-          .filter(dist => dist.valueString)
-          .map(dist => dist.valueString)
+          .filter((dist) => dist.valueString)
+          .map((dist) => dist.valueString)
           .filter(Boolean);
-        
+
         if (textLines.length > 0) {
-          newCustomData.set(questionId, { 
-            useCustomData: true, 
-            data: textLines.join('\n') 
+          newCustomData.set(questionId, {
+            useCustomData: true,
+            data: textLines.join('\n')
           });
         }
       } else if (question.type === 'date') {
         // For date questions, collect all valueStrings and join them
         const dateLines = dists
-          .filter(dist => dist.valueString)
-          .map(dist => dist.valueString)
+          .filter((dist) => dist.valueString)
+          .map((dist) => dist.valueString)
           .filter(Boolean);
-        
+
         if (dateLines.length > 0) {
-          newDateInputs.set(questionId, { 
-            useCustomData: true, 
-            data: dateLines.join('\n') 
+          newDateInputs.set(questionId, {
+            useCustomData: true,
+            data: dateLines.join('\n')
           });
         }
       } else if (question.type === 'multiple_choice_grid') {
         // For multiple choice grid questions, use option.value as keys
         const gridMap = new Map<string, Map<string, number>>();
-        
+
         logger.log(`Processing multiple_choice_grid question ${questionId}:`, {
-          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          questionOptions: question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text })),
           distributions: dists
         });
-        
-        dists.forEach(dist => {
+
+        dists.forEach((dist) => {
           if (dist.rowId && dist.optionId) {
             // Find row and column option by ID
-            const rowOption = question.options.find(opt => opt.id === dist.rowId);
-            const colOption = question.options.find(opt => opt.id === dist.optionId);
-            
+            const rowOption = question.options.find((opt) => opt.id === dist.rowId);
+            const colOption = question.options.find((opt) => opt.id === dist.optionId);
+
             logger.log(`Processing distribution:`, {
               dist,
               rowOption: rowOption ? { id: rowOption.id, value: rowOption.value, text: rowOption.text } : null,
               colOption: colOption ? { id: colOption.id, value: colOption.value, text: colOption.text } : null
             });
-            
+
             if (rowOption && colOption) {
               // MultipleChoiceGridPercentInput uses opt.value as keys
               const rowKey = rowOption.value; // Use value for multiple choice grid
               const colKey = colOption.value; // Use value for multiple choice grid
-              
+
               logger.log(`Setting grid value: rowKey=${rowKey}, colKey=${colKey}, percentage=${dist.percentage}`);
-              
+
               if (!gridMap.has(rowKey)) {
                 gridMap.set(rowKey, new Map());
               }
@@ -565,21 +563,24 @@ export default function TabFillExpectedRatio() {
             } else {
               console.warn(`Could not find options for distribution:`, dist);
               // Try alternative approach - maybe the IDs are stored differently
-              logger.log(`Available options for this question:`, question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })));
-              
+              logger.log(
+                `Available options for this question:`,
+                question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text }))
+              );
+
               // Alternative: try to find by value instead of id
-              const rowOptionByValue = question.options.find(opt => opt.value === dist.rowId);
-              const colOptionByValue = question.options.find(opt => opt.value === dist.optionId);
-              
+              const rowOptionByValue = question.options.find((opt) => opt.value === dist.rowId);
+              const colOptionByValue = question.options.find((opt) => opt.value === dist.optionId);
+
               if (rowOptionByValue && colOptionByValue) {
                 logger.log(`Found options by value instead of id:`, {
                   rowOption: { id: rowOptionByValue.id, value: rowOptionByValue.value, text: rowOptionByValue.text },
                   colOption: { id: colOptionByValue.id, value: colOptionByValue.value, text: colOptionByValue.text }
                 });
-                
+
                 const rowKey = rowOptionByValue.value;
                 const colKey = colOptionByValue.value;
-                
+
                 if (!gridMap.has(rowKey)) {
                   gridMap.set(rowKey, new Map());
                 }
@@ -589,37 +590,37 @@ export default function TabFillExpectedRatio() {
             }
           }
         });
-        
+
         logger.log(`Multiple choice grid map for ${questionId}:`, Array.from(gridMap.entries()));
         newGridValues.set(questionId, gridMap);
       } else if (question.type === 'checkbox_grid') {
         // For checkbox grid questions, use option.id as keys
         const gridMap = new Map<string, Map<string, number>>();
-        
+
         logger.log(`Processing checkbox_grid question ${questionId}:`, {
-          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          questionOptions: question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text })),
           distributions: dists
         });
-        
-        dists.forEach(dist => {
+
+        dists.forEach((dist) => {
           if (dist.rowId && dist.optionId) {
             // Find row and column option by ID
-            const rowOption = question.options.find(opt => opt.id === dist.rowId);
-            const colOption = question.options.find(opt => opt.id === dist.optionId);
-            
+            const rowOption = question.options.find((opt) => opt.id === dist.rowId);
+            const colOption = question.options.find((opt) => opt.id === dist.optionId);
+
             logger.log(`Processing checkbox distribution:`, {
               dist,
               rowOption: rowOption ? { id: rowOption.id, value: rowOption.value, text: rowOption.text } : null,
               colOption: colOption ? { id: colOption.id, value: colOption.value, text: colOption.text } : null
             });
-            
+
             if (rowOption && colOption) {
               // CheckboxGridPercentInput uses opt.id as keys
               const rowKey = rowOption.id; // Use id for checkbox grid
               const colKey = colOption.id; // Use id for checkbox grid
-              
+
               logger.log(`Setting checkbox grid value: rowKey=${rowKey}, colKey=${colKey}, percentage=${dist.percentage}`);
-              
+
               if (!gridMap.has(rowKey)) {
                 gridMap.set(rowKey, new Map());
               }
@@ -628,23 +629,26 @@ export default function TabFillExpectedRatio() {
             } else {
               console.warn(`Could not find options for checkbox distribution:`, dist);
               // Try alternative approach - maybe the IDs are stored differently
-              logger.log(`Available options for this checkbox question:`, question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })));
+              logger.log(
+                `Available options for this checkbox question:`,
+                question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text }))
+              );
             }
           }
         });
-        
+
         logger.log(`Checkbox grid map for ${questionId}:`, Array.from(gridMap.entries()));
         newGridValues.set(questionId, gridMap);
       } else {
         // For regular multiple choice questions
         logger.log(`Processing regular question ${questionId} (${question.type}):`, {
-          questionOptions: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text })),
+          questionOptions: question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text })),
           distributions: dists
         });
-        
-        dists.forEach(dist => {
+
+        dists.forEach((dist) => {
           logger.log(`Processing regular distribution:`, dist);
-          
+
           if (dist.optionId) {
             const questionMap = newQuestionOptions.get(questionId);
             if (questionMap) {
@@ -662,21 +666,21 @@ export default function TabFillExpectedRatio() {
         });
       }
     });
-    
+
     logger.log('Setting grid values:', Array.from(newGridValues.entries()));
     logger.log('Setting question options:', Array.from(newQuestionOptions.entries()));
     logger.log('Setting custom data:', Array.from(newCustomData.entries()));
     logger.log('Setting date inputs:', Array.from(newDateInputs.entries()));
-    
+
     // Debug: Log the structure of selectedForm questions for grid types
-    selectedForm.questions.forEach(question => {
+    selectedForm.questions.forEach((question) => {
       if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
         logger.log(`Grid question ${question.id} (${question.type}):`, {
-          options: question.options.map(opt => ({ id: opt.id, value: opt.value, text: opt.text }))
+          options: question.options.map((opt) => ({ id: opt.id, value: opt.value, text: opt.text }))
         });
       }
     });
-    
+
     // Debug: Log final grid values before setting state
     logger.log('Final newGridValues before setState:', {
       size: newGridValues.size,
@@ -690,12 +694,12 @@ export default function TabFillExpectedRatio() {
         }))
       }))
     });
-    
+
     setQuestionOptions(newQuestionOptions);
     setCustomData(newCustomData);
     setDateInputs(newDateInputs);
     setGridValues(newGridValues);
-    
+
     // Prefill Other inputs from previous fill request if present (aggregate multiple lines)
     const otherLinesMap = new Map<string, string[]>();
     fillRequest.answerDistributions.forEach((dist) => {
@@ -718,34 +722,34 @@ export default function TabFillExpectedRatio() {
     const newOtherInputs = new Map<string, string>();
     otherLinesMap.forEach((lines, qid) => newOtherInputs.set(qid, lines.join('\n')));
     setOtherOptionInputs(newOtherInputs);
-    
+
     // Validate the percentages
     validatePercentages(newQuestionOptions);
-    
+
     // Scroll to the top of the form
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  
+
   // Handle save changes
   const handleSaveChanges = async () => {
     // Implementation for saving changes
     logger.log('Saving changes...');
     setIsEditing(false);
   };
-  
+
   // Handle Other option text change - optimized to prevent unnecessary re-renders
   const handleOtherInputChange = useCallback((questionId: string, value: string) => {
     setIsEditing(true);
-    setOtherOptionInputs(prev => {
+    setOtherOptionInputs((prev) => {
       // Only update if value actually changed
       if (prev.get(questionId) === value) return prev;
-      
+
       const next = new Map(prev);
       next.set(questionId, value);
       return next;
     });
   }, []);
-  
+
   // Handle reset form
   const handleCancel = () => {
     // Reset form to original state
@@ -754,22 +758,22 @@ export default function TabFillExpectedRatio() {
         try {
           const formDetails = await getFormDetail(selectedFormId);
           setSelectedForm(formDetails);
-          
+
           // Reset question options percentages
           const newQuestionOptions = new Map<string, Map<string, number>>();
-          const newCustomData = new Map<string, { useCustomData: boolean, data: string }>();
-          const newDateInputs = new Map<string, { useCustomData: boolean, data: string }>();
+          const newCustomData = new Map<string, { useCustomData: boolean; data: string }>();
+          const newDateInputs = new Map<string, { useCustomData: boolean; data: string }>();
           const newGridValues = new Map<string, Map<string, Map<string, number>>>();
-          
-          formDetails.questions.forEach(question => {
+
+          formDetails.questions.forEach((question) => {
             const optionsMap = new Map<string, number>();
-            
-            question.options.forEach(option => {
+
+            question.options.forEach((option) => {
               optionsMap.set(option.id, 0);
             });
-            
+
             newQuestionOptions.set(question.id, optionsMap);
-            
+
             if (question.type === 'text') {
               newCustomData.set(question.id, { useCustomData: false, data: '' });
             }
@@ -777,12 +781,12 @@ export default function TabFillExpectedRatio() {
             if (question.type === 'date') {
               newDateInputs.set(question.id, { useCustomData: false, data: '' });
             }
-            
+
             if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
               newGridValues.set(question.id, new Map());
             }
           });
-          
+
           setQuestionOptions(newQuestionOptions);
           setCustomData(newCustomData);
           setDateInputs(newDateInputs);
@@ -796,17 +800,17 @@ export default function TabFillExpectedRatio() {
           setAlertPopup({ open: true, message: handleFormError(err, 'fetch') });
         }
       };
-      
+
       fetchFormDetails();
     }
   };
-  
+
   // Force sync all textarea values before submitting
   const forceSyncTextareas = () => {
     logger.log('🔍 Force syncing all textareas...');
     // Trigger blur events on all textareas to ensure they sync their values
     const textareas = document.querySelectorAll('textarea');
-    textareas.forEach(textarea => {
+    textareas.forEach((textarea) => {
       textarea.dispatchEvent(new Event('blur', { bubbles: true }));
     });
     logger.log('🔍 Force sync completed');
@@ -821,31 +825,31 @@ export default function TabFillExpectedRatio() {
     endDate?: Date;
   }) => {
     if (!selectedFormId || !selectedForm) return;
-    
+
     // Force sync all textareas before processing
     forceSyncTextareas();
-    
+
     // Email validation regex
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    
+
     try {
       // Prepare answer distributions
       const answerDistributions: AnswerDistribution[] = [];
-      
+
       // Debug: Log otherOptionInputs state
       logger.log('🔍 otherOptionInputs state at API call:', otherOptionInputs);
       logger.log('🔍 otherOptionInputs size:', otherOptionInputs.size);
       otherOptionInputs.forEach((value, key) => {
         logger.log('🔍 otherOptionInputs entry:', key, 'value:', value, 'length:', value.length);
       });
-      
+
       // Track validation errors
       let validationErrors: string[] = [];
-      
+
       // Add multiple-choice questions
       questionOptions.forEach((optionMap, questionId) => {
-        const question = selectedForm.questions.find(q => q.id === questionId);
-        
+        const question = selectedForm.questions.find((q) => q.id === questionId);
+
         // For multiple-choice questions
         if (question && question.type !== 'text' && question.type !== 'date') {
           optionMap.forEach((percentage, optionId) => {
@@ -859,10 +863,10 @@ export default function TabFillExpectedRatio() {
                   .split('\n')
                   .map((l) => l.trim())
                   .filter((l) => l.length > 0);
-                
+
                 // Remove duplicates from lines to prevent duplicate entries
                 const uniqueLines = Array.from(new Set(lines));
-                
+
                 if (uniqueLines.length > 0) {
                   const per = percentage / uniqueLines.length;
                   uniqueLines.forEach((line, index) => {
@@ -882,18 +886,16 @@ export default function TabFillExpectedRatio() {
                 }
               } else {
                 // Normal non-other option
-              const payload: any = { questionId, optionId, percentage };
+                const payload: any = { questionId, optionId, percentage };
                 answerDistributions.push(payload);
               }
             }
           });
         }
       });
-      
 
-      
       // Trong handleCreateFillRequest, bổ sung logic cho grid
-      selectedForm.questions.forEach(question => {
+      selectedForm.questions.forEach((question) => {
         if (question.type === 'multiple_choice_grid') {
           const gridMap = gridValues.get(question.id);
           if (gridMap) {
@@ -901,18 +903,18 @@ export default function TabFillExpectedRatio() {
             gridMap.forEach((colMap, rowValue) => {
               const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
               if (total !== 100) {
-                const rowOption = question.options.find(opt => opt.value === rowValue);
+                const rowOption = question.options.find((opt) => opt.value === rowValue);
                 validationErrors.push(`Câu hỏi "${question.title}" - "${rowOption?.text}" có tổng tỉ lệ = ${total}% (cần = 100%)`);
               }
             });
-            
+
             gridMap.forEach((colMap, rowValue) => {
               // Map rowValue (option.value) sang rowOption.id
-              const rowOption = question.options.find(opt => opt.value === rowValue && opt.value.startsWith('row'));
+              const rowOption = question.options.find((opt) => opt.value === rowValue && opt.value.startsWith('row'));
               if (!rowOption) return;
               colMap.forEach((percentage, colValue) => {
                 // Map colValue (option.value) sang colOption.id
-                const colOption = question.options.find(opt => opt.value === colValue && !opt.value.startsWith('row'));
+                const colOption = question.options.find((opt) => opt.value === colValue && !opt.value.startsWith('row'));
                 if (!colOption) return;
                 if (percentage > 0) {
                   const payload: any = {
@@ -933,11 +935,11 @@ export default function TabFillExpectedRatio() {
             gridMap.forEach((colMap, rowId) => {
               const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
               if (total !== 100) {
-                const rowOption = question.options.find(opt => opt.id === rowId);
+                const rowOption = question.options.find((opt) => opt.id === rowId);
                 validationErrors.push(`Câu hỏi "${question.title}" - "${rowOption?.text}" có tổng tỉ lệ = ${total}% (cần = 100%)`);
               }
             });
-            
+
             gridMap.forEach((colMap, rowId) => {
               colMap.forEach((percentage, optionId) => {
                 if (percentage > 0) {
@@ -957,20 +959,20 @@ export default function TabFillExpectedRatio() {
           if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
             const lines = customDataEntry.data
               .split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0);
-            
+              .map((line) => line.trim())
+              .filter((line) => line.length > 0);
+
             // Remove duplicates from lines to prevent duplicate entries
             const uniqueLines = Array.from(new Set(lines));
-            
+
             // For email fields, validate each line is a valid email
             if (question.title.toLowerCase().includes('email')) {
-              const invalidEmails = uniqueLines.filter(line => !emailRegex.test(line));
+              const invalidEmails = uniqueLines.filter((line) => !emailRegex.test(line));
               if (invalidEmails.length > 0) {
                 validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
               }
             }
-            
+
             // Create a separate entry for each unique line with proper positionIndex
             uniqueLines.forEach((line, index) => {
               const payload: any = {
@@ -984,10 +986,10 @@ export default function TabFillExpectedRatio() {
             });
           } else {
             // Default entry with no valueString - only add if no text entries exist for this question
-            const hasTextEntries = answerDistributions.some(dist => 
-              dist.questionId === question.id && dist.optionId === null && dist.valueString
+            const hasTextEntries = answerDistributions.some(
+              (dist) => dist.questionId === question.id && dist.optionId === null && dist.valueString
             );
-            
+
             if (!hasTextEntries) {
               const payload: any = {
                 questionId: question.id,
@@ -1002,18 +1004,18 @@ export default function TabFillExpectedRatio() {
           if (dateInputEntry && dateInputEntry.useCustomData && dateInputEntry.data.trim()) {
             const lines = dateInputEntry.data
               .split('\n')
-              .map(line => line.trim())
-              .filter(line => line.length > 0);
-            
+              .map((line) => line.trim())
+              .filter((line) => line.length > 0);
+
             // Remove duplicates from lines to prevent duplicate entries
             const uniqueLines = Array.from(new Set(lines));
-            
+
             // Validate date format
-            const invalidDates = uniqueLines.filter(line => !line.match(/^\d{4}-\d{2}-\d{2}$/));
+            const invalidDates = uniqueLines.filter((line) => !line.match(/^\d{4}-\d{2}-\d{2}$/));
             if (invalidDates.length > 0) {
               validationErrors.push(`Câu hỏi "${question.title}" có ${invalidDates.length} ngày không đúng định dạng YYYY-MM-DD`);
             }
-            
+
             // Create a separate entry for each unique date
             uniqueLines.forEach((line, index) => {
               const payload: any = {
@@ -1027,10 +1029,10 @@ export default function TabFillExpectedRatio() {
             });
           } else {
             // Default entry with no valueString - only add if no date entries exist for this question
-            const hasDateEntries = answerDistributions.some(dist => 
-              dist.questionId === question.id && dist.optionId === null && dist.valueString
+            const hasDateEntries = answerDistributions.some(
+              (dist) => dist.questionId === question.id && dist.optionId === null && dist.valueString
             );
-            
+
             if (!hasDateEntries) {
               const payload: any = {
                 questionId: question.id,
@@ -1042,48 +1044,48 @@ export default function TabFillExpectedRatio() {
           }
         }
       });
-      
+
       // If there are validation errors, show them and don't submit
       if (validationErrors.length > 0) {
         setError(validationErrors.join('\n'));
         return;
       }
-      
+
       // Deduplicate answer distributions to prevent duplicates
       // Note: validateTextQuestionDistributions only affects text questions (optionId === null)
       // Other options (like "other" option) are handled by deduplicateAnswerDistributions
       const cleanedAnswerDistributions = validateTextQuestionDistributions(answerDistributions);
       const finalAnswerDistributions = deduplicateAnswerDistributions(cleanedAnswerDistributions);
-      
+
       logger.log('🔍 Deduplicate Debug Info:');
       logger.log('Original answerDistributions count:', answerDistributions.length);
       logger.log('Cleaned answerDistributions count:', cleanedAnswerDistributions.length);
       logger.log('Final answerDistributions count:', finalAnswerDistributions.length);
-      
+
       // Log details about text questions to help debug
-      const textQuestions = answerDistributions.filter(d => d.optionId === null && d.valueString);
-      const finalTextQuestions = finalAnswerDistributions.filter(d => d.optionId === null && d.valueString);
+      const textQuestions = answerDistributions.filter((d) => d.optionId === null && d.valueString);
+      const finalTextQuestions = finalAnswerDistributions.filter((d) => d.optionId === null && d.valueString);
       logger.log('Text questions before deduplicate:', textQuestions.length);
       logger.log('Text questions after deduplicate:', finalTextQuestions.length);
-      
+
       // Log details about "other" options to help debug
-      const otherOptions = answerDistributions.filter(d => d.optionId && d.valueString);
-      const finalOtherOptions = finalAnswerDistributions.filter(d => d.optionId && d.valueString);
+      const otherOptions = answerDistributions.filter((d) => d.optionId && d.valueString);
+      const finalOtherOptions = finalAnswerDistributions.filter((d) => d.optionId && d.valueString);
       logger.log('Other options before deduplicate:', otherOptions.length);
       logger.log('Other options after deduplicate:', finalOtherOptions.length);
-      
+
       if (textQuestions.length !== finalTextQuestions.length) {
         logger.log('⚠️ Text duplicates found and removed!');
         logger.log('Original text questions:', textQuestions);
         logger.log('Final text questions:', finalTextQuestions);
       }
-      
+
       if (otherOptions.length !== finalOtherOptions.length) {
         logger.log('⚠️ Other option duplicates found and removed!');
         logger.log('Original other options:', otherOptions);
         logger.log('Final other options:', finalOtherOptions);
       }
-      
+
       // Create request DTO
       const fillRequest: FillRequestDTO = {
         surveyCount: formValues.submissionCount,
@@ -1091,27 +1093,29 @@ export default function TabFillExpectedRatio() {
         isHumanLike: formValues.isHumanLike,
         answerDistributions: finalAnswerDistributions,
         startDate: formValues.startDate?.toISOString(),
-        endDate: formValues.endDate ? (() => {
-          const local = new Date(formValues.endDate);
-          local.setHours(23, 59, 59, 999);
-          // Trừ 8 tiếng từ endDate
-          local.setHours(local.getHours() - 8);
-          const y = local.getFullYear();
-          const m = String(local.getMonth() + 1).padStart(2, '0');
-          const d = String(local.getDate()).padStart(2, '0');
-          const h = String(local.getHours()).padStart(2, '0');
-          return `${y}-${m}-${d}T${h}:59:59`;
-        })() : undefined
+        endDate: formValues.endDate
+          ? (() => {
+              const local = new Date(formValues.endDate);
+              local.setHours(23, 59, 59, 999);
+              // Trừ 8 tiếng từ endDate
+              local.setHours(local.getHours() - 8);
+              const y = local.getFullYear();
+              const m = String(local.getMonth() + 1).padStart(2, '0');
+              const d = String(local.getDate()).padStart(2, '0');
+              const h = String(local.getHours()).padStart(2, '0');
+              return `${y}-${m}-${d}T${h}:59:59`;
+            })()
+          : undefined
       };
-      
+
       // Call API to save fill request
       await createFillRequest(selectedFormId, fillRequest);
       setIsAutoFillModalOpen(false);
-      
+
       // Reset editing state
       setIsEditing(false);
       setIsEditingFillRequest(false);
-      
+
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
         setFormDetailLoading(true);
@@ -1125,11 +1129,10 @@ export default function TabFillExpectedRatio() {
           setFormDetailLoading(false);
         }
       }
-      
+
       // Show success message
       setErrorSnackMessage('Tạo yêu cầu điền form thành công!');
       setErrorSnackOpen(true);
-      
     } catch (err: any) {
       logger.error('Error creating fill request:', err);
       testErrorStructure(err);
@@ -1153,8 +1156,14 @@ export default function TabFillExpectedRatio() {
     result.push(Math.floor((1 - prev) * 100));
     // Điều chỉnh tổng cho đúng 100 (do làm tròn)
     let sum = result.reduce((a, b) => a + b, 0);
-    while (sum < 100) { result[result.length - 1]++; sum++; }
-    while (sum > 100) { result[result.length - 1]--; sum--; }
+    while (sum < 100) {
+      result[result.length - 1]++;
+      sum++;
+    }
+    while (sum > 100) {
+      result[result.length - 1]--;
+      sum--;
+    }
     return result;
   }
 
@@ -1163,7 +1172,7 @@ export default function TabFillExpectedRatio() {
     // Giữ nguyên trạng thái validate; chỉ ẩn snackbar thông báo nếu đang mở
     setError(null);
     setErrorSnackOpen(false);
-    
+
     setIsAISuggestionModalOpen(true);
   };
 
@@ -1172,10 +1181,10 @@ export default function TabFillExpectedRatio() {
     try {
       setIsAiLoading(true);
       setIsAISuggestionModalOpen(false); // Đóng modal AI suggestion
-      
+
       // 🎯 Hiện loading dialog ngay sau khi đóng AI modal
       setIsAiDataFillingLoading(true);
-      
+
       if (!selectedForm) {
         throw new Error('Không có form được chọn');
       }
@@ -1183,7 +1192,7 @@ export default function TabFillExpectedRatio() {
       // 🚀 FIX: Sử dụng response đã có sẵn từ AISuggestionModal thay vì gọi API lại
       // Tránh gọi API trùng lặp - API đã được gọi trong AISuggestionModal
       const response = request.answerAttributesResponse;
-      
+
       if (!response || response.status !== 'OK' || !response.content) {
         throw new Error('Phản hồi không hợp lệ từ AI service');
       }
@@ -1214,20 +1223,20 @@ export default function TabFillExpectedRatio() {
 
       // 🚀 PERFORMANCE OPTIMIZATION: Pre-build lookup maps for O(1) access
       const startTime = performance.now();
-      
+
       // Build question lookup map once - O(n) -> O(1)
-      const questionLookup = new Map(selectedForm.questions.map(q => [q.id, q]));
-      
+      const questionLookup = new Map(selectedForm.questions.map((q) => [q.id, q]));
+
       // Build option lookup maps for each question - O(n*m) -> O(1)
       const optionLookupByQuestion = new Map<string, Map<string, any>>();
-      selectedForm.questions.forEach(question => {
-        const optionMap = new Map(question.options.map(opt => [opt.id, opt]));
+      selectedForm.questions.forEach((question) => {
+        const optionMap = new Map(question.options.map((opt) => [opt.id, opt]));
         optionLookupByQuestion.set(question.id, optionMap);
       });
 
       questionAnswerAttributes.forEach((qaAttr: any) => {
         const { questionId, questionType, optionDistributions, sampleAnswers, gridRowDistributions } = qaAttr;
-        
+
         // 🚀 O(1) lookup instead of O(n) .find()
         const question = questionLookup.get(questionId);
         if (!question) return;
@@ -1236,7 +1245,7 @@ export default function TabFillExpectedRatio() {
           // Handle text questions - update custom data with sample answers
           // 🚀 Early return with optional chaining for better performance
           if (!sampleAnswers?.length) return;
-          
+
           newCustomData.set(questionId, {
             useCustomData: true,
             data: sampleAnswers.join('\n')
@@ -1246,72 +1255,72 @@ export default function TabFillExpectedRatio() {
           // MultipleChoiceGridPercentInput uses row.value and col.value as keys
           // 🚀 Early return with optional chaining
           if (!gridRowDistributions?.length) return;
-          
+
           const questionGridMap = new Map<string, Map<string, number>>();
           // 🚀 Get pre-built option lookup for O(1) access
           const optionLookup = optionLookupByQuestion.get(questionId)!;
-          
+
           gridRowDistributions.forEach((rowDist: any) => {
             const { rowId, columnDistributions } = rowDist;
             const rowMap = new Map<string, number>();
-            
+
             // 🚀 O(1) lookup instead of O(n) .find()
             const rowOption = optionLookup.get(rowId);
             const rowKey = rowOption?.value || rowId;
-            
+
             columnDistributions.forEach((colDist: any) => {
               const { optionId, percentage } = colDist;
-              
+
               // 🚀 O(1) lookup instead of O(n) .find()
               const colOption = optionLookup.get(optionId);
               const colKey = colOption?.value || optionId;
-              
+
               rowMap.set(colKey, percentage);
             });
-            
+
             questionGridMap.set(rowKey, rowMap);
           });
-          
+
           newGridValues.set(questionId, questionGridMap);
         } else if (questionType === 'checkbox_grid') {
           // Handle checkbox grid questions
           // CheckboxGridPercentInput uses row.id and col.id as keys
           // 🚀 Early return with optional chaining
           if (!gridRowDistributions?.length) return;
-          
+
           const questionGridMap = new Map<string, Map<string, number>>();
-          
+
           gridRowDistributions.forEach((rowDist: any) => {
             const { rowId, columnDistributions } = rowDist;
             const rowMap = new Map<string, number>();
-            
+
             // CheckboxGridPercentInput uses row.id as key directly
             const rowKey = rowId;
-            
+
             columnDistributions.forEach((colDist: any) => {
               const { optionId, percentage } = colDist;
-              
+
               // CheckboxGridPercentInput uses col.id as key directly
               const colKey = optionId;
-              
+
               rowMap.set(colKey, percentage);
             });
-            
+
             questionGridMap.set(rowKey, rowMap);
           });
-          
+
           newGridValues.set(questionId, questionGridMap);
         } else {
           // Handle radio, checkbox, select questions
           // 🚀 Early return with optional chaining
           if (!optionDistributions?.length) return;
-          
+
           const optionMap = new Map<string, number>();
           let otherOptionSamples: string[] = [];
-          
+
           optionDistributions.forEach((optDist: any) => {
             const { optionId, percentage, optionValue, sampleValues } = optDist;
-            
+
             // Only accept option IDs that exist in the current question of the selected form
             const optionLookup = optionLookupByQuestion.get(questionId)!;
             if (!optionLookup || !optionLookup.has(optionId)) {
@@ -1320,16 +1329,16 @@ export default function TabFillExpectedRatio() {
 
             // Set percentage for the valid option
             optionMap.set(optionId, percentage);
-            
+
             // Detect "other" option either by explicit optionValue or by lookup
             const optMeta = optionLookup.get(optionId);
             if ((optionValue === '__other_option__' || optMeta?.value === '__other_option__') && sampleValues?.length > 0) {
               otherOptionSamples = sampleValues;
             }
           });
-          
+
           newQuestionOptions.set(questionId, optionMap);
-          
+
           // Set other option sample values if available
           if (otherOptionSamples.length > 0) {
             newOtherOptionInputs.set(questionId, otherOptionSamples.join('\n'));
@@ -1337,7 +1346,7 @@ export default function TabFillExpectedRatio() {
         }
       });
 
-                  // 🚀 Performance monitoring
+      // 🚀 Performance monitoring
       const processingTime = performance.now() - startTime;
       logger.log(`🚀 AI data processing completed in ${processingTime.toFixed(2)}ms`);
 
@@ -1351,23 +1360,22 @@ export default function TabFillExpectedRatio() {
 
         // Validate percentages
         validatePercentages(newQuestionOptions);
-        
+
         // 🎯 Ẩn loading dialog sau khi điền xong với minimum display time
         const minimumLoadingTime = 1500; // 1.5 giây để user thấy được loading
         const elapsedTime = performance.now() - startTime;
         const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
-        
+
         setTimeout(() => {
           setIsAiDataFillingLoading(false);
           setErrorSnackMessage(`AI tạo dữ liệu mẫu và điền câu trả lời lên form thành công!`);
-      setErrorSnackOpen(true);
+          setErrorSnackOpen(true);
         }, remainingTime);
       });
-      
     } catch (error) {
       logger.error('Error processing AI suggestion:', error);
       const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi xử lý AI gợi ý';
-      
+
       // 🎯 Ẩn loading dialog nếu có lỗi
       setIsAiDataFillingLoading(false);
       setErrorSnackMessage(errorMessage);
@@ -1377,261 +1385,276 @@ export default function TabFillExpectedRatio() {
       setIsAISuggestionModalOpen(false);
     }
   };
-  
+
   // Function to render individual question
-  const renderQuestion = useCallback((question: any) => {
-    return (
-      <Box sx={{ p: 3 }}>
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
-          {question.title}
-        </Typography>
-        {question.type === 'text' ? (
-          <>
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={customData.get(question.id)?.useCustomData || false} 
-                  onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
-                />
-              }
-              label="Điền theo data của bạn"
-            />
-            {customData.get(question.id)?.useCustomData && (
-              <DebouncedMultilineTextField
-                value={customData.get(question.id)?.data || ''}
-                onChange={(v) => handleCustomDataChange(question.id, v)}
-                rows={4}
-                placeholder="Nhập dữ liệu của bạn"
-                sx={{ mt: 2 }}
-                debounceMs={150}
+  const renderQuestion = useCallback(
+    (question: any) => {
+      return (
+        <Box sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+            {question.title}
+          </Typography>
+          {question.type === 'text' ? (
+            <>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={customData.get(question.id)?.useCustomData || false}
+                    onChange={(e) => handleCustomDataToggle(question.id, e.target.checked)}
+                  />
+                }
+                label="Điền theo data của bạn"
               />
-            )}
-          </>
-        ) : question.type === 'date' ? (
-          <>
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={dateInputs.get(question.id)?.useCustomData || false} 
-                  onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+              {customData.get(question.id)?.useCustomData && (
+                <DebouncedMultilineTextField
+                  value={customData.get(question.id)?.data || ''}
+                  onChange={(v) => handleCustomDataChange(question.id, v)}
+                  rows={4}
+                  placeholder="Nhập dữ liệu của bạn"
+                  sx={{ mt: 2 }}
+                  debounceMs={150}
                 />
-              }
-              label="Điền theo data của bạn"
-            />
-            {dateInputs.get(question.id)?.useCustomData && (
-              <DebouncedMultilineTextField
-                value={dateInputs.get(question.id)?.data || ''}
-                onChange={(v) => handleDateInputChange(question.id, v)}
-                rows={4}
-                placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
-                sx={{ mt: 2 }}
-                helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
-                debounceMs={150}
+              )}
+            </>
+          ) : question.type === 'date' ? (
+            <>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={dateInputs.get(question.id)?.useCustomData || false}
+                    onChange={(e) => handleDateInputToggle(question.id, e.target.checked)}
+                  />
+                }
+                label="Điền theo data của bạn"
               />
-            )}
-          </>
-        ) : question.type === 'multiple_choice_grid' ? (
-          <MultipleChoiceGridPercentInput
-            question={{
-              ...question,
-              options: question.options.map((opt: any) => ({
-                ...opt,
-                title: opt.text ?? '',
-              })),
-            }}
-            value={(() => {
-              const grid = gridValues.get(question.id);
-              if (!grid) {
-                logger.log(`No grid data found for multiple_choice_grid question ${question.id}`);
-                return {};
-              }
-              const obj: Record<string, Record<string, number>> = {};
-              grid.forEach((colMap, rowId) => {
-                obj[rowId] = {};
-                colMap.forEach((percent, colId) => {
-                  obj[rowId][colId] = percent;
-                });
-              });
-              logger.log(`MultipleChoiceGrid value for question ${question.id}:`, obj);
-              return obj;
-            })()}
-            onChange={(value) => {
-              setIsEditing(true);
-              setGridValues(prev => {
-                const newMap = new Map(prev);
-                const rowMap = new Map<string, Map<string, number>>();
-                Object.entries(value).forEach(([rowId, colObj]) => {
-                  const colMap = new Map<string, number>();
-                  Object.entries(colObj).forEach(([optionId, percent]) => {
-                    colMap.set(optionId, percent);
+              {dateInputs.get(question.id)?.useCustomData && (
+                <DebouncedMultilineTextField
+                  value={dateInputs.get(question.id)?.data || ''}
+                  onChange={(v) => handleDateInputChange(question.id, v)}
+                  rows={4}
+                  placeholder="Nhập dữ liệu của bạn (mỗi dòng một ngày, định dạng YYYY-MM-DD)"
+                  sx={{ mt: 2 }}
+                  helperText="Nhập mỗi ngày trên một dòng, định dạng YYYY-MM-DD"
+                  debounceMs={150}
+                />
+              )}
+            </>
+          ) : question.type === 'multiple_choice_grid' ? (
+            <MultipleChoiceGridPercentInput
+              question={{
+                ...question,
+                options: question.options.map((opt: any) => ({
+                  ...opt,
+                  title: opt.text ?? ''
+                }))
+              }}
+              value={(() => {
+                const grid = gridValues.get(question.id);
+                if (!grid) {
+                  logger.log(`No grid data found for multiple_choice_grid question ${question.id}`);
+                  return {};
+                }
+                const obj: Record<string, Record<string, number>> = {};
+                grid.forEach((colMap, rowId) => {
+                  obj[rowId] = {};
+                  colMap.forEach((percent, colId) => {
+                    obj[rowId][colId] = percent;
                   });
-                  rowMap.set(rowId, colMap);
                 });
-                newMap.set(question.id, rowMap);
-                return newMap;
-              });
-            }}
-          />
-        ) : question.type === 'checkbox_grid' ? (
-          <CheckboxGridPercentInput
-            question={{
-              ...question,
-              options: question.options.map((opt: any) => ({
-                ...opt,
-                title: opt.text ?? '',
-              })),
-            }}
-            value={(() => {
-              const grid = gridValues.get(question.id);
-              if (!grid) {
-                logger.log(`No grid data found for checkbox_grid question ${question.id}`);
-                return {};
-              }
-              const obj: Record<string, Record<string, number>> = {};
-              grid.forEach((colMap, rowId) => {
-                obj[rowId] = {};
-                colMap.forEach((percent, colId) => {
-                  obj[rowId][colId] = percent;
-                });
-              });
-              logger.log(`CheckboxGrid value for question ${question.id}:`, obj);
-              return obj;
-            })()}
-            onChange={(value) => {
-              setIsEditing(true);
-              setGridValues(prev => {
-                const newMap = new Map(prev);
-                const rowMap = new Map<string, Map<string, number>>();
-                Object.entries(value).forEach(([rowId, colObj]) => {
-                  const colMap = new Map<string, number>();
-                  Object.entries(colObj).forEach(([optionId, percent]) => {
-                    colMap.set(optionId, percent);
+                logger.log(`MultipleChoiceGrid value for question ${question.id}:`, obj);
+                return obj;
+              })()}
+              onChange={(value) => {
+                setIsEditing(true);
+                setGridValues((prev) => {
+                  const newMap = new Map(prev);
+                  const rowMap = new Map<string, Map<string, number>>();
+                  Object.entries(value).forEach(([rowId, colObj]) => {
+                    const colMap = new Map<string, number>();
+                    Object.entries(colObj).forEach(([optionId, percent]) => {
+                      colMap.set(optionId, percent);
+                    });
+                    rowMap.set(rowId, colMap);
                   });
-                  rowMap.set(rowId, colMap);
+                  newMap.set(question.id, rowMap);
+                  return newMap;
                 });
-                newMap.set(question.id, rowMap);
-                return newMap;
-              });
-            }}
-          />
-        ) : (
-          <Grid container spacing={2}>
-            {question.options.map((option: any) => {
-              const questionMap = questionOptions.get(question.id);
-              const percentage = questionMap?.get(option.id) || 0;
-              logger.log(`Rendering option ${option.id} for question ${question.id}: ${percentage}%`);
+              }}
+            />
+          ) : question.type === 'checkbox_grid' ? (
+            <CheckboxGridPercentInput
+              question={{
+                ...question,
+                options: question.options.map((opt: any) => ({
+                  ...opt,
+                  title: opt.text ?? ''
+                }))
+              }}
+              value={(() => {
+                const grid = gridValues.get(question.id);
+                if (!grid) {
+                  logger.log(`No grid data found for checkbox_grid question ${question.id}`);
+                  return {};
+                }
+                const obj: Record<string, Record<string, number>> = {};
+                grid.forEach((colMap, rowId) => {
+                  obj[rowId] = {};
+                  colMap.forEach((percent, colId) => {
+                    obj[rowId][colId] = percent;
+                  });
+                });
+                logger.log(`CheckboxGrid value for question ${question.id}:`, obj);
+                return obj;
+              })()}
+              onChange={(value) => {
+                setIsEditing(true);
+                setGridValues((prev) => {
+                  const newMap = new Map(prev);
+                  const rowMap = new Map<string, Map<string, number>>();
+                  Object.entries(value).forEach(([rowId, colObj]) => {
+                    const colMap = new Map<string, number>();
+                    Object.entries(colObj).forEach(([optionId, percent]) => {
+                      colMap.set(optionId, percent);
+                    });
+                    rowMap.set(rowId, colMap);
+                  });
+                  newMap.set(question.id, rowMap);
+                  return newMap;
+                });
+              }}
+            />
+          ) : (
+            <Grid container spacing={2}>
+              {question.options.map((option: any) => {
+                const questionMap = questionOptions.get(question.id);
+                const percentage = questionMap?.get(option.id) || 0;
+                logger.log(`Rendering option ${option.id} for question ${question.id}: ${percentage}%`);
                 const isOtherOption = option.value === '__other_option__';
                 const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
-                const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
+                const otherPercent = otherOpt ? questionOptions.get(question.id)?.get(otherOpt.id) || 0 : 0;
                 const showOtherTextarea = isOtherOption && otherPercent > 0;
-                
+
                 return (
-                <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
-                  <Tooltip 
-                    title={option.text} 
-                    arrow 
-                    placement="top" 
-                    slotProps={{
-                      tooltip: {
-                        sx: {
-                          backgroundColor: 'gray',
-                          color: 'white'
+                  <Grid key={option.id} item xs={6} sm={3} md={2} lg={2}>
+                    <Tooltip
+                      title={option.text}
+                      arrow
+                      placement="top"
+                      slotProps={{
+                        tooltip: {
+                          sx: {
+                            backgroundColor: 'gray',
+                            color: 'white'
+                          }
+                        }
+                      }}
+                    >
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          mb: 1,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          cursor: 'pointer',
+                          ...(isOtherOption && {
+                            fontStyle: 'italic',
+                            fontWeight: 600,
+                            ...(showOtherTextarea && {
+                              color: 'primary.main'
+                            })
+                          })
+                        }}
+                      >
+                        {option.text}
+                      </Typography>
+                    </Tooltip>
+                    <PercentInput
+                      value={percentage}
+                      onChange={(value) => handlePercentageChange(question.id, option.id, value)}
+                      error={balanceErrors.has(question.id)}
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+          {/* Other option free text input */}
+          {(() => {
+            const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+            const otherPercent = otherOpt ? questionOptions.get(question.id)?.get(otherOpt.id) || 0 : 0;
+            if (otherOpt && otherPercent > 0) {
+              return (
+                <Box
+                  sx={{ mt: 2, p: 2, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2, backgroundColor: 'primary.50' }}
+                >
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      mb: 1,
+                      fontWeight: 600,
+                      color: 'primary.main',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
+                    }}
+                  >
+                    ✏️ Dữ liệu cho đáp án "Khác"
+                  </Typography>
+                  <DebouncedMultilineTextField
+                    value={otherOptionInputs.get(question.id) || ''}
+                    onChange={(v) => handleOtherInputChange(question.id, v)}
+                    rows={3}
+                    placeholder="Nhập dữ liệu của bạn"
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderColor: 'primary.main',
+                        '&:hover': {
+                          borderColor: 'primary.dark'
+                        },
+                        '&.Mui-focused': {
+                          borderColor: 'primary.main'
                         }
                       }
                     }}
-                  >
-                    <Typography 
-                      variant="body1" 
-                      sx={{ 
-                        mb: 1, 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis', 
-                        cursor: 'pointer',
-                        ...(isOtherOption && {
-                          fontStyle: 'italic',
-                          fontWeight: 600,
-                          ...(showOtherTextarea && {
-                            color: 'primary.main'
-                          })
-                        })
-                      }}
-                    >
-                      {option.text}
-                    </Typography>
-                  </Tooltip>
-                  <PercentInput
-                    value={percentage}
-                    onChange={(value) => handlePercentageChange(
-                      question.id, 
-                      option.id, 
-                      value
-                    )}
-                    error={balanceErrors.has(question.id)}
+                    debounceMs={150}
                   />
-                </Grid>
+                </Box>
               );
-            })}
-          </Grid>
-        )}
-        {/* Other option free text input */}
-        {(() => {
-          const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
-          const otherPercent = otherOpt ? (questionOptions.get(question.id)?.get(otherOpt.id) || 0) : 0;
-          if (otherOpt && otherPercent > 0) {
-            return (
-              <Box sx={{ mt: 2, p: 2, border: '2px dashed', borderColor: 'primary.main', borderRadius: 2, backgroundColor: 'primary.50' }}>
-                <Typography 
-                  variant="body1" 
-                  sx={{ 
-                    mb: 1, 
-                    fontWeight: 600, 
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 1
-                  }}
-                >
-                  ✏️ Dữ liệu cho đáp án "Khác"
-                </Typography>
-                <DebouncedMultilineTextField
-                  value={otherOptionInputs.get(question.id) || ''}
-                  onChange={(v) => handleOtherInputChange(question.id, v)}
-                  rows={3}
-                  placeholder="Nhập dữ liệu của bạn"
-                  sx={{ 
-                    '& .MuiOutlinedInput-root': {
-                      borderColor: 'primary.main',
-                      '&:hover': {
-                        borderColor: 'primary.dark'
-                      },
-                      '&.Mui-focused': {
-                        borderColor: 'primary.main'
-                      }
-                    }
-                  }}
-                  debounceMs={150}
-                />
-              </Box>
-            );
-          }
-          return null;
-        })()}
-        {balanceErrors.has(question.id) && question.type !== 'date' &&
-          question.type !== 'multiple_choice_grid' &&
-          question.type !== 'checkbox_grid' &&
-          question.type !== 'text' && (
-          <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
-            {balanceErrors.get(question.id)}
-          </Alert>
-                 )}
-       </Box>
-    );
-  }, [customData, dateInputs, gridValues, questionOptions, otherOptionInputs, balanceErrors, handleCustomDataToggle, handleCustomDataChange, handleDateInputToggle, handleDateInputChange, handlePercentageChange, handleOtherInputChange]);
-  
+            }
+            return null;
+          })()}
+          {balanceErrors.has(question.id) &&
+            question.type !== 'date' &&
+            question.type !== 'multiple_choice_grid' &&
+            question.type !== 'checkbox_grid' &&
+            question.type !== 'text' && (
+              <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
+                {balanceErrors.get(question.id)}
+              </Alert>
+            )}
+        </Box>
+      );
+    },
+    [
+      customData,
+      dateInputs,
+      gridValues,
+      questionOptions,
+      otherOptionInputs,
+      balanceErrors,
+      handleCustomDataToggle,
+      handleCustomDataChange,
+      handleDateInputToggle,
+      handleDateInputChange,
+      handlePercentageChange,
+      handleOtherInputChange
+    ]
+  );
+
   // Check if there are any balance errors
   const hasBalanceErrors = balanceErrors.size > 0;
-  
+
   return (
     <>
       <AlertSnackbarWithProgress
@@ -1639,7 +1662,7 @@ export default function TabFillExpectedRatio() {
         message={alertPopup.message}
         onClose={() => setAlertPopup({ open: false, message: '' })}
       />
-      
+
       {/* Prominent error/success snackbar */}
       <AlertSnackbarWithProgress
         open={errorSnackOpen}
@@ -1649,10 +1672,7 @@ export default function TabFillExpectedRatio() {
       />
       <Grid container spacing={GRID_COMMON_SPACING}>
         <Grid item xs={12}>
-          <MainCard 
-            title="Chọn Form muốn điền" 
-            sx={MAINCARD_STYLE}
-          >
+          <MainCard title="Chọn Form muốn điền" sx={MAINCARD_STYLE}>
             {loading ? (
               <Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
                 <CircularProgress />
@@ -1662,12 +1682,12 @@ export default function TabFillExpectedRatio() {
                 <Grid item xs={12} sm={6}>
                   <Stack direction="column" sx={{ gap: 1 }}>
                     <InputLabel htmlFor="ten-form">Tên Form</InputLabel>
-                    <Select 
-                      size="medium" 
-                      fullWidth 
-                      id="ten-form" 
-                      value={selectedFormId || ''} 
-                      onChange={handleFormChange} 
+                    <Select
+                      size="medium"
+                      fullWidth
+                      id="ten-form"
+                      value={selectedFormId || ''}
+                      onChange={handleFormChange}
                       MenuProps={MenuProps}
                       disabled={loading}
                       displayEmpty
@@ -1687,12 +1707,7 @@ export default function TabFillExpectedRatio() {
                   <Stack direction="row" sx={{ gap: 1 }}>
                     <InputLabel htmlFor="form-link">Link Form</InputLabel>
                     {formLink ? (
-                      <Link 
-                        href={formLink} 
-                        id="form-link"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <Link href={formLink} id="form-link" target="_blank" rel="noopener noreferrer">
                         {formLink}
                       </Link>
                     ) : (
@@ -1708,113 +1723,110 @@ export default function TabFillExpectedRatio() {
         </Grid>
 
         {selectedFormId && selectedForm && (
-        <Grid item xs={12}>
-          <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
-            {formDetailLoading ? (
-              <Stack direction="row" justifyContent="center" sx={{ py: 4 }}>
-                <CircularProgress />
-              </Stack>
-            ) : error ? (
-              <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>{error}</Alert>
-            ) : selectedForm ? (
-              <>
-                {isEditingFillRequest && (
-                  <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
-                    Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
-                  </Alert>
-                )}
-                
-
-                
-                <QuestionGroup 
-                  questions={selectedForm.questions}
-                  renderQuestion={renderQuestion}
-                />
-                
-                <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
-                  <Button 
-                    variant="outlined" 
-                    color="secondary"
-                    startIcon={<Refresh size={20} />}
-                    onClick={handleCancel}
-                    disabled={!isEditing || isAiLoading}
-                    sx={{ minWidth: 140, fontWeight: 600 }}
-                  >
-                    Reset Form
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="info"
-                    startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <AISuggestionIcon />}
-                    onClick={handleAiSuggest}
-                    disabled={isAiLoading}
-                    sx={{ minWidth: 160, fontWeight: 600 }}
-                  >
-                    {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<FormIcon />}
-                    onClick={handleOpenAutoFillModal}
-                    disabled={loading || selectedForm == null || balanceErrors.size > 0 || hasGridErrors || isAiLoading}
-                    sx={{ minWidth: 200, fontWeight: 600 }}
-                  >
-                    Tạo yêu cầu điền Form
-                  </Button>
+          <Grid item xs={12}>
+            <MainCard title="Điền tỉ lệ mong muốn cho các đáp án" sx={MAINCARD_STYLE}>
+              {formDetailLoading ? (
+                <Stack direction="row" justifyContent="center" sx={{ py: 4 }}>
+                  <CircularProgress />
                 </Stack>
-              </>
-            ) : (
-              <Typography color="textSecondary" sx={{ py: 2 }}>
-                Vui lòng chọn form để xem chi tiết
-              </Typography>
-            )}
-          </MainCard>
-        </Grid>
+              ) : error ? (
+                <Alert color="error" icon={<ErrorIcon />} sx={{ py: 2 }}>
+                  {error}
+                </Alert>
+              ) : selectedForm ? (
+                <>
+                  {isEditingFillRequest && (
+                    <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
+                      Các giá trị tỉ lệ đã được điền từ yêu cầu điền form.
+                    </Alert>
+                  )}
+
+                  <QuestionGroup questions={selectedForm.questions} renderQuestion={renderQuestion} />
+
+                  <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      startIcon={<Refresh size={20} />}
+                      onClick={handleCancel}
+                      disabled={!isEditing || isAiLoading}
+                      sx={{ minWidth: 140, fontWeight: 600 }}
+                    >
+                      Reset Form
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="info"
+                      startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <AISuggestionIcon />}
+                      onClick={handleAiSuggest}
+                      disabled={isAiLoading}
+                      sx={{ minWidth: 160, fontWeight: 600 }}
+                    >
+                      {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<FormIcon />}
+                      onClick={handleOpenAutoFillModal}
+                      disabled={loading || selectedForm == null || balanceErrors.size > 0 || hasGridErrors || isAiLoading}
+                      sx={{ minWidth: 200, fontWeight: 600 }}
+                    >
+                      Tạo yêu cầu điền Form
+                    </Button>
+                  </Stack>
+                </>
+              ) : (
+                <Typography color="textSecondary" sx={{ py: 2 }}>
+                  Vui lòng chọn form để xem chi tiết
+                </Typography>
+              )}
+            </MainCard>
+          </Grid>
         )}
 
         {selectedFormId && selectedForm && (
-        <Grid item xs={12}>
-          <ExpectedRatioFormList 
-            onSchedule={handleOpenScheduleModal}
-            onViewDetails={handleOpenDetailModal}
-            onEdit={handleEditFillRequest}
-            fillRequests={(selectedForm?.fillRequests || []).filter(req => (req.answerDistributions?.length || 0) > 0)}
-            formName={selectedForm?.name || ''}
-            formLink={formLink}
-            page={pageIndex + 1}
-            rowsPerPage={pageSize}
-          />
-          
-          <Divider />
-          <Box sx={{ p: 2 }}>
-            <ReactTablePagination
-              setPageSize={setPageSize as any}
-              setPageIndex={setPageIndex as any}
-              getState={getTableState as any}
-              getPageCount={() => Math.ceil(((selectedForm?.fillRequests || []).filter(req => (req.answerDistributions?.length || 0) > 0).length) / pageSize)}
-              initialPageSize={10}
+          <Grid item xs={12}>
+            <ExpectedRatioFormList
+              onSchedule={handleOpenScheduleModal}
+              onViewDetails={handleOpenDetailModal}
+              onEdit={handleEditFillRequest}
+              fillRequests={(selectedForm?.fillRequests || []).filter((req) => (req.answerDistributions?.length || 0) > 0)}
+              formName={selectedForm?.name || ''}
+              formLink={formLink}
+              page={pageIndex + 1}
+              rowsPerPage={pageSize}
             />
-          </Box>
-        </Grid>
+
+            <Divider />
+            <Box sx={{ p: 2 }}>
+              <ReactTablePagination
+                setPageSize={setPageSize as any}
+                setPageIndex={setPageIndex as any}
+                getState={getTableState as any}
+                getPageCount={() =>
+                  Math.ceil(
+                    (selectedForm?.fillRequests || []).filter((req) => (req.answerDistributions?.length || 0) > 0).length / pageSize
+                  )
+                }
+                initialPageSize={10}
+              />
+            </Box>
+          </Grid>
         )}
-        
+
         {/* Modals */}
-        <AutoFillFormModal 
-          open={isAutoFillModalOpen} 
+        <AutoFillFormModal
+          open={isAutoFillModalOpen}
           onClose={() => setIsAutoFillModalOpen(false)}
           formName={selectedForm?.name || ''}
           onSubmit={handleCreateFillRequest}
         />
-        
-        <ScheduleFormModal 
-          open={isScheduleModalOpen} 
-          onClose={() => setIsScheduleModalOpen(false)}
-          formId={selectedDetailFormId}
-        />
-        
-        <FormDetailModal 
-          open={isDetailModalOpen} 
+
+        <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />
+
+        <FormDetailModal
+          open={isDetailModalOpen}
           onClose={() => setIsDetailModalOpen(false)}
           fillRequest={selectedFillRequest}
           formName={selectedForm?.name || ''}
@@ -1830,7 +1842,7 @@ export default function TabFillExpectedRatio() {
         )}
 
         {/* 🎯 AI Data Filling Loading Dialog */}
-        <AILoadingDialog 
+        <AILoadingDialog
           open={isAiDataFillingLoading}
           title="Đang xử lý điền dữ liệu mẫu vào form"
           subtitle="Vui lòng chờ trong giây lát..."

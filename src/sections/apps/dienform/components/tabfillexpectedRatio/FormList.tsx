@@ -33,16 +33,16 @@ interface ExpectedRatioFormListProps {
   onSchedule: (formId: string) => void; // Changed from number to string
   onViewDetails: (formId: string) => void; // Changed from number to string
   onEdit: (formId: string) => void; // Changed from number to string
-  fillRequests?: FillRequestDTO[]; 
+  fillRequests?: FillRequestDTO[];
   formName?: string;
   formLink?: string;
   page?: number;
   rowsPerPage?: number;
 }
 
-export default function ExpectedRatioFormList({ 
-  onSchedule, 
-  onViewDetails, 
+export default function ExpectedRatioFormList({
+  onSchedule,
+  onViewDetails,
   onEdit,
   fillRequests = [],
   formName = '',
@@ -51,7 +51,7 @@ export default function ExpectedRatioFormList({
   rowsPerPage = 10
 }: ExpectedRatioFormListProps) {
   const [searchText, setSearchText] = useState('');
-  
+
   // Debug requests data when it changes
   useEffect(() => {
     console.log('Fill Requests updated:', fillRequests);
@@ -60,40 +60,37 @@ export default function ExpectedRatioFormList({
       console.log('First request ID type:', typeof fillRequests[0].id);
     }
   }, [fillRequests]);
-  
+
   // Filter fillRequests based on search text
-  const filteredForms = searchText.trim() === '' 
-    ? fillRequests 
-    : fillRequests.filter(request => {
-        // Convert dates to string for searching
-        const createdDateStr = request.createdAt 
-          ? new Date(request.createdAt).toLocaleDateString('vi-VN')
-          : '';
-        const startDateStr = request.startDate
-          ? new Date(request.startDate).toLocaleDateString('vi-VN')
-          : '';
-        const endDateStr = request.endDate
-          ? new Date(request.endDate).toLocaleDateString('vi-VN')
-          : '';
-        
-        // Convert total price to string for searching
-        const priceStr = request.totalPrice?.toString() || '';
-        
-        // Search by dates, status, or price
-        return createdDateStr.toLowerCase().includes(searchText.toLowerCase()) || 
-               startDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
-               endDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
-               (request.status && request.status.toLowerCase().includes(searchText.toLowerCase())) ||
-               priceStr.includes(searchText);
-      });
-  
+  const filteredForms =
+    searchText.trim() === ''
+      ? fillRequests
+      : fillRequests.filter((request) => {
+          // Convert dates to string for searching
+          const createdDateStr = request.createdAt ? new Date(request.createdAt).toLocaleDateString('vi-VN') : '';
+          const startDateStr = request.startDate ? new Date(request.startDate).toLocaleDateString('vi-VN') : '';
+          const endDateStr = request.endDate ? new Date(request.endDate).toLocaleDateString('vi-VN') : '';
+
+          // Convert total price to string for searching
+          const priceStr = request.totalPrice?.toString() || '';
+
+          // Search by dates, status, or price
+          return (
+            createdDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
+            startDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
+            endDateStr.toLowerCase().includes(searchText.toLowerCase()) ||
+            (request.status && request.status.toLowerCase().includes(searchText.toLowerCase())) ||
+            priceStr.includes(searchText)
+          );
+        });
+
   // Get paginated forms
   const getPaginatedForms = () => {
     const startIndex = (page - 1) * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredForms.slice(startIndex, endIndex);
   };
-  
+
   const getStatusChip = (status: string) => <StatusChip status={status} />;
 
   const getScheduleIcon = (isHumanLike: boolean | undefined) => {
@@ -129,9 +126,10 @@ export default function ExpectedRatioFormList({
 
   // Handle view details with proper ID handling
   const handleViewDetails = (id: string | undefined) => {
-    if (id && onEdit) {  // Call onEdit instead of onViewDetails
+    if (id && onEdit) {
+      // Call onEdit instead of onViewDetails
       console.log('View details for ID:', id);
-      onEdit(id);  // This will load the answer distributions into the form
+      onEdit(id); // This will load the answer distributions into the form
     }
   };
 
@@ -161,7 +159,7 @@ export default function ExpectedRatioFormList({
           sx={{ maxWidth: 300 }}
         />
       </Box>
-      
+
       <TableContainer>
         <Table>
           <TableHead>
@@ -185,8 +183,8 @@ export default function ExpectedRatioFormList({
                   <TableCell>{formName}</TableCell>
                   <TableCell align="center">
                     <Tooltip title="Hẹn giờ điền">
-                      <IconButton 
-                        color="primary" 
+                      <IconButton
+                        color="primary"
                         // onClick={() => onSchedule(request.id || '')}
                       >
                         {getScheduleIcon((request as any).isHumanLike ?? (request as any).humanLike)}
@@ -201,11 +199,7 @@ export default function ExpectedRatioFormList({
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
                       <Tooltip title="Xem chi tiết">
-                        <IconButton 
-                          color="info" 
-                          size="small"
-                          onClick={() => handleViewDetails(request.id)}
-                        >
+                        <IconButton color="info" size="small" onClick={() => handleViewDetails(request.id)}>
                           <Eye size={18} />
                         </IconButton>
                       </Tooltip>

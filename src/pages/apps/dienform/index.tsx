@@ -75,7 +75,13 @@ export default function AccountProfile() {
           <Box sx={{ borderBottom: 1, borderColor: 'divider', width: '100%' }}>
             <Tabs value={value} onChange={handleChange} variant="scrollable" scrollButtons="auto" aria-label="account profile tab">
               <Tab label="Danh sách/Tạo Form" component={Link} to="/apps/dienform/create" icon={<Profile />} iconPosition="start" />
-              <Tab label="Điền theo tỉ lệ mong muốn" component={Link} to="/apps/dienform/fill-expected-ratio" icon={<DocumentText />} iconPosition="start" />
+              <Tab
+                label="Điền theo tỉ lệ mong muốn"
+                component={Link}
+                to="/apps/dienform/fill-expected-ratio"
+                icon={<DocumentText />}
+                iconPosition="start"
+              />
               {/* <Tab
                 label="My Account"
                 component={Link}

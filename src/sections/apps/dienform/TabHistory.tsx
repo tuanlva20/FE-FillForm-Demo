@@ -103,11 +103,11 @@ export default function TabHistory() {
   const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  
+
   // Pagination states (align with custom TablePagination)
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
-  
+
   // Sorting states
   const [orderBy, setOrderBy] = useState<ColumnKey>('createdAt');
   const [order, setOrder] = useState<Order>('desc');
@@ -129,49 +129,50 @@ export default function TabHistory() {
   // Apply filters based on search term and status
   const applyFilters = (searchTerm: string, status: string) => {
     let filtered = formHistory;
-    
+
     // Apply search filter
     if (searchTerm) {
       const lowerSearchTerm = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (item) => 
+        (item) =>
           item.name.toLowerCase().includes(lowerSearchTerm) ||
           item.type.toLowerCase().includes(lowerSearchTerm) ||
           item.status.toLowerCase().includes(lowerSearchTerm)
       );
     }
-    
+
     // Apply status filter
     if (status && status !== 'all') {
-      filtered = filtered.filter(item => item.status === status);
+      filtered = filtered.filter((item) => item.status === status);
     }
-    
+
     setFilteredHistory(filtered);
   };
 
   // Build state for ReactTablePagination
-  const getTableState = () => ({
-    pagination: { pageIndex, pageSize },
-    columnVisibility: {},
-    columnOrder: [],
-    columnPinning: { left: [], right: [] },
-    rowSelection: {},
-    sorting: [],
-    columnFilters: [],
-    globalFilter: '',
-    expanded: {},
-    columnSizing: {},
-    columnSizingInfo: { 
-      startOffset: null, 
-      columnSizingStart: [], 
-      isResizingColumn: false, 
-      deltaOffset: null,
-      deltaPercentage: null,
-      startSize: null
-    },
-    rowPinning: { top: [], bottom: [] },
-    grouping: []
-  } as any);
+  const getTableState = () =>
+    ({
+      pagination: { pageIndex, pageSize },
+      columnVisibility: {},
+      columnOrder: [],
+      columnPinning: { left: [], right: [] },
+      rowSelection: {},
+      sorting: [],
+      columnFilters: [],
+      globalFilter: '',
+      expanded: {},
+      columnSizing: {},
+      columnSizingInfo: {
+        startOffset: null,
+        columnSizingStart: [],
+        isResizingColumn: false,
+        deltaOffset: null,
+        deltaPercentage: null,
+        startSize: null
+      },
+      rowPinning: { top: [], bottom: [] },
+      grouping: []
+    }) as any;
 
   // Handle sort request
   const handleRequestSort = (property: ColumnKey) => {
@@ -184,26 +185,22 @@ export default function TabHistory() {
   const sortData = (data: FormHistoryItem[]) => {
     return data.slice().sort((a, b) => {
       const isAsc = order === 'asc';
-      
+
       switch (orderBy) {
         case 'name':
         case 'type':
         case 'status':
-          return isAsc 
-            ? a[orderBy].localeCompare(b[orderBy]) 
-            : b[orderBy].localeCompare(a[orderBy]);
-        
+          return isAsc ? a[orderBy].localeCompare(b[orderBy]) : b[orderBy].localeCompare(a[orderBy]);
+
         case 'createdAt':
           return isAsc
             ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
             : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        
+
         case 'completedSurveys':
         case 'cost':
-          return isAsc
-            ? a[orderBy] - b[orderBy]
-            : b[orderBy] - a[orderBy];
-        
+          return isAsc ? a[orderBy] - b[orderBy] : b[orderBy] - a[orderBy];
+
         default:
           return 0;
       }
@@ -239,7 +236,7 @@ export default function TabHistory() {
   useEffect(() => {
     const fetchFormHistory = async () => {
       setLoading(true);
-      
+
       try {
         // Simulate API call with setTimeout
         setTimeout(() => {
@@ -252,21 +249,17 @@ export default function TabHistory() {
         setLoading(false);
       }
     };
-    
+
     fetchFormHistory();
   }, []);
 
   return (
     <Grid container spacing={GRID_COMMON_SPACING}>
       <Grid size={12}>
-        <MainCard 
-          title="Lịch sử điền form" 
+        <MainCard
+          title="Lịch sử điền form"
           secondary={
-            <Button
-              variant="contained"
-              startIcon={<DocumentDownload />}
-              onClick={handleExportToExcel}
-            >
+            <Button variant="contained" startIcon={<DocumentDownload />} onClick={handleExportToExcel}>
               Xuất Excel
             </Button>
           }
@@ -306,14 +299,16 @@ export default function TabHistory() {
               </FormControl>
             </Grid>
           </Grid>
-          
+
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
           ) : filteredHistory.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
-              <Typography variant="h6" color="textSecondary">Không tìm thấy dữ liệu</Typography>
+              <Typography variant="h6" color="textSecondary">
+                Không tìm thấy dữ liệu
+              </Typography>
             </Box>
           ) : (
             <>
@@ -380,8 +375,8 @@ export default function TabHistory() {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                      {sortData(filteredHistory)
-                        .slice(pageIndex * pageSize, pageIndex * pageSize + pageSize)
+                    {sortData(filteredHistory)
+                      .slice(pageIndex * pageSize, pageIndex * pageSize + pageSize)
                       .map((item, index) => (
                         <TableRow key={item.id} hover>
                           <TableCell>{pageIndex * pageSize + index + 1}</TableCell>
@@ -389,33 +384,23 @@ export default function TabHistory() {
                           <TableCell>{item.type}</TableCell>
                           <TableCell>{item.createdAt}</TableCell>
                           <TableCell>
-                            <Chip 
-                              label={item.status} 
-                              color={getStatusChipColor(item.status)} 
-                              size="small"
-                            />
+                            <Chip label={item.status} color={getStatusChipColor(item.status)} size="small" />
                           </TableCell>
                           <TableCell>
                             {item.completedSurveys}/{item.totalSurveys}
                           </TableCell>
-                          <TableCell>
-                            {new Intl.NumberFormat('vi-VN').format(item.cost)}
-                          </TableCell>
+                          <TableCell>{new Intl.NumberFormat('vi-VN').format(item.cost)}</TableCell>
                           <TableCell align="center">
-                            <IconButton 
-                              color="primary" 
-                              size="small"
-                              onClick={() => handleViewDetails(item.id)}
-                            >
+                            <IconButton color="primary" size="small" onClick={() => handleViewDetails(item.id)}>
                               <Eye />
                             </IconButton>
                           </TableCell>
                         </TableRow>
-                    ))}
+                      ))}
                   </TableBody>
                 </Table>
               </TableContainer>
-              
+
               <Box sx={{ p: 2 }}>
                 <ReactTablePagination
                   setPageSize={setPageSize as any}

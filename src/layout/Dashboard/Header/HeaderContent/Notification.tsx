@@ -65,12 +65,12 @@ export default function NotificationPage() {
   return (
     <Box sx={{ flexShrink: 0, ml: 0.5 }}>
       <Stack direction="row" spacing={1} alignItems="center">
-        <Tooltip 
+        <Tooltip
           title={`Số dư hiện có: ${isBalanceLoading ? 'Đang tải...' : `${(balance || 0).toLocaleString('vi-VN')}đ`}`}
           placement="bottom"
           arrow
         >
-          <Box 
+          <Box
             onClick={() => {
               forceRefresh();
               debugSocket(); // Debug socket connection
@@ -79,9 +79,9 @@ export default function NotificationPage() {
               e.preventDefault();
               testNotification(); // Right-click to test notification
             }}
-            sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
               gap: 0.5,
               px: 1.5,
               py: 0.75,
@@ -101,9 +101,9 @@ export default function NotificationPage() {
             }}
           >
             <img src={moneybank} alt="balance" style={{ width: 36, height: 34 }} />
-            <Typography 
-              variant="subtitle1" 
-              sx={{ 
+            <Typography
+              variant="subtitle1"
+              sx={{
                 color: 'primary.main',
                 fontWeight: 600,
                 fontSize: '1rem'
@@ -170,60 +170,58 @@ export default function NotificationPage() {
                         })}
                       >
                         <ListItem
-  component={ListItemButton}
-  secondaryAction={
-    <Typography variant="caption" noWrap>
-      10:42 AM
-    </Typography>
-  }
->
-  <ListItemAvatar>
-    <Avatar type="outlined">
-      <CheckCircleIcon/>
-    </Avatar>
-  </ListItemAvatar>
-  <ListItemText
-    primary={
-      <Typography variant="h6">
-        Tự động điền{' '}
-        <Typography component="span" variant="subtitle1">
-          Form khảo sát
-        </Typography>{' '}
-        đã hoàn tất.
-      </Typography>
-    }
-    secondary="Yêu cầu #1243 đã được xử lý thành công."
-  />
-</ListItem>
+                          component={ListItemButton}
+                          secondaryAction={
+                            <Typography variant="caption" noWrap>
+                              10:42 AM
+                            </Typography>
+                          }
+                        >
+                          <ListItemAvatar>
+                            <Avatar type="outlined">
+                              <CheckCircleIcon />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="h6">
+                                Tự động điền{' '}
+                                <Typography component="span" variant="subtitle1">
+                                  Form khảo sát
+                                </Typography>{' '}
+                                đã hoàn tất.
+                              </Typography>
+                            }
+                            secondary="Yêu cầu #1243 đã được xử lý thành công."
+                          />
+                        </ListItem>
 
-<ListItem
-  component={ListItemButton}
-  secondaryAction={
-    <Typography variant="caption" noWrap>
-      2:10 PM
-    </Typography>
-  }
->
-  <ListItemAvatar>
-    <Avatar type="outlined" sx={{ bgcolor: 'error.main', color: 'background.paper' }}>
-      <CloseCircle size={20} variant="Bold" />
-    </Avatar>
-  </ListItemAvatar>
-  <ListItemText
-    primary={
-      <Typography variant="h6">
-        Gặp lỗi khi xử lý{' '}
-        <Typography component="span" variant="subtitle1">
-          form khảo sát
-        </Typography>
-        .
-      </Typography>
-    }
-    secondary="Vui lòng kiểm tra lại yêu cầu #1244."
-  />
-</ListItem>
-
-
+                        <ListItem
+                          component={ListItemButton}
+                          secondaryAction={
+                            <Typography variant="caption" noWrap>
+                              2:10 PM
+                            </Typography>
+                          }
+                        >
+                          <ListItemAvatar>
+                            <Avatar type="outlined" sx={{ bgcolor: 'error.main', color: 'background.paper' }}>
+                              <CloseCircle size={20} variant="Bold" />
+                            </Avatar>
+                          </ListItemAvatar>
+                          <ListItemText
+                            primary={
+                              <Typography variant="h6">
+                                Gặp lỗi khi xử lý{' '}
+                                <Typography component="span" variant="subtitle1">
+                                  form khảo sát
+                                </Typography>
+                                .
+                              </Typography>
+                            }
+                            secondary="Vui lòng kiểm tra lại yêu cầu #1244."
+                          />
+                        </ListItem>
                       </List>
                     </SimpleBar>
                   </CardContent>

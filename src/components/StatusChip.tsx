@@ -51,16 +51,5 @@ export default function StatusChip({ status, fillRequest, size = 'medium', varia
     }
   }
 
-  return (
-    <Chip
-      color={color}
-      icon={icon}
-      label={label}
-      size={size}
-      variant={variant}
-      sx={{ ...(baseSx as any), ...(sx as any) }}
-    />
-  );
+  return <Chip color={color} icon={icon} label={label} size={size} variant={variant} sx={{ ...(baseSx as any), ...(sx as any) }} />;
 }
-
-
