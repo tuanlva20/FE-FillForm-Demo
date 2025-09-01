@@ -12,18 +12,17 @@ import MainCard from 'components/MainCard';
 // types
 import { ColorProps } from 'types/extended';
 
-// assets
-import { ArrowDown, ArrowUp } from 'iconsax-react';
-
 interface SurveyStatsCardProps {
   title: string;
-  count: string;
+  count: number;
   percentage?: number;
-  isLoss?: boolean;
+  trend?: 'up' | 'down';
+  trendPercentage?: number;
   color: ColorProps;
   extra: string;
   icon: React.ReactNode;
   description: string;
+  progressBarPercentage?: number;
 }
 
 // ==============================|| DASHBOARD - SURVEY STATS CARD ||============================== //
@@ -32,11 +31,13 @@ export default function SurveyStatsCard({
   title,
   count,
   percentage,
-  isLoss,
+  trend,
+  trendPercentage,
   color = 'primary',
   extra,
   icon,
-  description
+  description,
+  progressBarPercentage
 }: SurveyStatsCardProps) {
   const theme = useTheme();
 
@@ -74,6 +75,24 @@ export default function SurveyStatsCard({
   };
 
   const colors = getColorPalette(color);
+
+  // Format count with thousands separator
+  const formatCount = (num: number) => {
+    return num.toLocaleString('vi-VN');
+  };
+
+  // Calculate progress bar percentage based on count relative to total
+  const calculateProgressPercentage = () => {
+    // For failed surveys, show as percentage of total surveys
+    // For successful surveys, show as percentage of total surveys
+    // For pending surveys, show as percentage of total surveys
+    // For total surveys, show as 100%
+    if (title.includes('Tổng số')) {
+      return 100;
+    }
+    // For other cards, use the percentage from API or calculate based on total
+    return progressBarPercentage || percentage || 0;
+  };
 
   return (
     <MainCard
@@ -120,9 +139,6 @@ export default function SurveyStatsCard({
               <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 500 }}>
                 {title}
               </Typography>
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                {description}
-              </Typography>
             </Box>
           </Stack>
         </Grid>
@@ -130,40 +146,15 @@ export default function SurveyStatsCard({
         {/* Main Stats */}
         <Grid size={12}>
           <Stack spacing={1}>
-            <Stack direction="row" alignItems="baseline" spacing={1}>
-              <Typography
-                variant="h2"
-                sx={{
-                  color: colors.main,
-                  fontWeight: 700,
-                  fontSize: '2.5rem'
-                }}
-              >
-                {count}
-              </Typography>
-              {percentage && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    bgcolor: isLoss ? alpha(theme.palette.error.main, 0.1) : alpha(theme.palette.success.main, 0.1),
-                    color: isLoss ? theme.palette.error.main : theme.palette.success.main,
-                    px: 1,
-                    py: 0.5,
-                    borderRadius: 1,
-                    fontSize: '0.875rem',
-                    fontWeight: 600
-                  }}
-                >
-                  {!isLoss ? <ArrowUp size={16} style={{ marginRight: 4 }} /> : <ArrowDown size={16} style={{ marginRight: 4 }} />}
-                  {Math.abs(percentage)}%
-                </Box>
-              )}
-            </Stack>
-
-            {/* Extra Info */}
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {extra}
+            <Typography
+              variant="h2"
+              sx={{
+                color: colors.main,
+                fontWeight: 700,
+                fontSize: '2.5rem'
+              }}
+            >
+              {formatCount(count)}
             </Typography>
           </Stack>
         </Grid>
@@ -184,11 +175,11 @@ export default function SurveyStatsCard({
                 height: '100%',
                 background: `linear-gradient(90deg, ${colors.main} 0%, ${colors.light} 100%)`,
                 borderRadius: 3,
-                width: `${Math.min(100, (parseInt(count) / 100) * 100)}%`,
+                width: `${calculateProgressPercentage()}%`,
                 animation: 'progressFill 1.5s ease-out',
                 '@keyframes progressFill': {
                   from: { width: 0 },
-                  to: { width: `${Math.min(100, (parseInt(count) / 100) * 100)}%` }
+                  to: { width: `${calculateProgressPercentage()}%` }
                 }
               }}
             />

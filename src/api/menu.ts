@@ -14,13 +14,8 @@ const initialState: MenuProps = {
   isComponentDrawerOpened: true
 };
 
-const staticMenuItem = {
-  id: 'finance',
-  title: 'finance',
-  type: 'item',
-  url: '/dashboard/finance',
-  breadcrumbs: false
-};
+// Menu finance đã được thêm trực tiếp vào dashboard menu
+// Không cần thêm ở đây nữa
 
 // ==============================|| API - MENU ||============================== //
 
@@ -40,20 +35,8 @@ export function useGetMenu() {
   const memoizedValue = useMemo(() => {
     let updatedMenu = data?.dashboard;
 
-    if (updatedMenu && Array.isArray(updatedMenu.children) && updatedMenu.children.length > 0) {
-      updatedMenu = {
-        ...updatedMenu,
-        children: updatedMenu.children.map((group: NavItemType) => {
-          if (Array.isArray(group.children)) {
-            return {
-              ...group,
-              children: [...group.children, staticMenuItem]
-            };
-          }
-          return group;
-        })
-      };
-    }
+    // Menu finance đã được thêm trực tiếp vào dashboard menu
+    // Không cần xử lý thêm ở đây
 
     return {
       menu: updatedMenu as NavItemType,

@@ -1,133 +1,107 @@
-import { useState, MouseEvent, useEffect } from 'react';
 
 // material-ui
-import { useTheme } from '@mui/material/styles';
-import ListItemButton from '@mui/material/ListItemButton';
-import Menu from '@mui/material/Menu';
+import {
+    AccountBalance,
+    AccountBalanceWallet,
+    CardGiftcard,
+    Payment
+} from '@mui/icons-material';
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-// third-party
-import ReactApexChart, { Props as ChartProps } from 'react-apexcharts';
-
 // project-imports
-import IconButton from 'components/@extended/IconButton';
-import MoreIcon from 'components/@extended/MoreIcon';
 import MainCard from 'components/MainCard';
-import { ThemeMode } from 'config';
-
-interface Props {
-  color: string;
-  data: number[];
-}
 
 interface TransactionProps {
   title: string;
-  caption: string;
   color: string;
-  data: any;
   amount: string;
-}
-
-// ===========================|| TRANSACTIONS - CHART ||=========================== //
-
-function TransactionsChart({ color, data }: Props) {
-  const theme = useTheme();
-  const mode = theme.palette.mode;
-
-  // chart options
-  const areaChartOptions = {
-    chart: {
-      id: 'new-stack-chart',
-      type: 'line',
-      sparkline: {
-        enabled: true
-      }
-    },
-    dataLabels: { enabled: false },
-    markers: { hover: { size: 4 } },
-    fill: { type: 'solid', colors: 'transparent' },
-    stroke: { curve: 'straight', width: 2 },
-    tooltip: { x: { show: false } }
-  };
-  const { primary, secondary } = theme.palette.text;
-  const line = theme.palette.divider;
-
-  const [options, setOptions] = useState<ChartProps>(areaChartOptions);
-
-  useEffect(() => {
-    setOptions((prevState) => ({
-      ...prevState,
-      colors: [color],
-      theme: { mode: mode === ThemeMode.DARK ? 'dark' : 'light' },
-      grid: { show: true, strokeDashArray: 4, borderColor: line }
-    }));
-  }, [color, mode, primary, secondary, line, theme]);
-
-  const [series] = useState([{ name: 'Orders', data }]);
-
-  return <ReactApexChart options={options} series={series} type="area" height={48} />;
+  icon?: string;
 }
 
 // ===========================|| FINANCE - TRANSACTIONS CARD ||=========================== //
 
-export default function TransactionCard({ title, caption, color, data, amount }: TransactionProps) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const open = Boolean(anchorEl);
-
-  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => {
-    setAnchorEl(null);
+export default function TransactionCard({ title, color, amount, icon }: TransactionProps) {
+  const getIcon = (iconName?: string) => {
+    const iconSize = 48;
+    const iconStyle = { 
+      fontSize: iconSize, 
+      color: color,
+      opacity: 0.9
+    };
+    
+    switch (iconName) {
+      case 'wallet':
+        return <AccountBalanceWallet sx={iconStyle} />;
+      case 'account-balance':
+        return <AccountBalance sx={iconStyle} />;
+      case 'card-giftcard':
+        return <CardGiftcard sx={iconStyle} />;
+      case 'payment':
+        return <Payment sx={iconStyle} />;
+      default:
+        return <AccountBalance sx={iconStyle} />;
+    }
   };
 
   return (
-    <MainCard content={false} sx={{ p: 2 }}>
-      <Stack sx={{ gap: 2 }}>
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <Typography variant="subtitle1">{title}</Typography>
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {caption}
-            </Typography>
-          </div>
-          <IconButton
-            color="secondary"
-            id="wallet-button"
-            aria-controls={open ? 'wallet-menu' : undefined}
-            aria-haspopup="true"
-            aria-expanded={open ? 'true' : undefined}
-            onClick={handleClick}
+    <MainCard 
+      content={false} 
+      sx={{ 
+        p: 0,
+        height: '100%',
+        transition: 'all 0.2s ease',
+        border: '1px solid',
+        borderColor: 'divider',
+        '&:hover': {
+          borderColor: color,
+          boxShadow: `0 4px 20px ${color}20`
+        }
+      }}
+    >
+      <Stack sx={{ height: '100%', p: 3 }}>
+        {/* Header */}
+        <Box sx={{ mb: 3 }}>
+          <Typography 
+            variant="subtitle1" 
+            fontWeight={500} 
+            color="text.primary"
+            sx={{ 
+              fontSize: '0.95rem',
+              lineHeight: 1.4
+            }}
           >
-            <MoreIcon />
-          </IconButton>
-          <Menu
-            id="wallet-menu"
-            anchorEl={anchorEl}
-            open={open}
-            onClose={handleClose}
-            MenuListProps={{ 'aria-labelledby': 'wallet-button', sx: { p: 1.25, minWidth: 150 } }}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <ListItemButton onClick={handleClose}>Today</ListItemButton>
-            <ListItemButton onClick={handleClose}>Weekly</ListItemButton>
-            <ListItemButton onClick={handleClose}>Monthly</ListItemButton>
-          </Menu>
-        </Stack>
-
-        <TransactionsChart color={color} data={data} />
-
-        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
-          <Stack direction="row" sx={{ gap: 0.25, alignItems: 'center' }}>
-            <Typography sx={{ fontSize: 'h6', color: 'text.secondary' }}>$</Typography>
-            <Typography variant="h4">{amount}</Typography>
-          </Stack>
-          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            Compare to last week
+            {title}
           </Typography>
+        </Box>
+
+        {/* Content */}
+        <Stack sx={{ flex: 1, justifyContent: 'space-between' }}>
+          {/* Icon */}
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            mb: 2
+          }}>
+            {getIcon(icon)}
+          </Box>
+
+          {/* Amount */}
+          <Box sx={{ textAlign: 'center' }}>
+            <Typography 
+              variant="h5" 
+              fontWeight={600} 
+              color={color}
+              sx={{ 
+                fontSize: '1.75rem',
+                lineHeight: 1.2
+              }}
+            >
+              {amount}
+            </Typography>
+          </Box>
         </Stack>
       </Stack>
     </MainCard>

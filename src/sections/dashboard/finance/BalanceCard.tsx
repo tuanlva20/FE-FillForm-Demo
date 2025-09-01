@@ -35,7 +35,7 @@ export default function BalanceCard() {
     <MainCard>
       <Stack sx={{ gap: 2.5 }}>
         <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h5">My Card</Typography>
+          <Typography variant="h5">Luong Vu Anh Tuan</Typography>
           <IconButton
             color="secondary"
             id="wallet-button"
@@ -87,7 +87,7 @@ export default function BalanceCard() {
                   <Typography variant="body2" sx={{ color: 'grey.600' }}>
                     CARD NAME
                   </Typography>
-                  <Typography variant="h5">Jonh Smith</Typography>
+                  <Typography variant="h5">Luong Vu Anh Tuan</Typography>
                 </Stack>
                 <CardMedia component="img" src={cardDots} alt="CardDots" sx={{ width: 30, height: 18 }} />
               </Stack>
@@ -115,7 +115,7 @@ export default function BalanceCard() {
           </MainCard>
         </Stack>
         <Stack sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 0.25 }}>
-          <Typography variant="h3">$1.480.000</Typography>
+          <Typography variant="h3">1.480.000 VND</Typography>
           <Typography variant="h6" sx={{ color: 'text.secondary' }}>
             Total Balance
           </Typography>

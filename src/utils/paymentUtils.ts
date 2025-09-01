@@ -1,9 +1,8 @@
 // Utility function để format số tiền
-export const formatAmount = (value: string): string => {
-  const numericValue = value.replace(/[^0-9]/g, '');
-  if (!numericValue) return '';
-
-  const number = parseInt(numericValue, 10);
+export const formatAmount = (value: string | number): string => {
+  const number = typeof value === 'string' ? parseInt(value.replace(/[^0-9]/g, ''), 10) : value;
+  if (!number) return '0';
+  
   return number.toLocaleString('vi-VN');
 };
 

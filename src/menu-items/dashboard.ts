@@ -2,7 +2,7 @@
 import { useGetMenu } from 'api/menu';
 
 // assets
-import { Box1, Home3, HomeTrendUp, Refresh } from 'iconsax-react';
+import { Box1, DocumentText, DollarSquare, Home3, HomeTrendUp, Refresh } from 'iconsax-react';
 
 // types
 import { NavItemType } from 'types/menu';
@@ -11,7 +11,9 @@ const icons = {
   navigation: Home3,
   dashboard: HomeTrendUp,
   components: Box1,
-  loading: Refresh
+  loading: Refresh,
+  finance: DollarSquare,
+  default: DocumentText
 };
 
 const loadingMenu: NavItemType = {
@@ -24,9 +26,41 @@ const loadingMenu: NavItemType = {
       id: 'dashboard1',
       title: 'Dashboard',
       type: 'item',
-      icon: icons.dashboard,
       url: '/dashboard/default',
       breadcrumbs: false
+    }
+  ]
+};
+
+// Default dashboard menu with finance submenu
+const defaultDashboardMenu: NavItemType = {
+  id: 'group-dashboard',
+  title: 'dashboard',
+  type: 'group',
+  icon: icons.dashboard,
+  children: [
+    {
+      id: 'dashboard-default',
+      title: 'Default',
+      type: 'item',
+      url: '/dashboard/default',
+      breadcrumbs: false,
+      icon: icons.default
+    },
+    {
+      id: 'finance',
+      title: 'Tài chính',
+      type: 'collapse',
+      icon: icons.finance,
+      children: [
+        {
+          id: 'finance-overview',
+          title: 'Tổng quan',
+          type: 'item',
+          url: '/dashboard/finance',
+          breadcrumbs: false
+        }
+      ]
     }
   ]
 };
@@ -37,6 +71,11 @@ export function MenuFromAPI() {
   const { menu, menuLoading } = useGetMenu();
 
   if (menuLoading) return loadingMenu;
+
+  // If no menu from API, return default dashboard menu
+  if (!menu || !menu.children || menu.children.length === 0) {
+    return defaultDashboardMenu;
+  }
 
   const subChildrenList = (children: NavItemType[]) => {
     return children?.map((subList: NavItemType) => {

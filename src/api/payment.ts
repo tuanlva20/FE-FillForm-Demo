@@ -51,3 +51,25 @@ export const querySEPAYTransaction = async (orderId: string): Promise<SEPAYPayme
   const response = await axios.post(`/api/payments/sepay/${orderId}/query`, {});
   return response.data;
 };
+
+// Financial Report APIs
+export const getFinancialOverview = async () => {
+  const response = await axios.get('/api/payments/financial/overview');
+  return response.data;
+};
+
+export const getFinancialStats = async () => {
+  const response = await axios.get('/api/payments/financial/stats');
+  return response.data;
+};
+
+// New Financial Report API
+export const getFinancialReport = async () => {
+  const response = await axios.get('/api/v1/payment-orders/financial-report');
+  return response.data;
+};
+
+export const getSpendingChartData = async () => {
+  const response = await axios.get('/api/payments/financial/spending-chart');
+  return response.data;
+};

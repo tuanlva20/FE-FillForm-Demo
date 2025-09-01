@@ -13,6 +13,7 @@ import ErrorBoundary from './ErrorBoundary';
 const DashboardDefault = Loadable(lazy(() => import('pages/dashboard/default')));
 const DashboardAnalytics = Loadable(lazy(() => import('pages/dashboard/analytics')));
 const DashboardFinance = Loadable(lazy(() => import('pages/dashboard/finance')));
+const DashboardFinancialReport = Loadable(lazy(() => import('pages/dashboard/financial-report')));
 
 // render - widget
 const WidgetStatistics = Loadable(lazy(() => import('pages/widget/statistics')));
@@ -198,6 +199,10 @@ const MainRoutes = {
             {
               path: 'finance',
               element: <DashboardFinance />
+            },
+            {
+              path: 'financial-report',
+              element: <DashboardFinancialReport />
             }
           ]
         },

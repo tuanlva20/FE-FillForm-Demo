@@ -24,16 +24,16 @@ import Typography from '@mui/material/Typography';
 
 // project-imports
 import MainCard from 'components/MainCard';
-import PaymentStatusChip from 'components/PaymentStatusChip';
+import StatusChip from 'components/StatusChip';
 import { TablePagination } from 'components/third-party/react-table';
 
 // API
 import { getPaymentOrders, PaymentOrderData } from 'api/payment-orders';
 
-// types
-import { PaymentStatusType } from 'types/paymentStatus';
+
 
 // assets
+import { TableState } from '@tanstack/react-table';
 import { Refresh, SearchNormal1 } from 'iconsax-react';
 
 // utils
@@ -90,9 +90,13 @@ export default function PaymentOrdersHistoryCard() {
 
       const response = await getPaymentOrders(params);
       
-      setPaymentOrders(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 0);
-      setTotalElements(response.pagination?.totalElements || 0);
+      if (response.status === 'OK' && response.content) {
+        setPaymentOrders(response.content || []);
+        setTotalPages(response.totalPages || 0);
+        setTotalElements(response.totalElements || 0);
+      } else {
+        throw new Error('Invalid API response structure');
+      }
     } catch (err) {
       console.error('Error fetching payment orders:', err);
       const errorMessage = handleApiError(err, 'Không thể tải dữ liệu giao dịch. Vui lòng thử lại sau.');
@@ -119,38 +123,44 @@ export default function PaymentOrdersHistoryCard() {
     setPageIndex(0);
   }, [debouncedSearchQuery, statusFilter]);
 
-  // Get unique statuses for filter
+  // Get unique statuses for filter with display names
   const uniqueStatuses = useMemo(() => {
-    const statuses = [...new Set(paymentOrders.map(order => order.status))];
-    return statuses;
+    const statusMap = new Map<string, string>();
+    paymentOrders.forEach(order => {
+      statusMap.set(order.status, order.statusDisplayName);
+    });
+    return Array.from(statusMap.entries()).map(([status, displayName]) => ({
+      status,
+      displayName
+    }));
   }, [paymentOrders]);
 
-  const getTableState = () => ({
-    pagination: { pageIndex, pageSize }
+  const getTableState = (): TableState => ({
+    pagination: { pageIndex, pageSize },
+    columnVisibility: {},
+    columnOrder: [],
+    columnPinning: {},
+    rowPinning: {},
+    sorting: [],
+    grouping: [],
+    columnFilters: [],
+    globalFilter: '',
+    rowSelection: {},
+    expanded: {},
+    columnSizing: {},
+    columnSizingInfo: {
+      startOffset: null,
+      startSize: null,
+      deltaOffset: null,
+      deltaPercentage: null,
+      isResizingColumn: false,
+      columnSizingStart: []
+    }
   });
 
   const getPageCount = () => totalPages;
 
-  // Map order status to PaymentStatusType
-  const mapOrderStatusToPaymentStatus = (status: string): PaymentStatusType => {
-    const statusUpper = status.toUpperCase();
-    switch (statusUpper) {
-      case 'COMPLETED':
-        return 'COMPLETED';
-      case 'PENDING':
-        return 'PENDING';
-      case 'FAILED':
-        return 'FAILED';
-      case 'EXPIRED':
-        return 'FAILED';
-      case 'MISMATCH':
-        return 'FAILED';
-      case 'OVERPAYMENT':
-        return 'COMPLETED';
-      default:
-        return 'PENDING';
-    }
-  };
+
 
   // Get default avatar if userAvatar is not available
   const getAvatar = (order: PaymentOrderData) => {
@@ -227,9 +237,9 @@ export default function PaymentOrdersHistoryCard() {
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <MenuItem value="all">Tất cả</MenuItem>
-              {uniqueStatuses.map((status) => (
+              {uniqueStatuses.map(({ status, displayName }) => (
                 <MenuItem key={status} value={status}>
-                  {status}
+                  {displayName}
                 </MenuItem>
               ))}
             </Select>
@@ -251,15 +261,17 @@ export default function PaymentOrdersHistoryCard() {
           <TableHead>
             <TableRow>
               <TableCell>Người dùng</TableCell>
+              <TableCell>Mã giao dịch</TableCell>
               <TableCell>Ngày tạo</TableCell>
               <TableCell align="center">Số tiền</TableCell>
+              <TableCell align="center">Loại giao dịch</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={6} align="center">
                   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 3 }}>
                     <CircularProgress size={24} />
                     <Typography variant="body2" sx={{ ml: 2 }}>
@@ -270,7 +282,7 @@ export default function PaymentOrdersHistoryCard() {
               </TableRow>
             ) : error ? (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body1" color="error">
                     {error}
                   </Typography>
@@ -279,7 +291,7 @@ export default function PaymentOrdersHistoryCard() {
             ) : paymentOrders.length > 0 ? (
               paymentOrders.map((order) => (
                 <TableRow hover key={order.id}>
-                  <TableCell align="center">
+                  <TableCell>
                     <Stack direction="row" sx={{ alignItems: 'center', gap: 2 }}>
                       <Avatar alt={order.userName} src={getAvatar(order)} />
                       <Box>
@@ -293,6 +305,11 @@ export default function PaymentOrdersHistoryCard() {
                     </Stack>
                   </TableCell>
                   <TableCell>
+                    <Typography variant="body2" fontWeight={600} color="primary">
+                      {order.orderId}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
                     <Typography variant="body2" color="text.secondary">
                       {formatFullDateTime(order.createdAt)}
                     </Typography>
@@ -303,16 +320,18 @@ export default function PaymentOrdersHistoryCard() {
                     </Typography>
                   </TableCell>
                   <TableCell align="center">
-                    <PaymentStatusChip 
-                      status={mapOrderStatusToPaymentStatus(order.status)}
-                      size="medium"
-                    />
+                    <Typography variant="body2" fontWeight={500}>
+                      {order.paymentTypeDisplayName}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    <StatusChip status={order.status} size="small" />
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body1" color="text.secondary">
                     {debouncedSearchQuery || statusFilter !== 'all' ? 'Không tìm thấy giao dịch nào phù hợp' : 'Chưa có giao dịch nào'}
                   </Typography>
