@@ -64,6 +64,41 @@ axiosServices.interceptors.response.use(
           return axiosServices(originalRequest);
         }
       }
+      // If status is 403 here, there won't be a generic 401 handler below.
+      // Redirect to login for protected routes to ensure user can re-authenticate.
+      if (status === 403) {
+        const currentPath = window.location.pathname || '/';
+        const PUBLIC_ROUTES = [
+          '/',
+          '/login',
+          '/register',
+          '/forgot-password',
+          '/reset-password',
+          '/check-mail',
+          '/code-verification',
+          '/auth/login',
+          '/auth/register',
+          '/auth/forgot-password',
+          '/auth/reset-password',
+          '/auth/check-mail',
+          '/auth/code-verification',
+          '/maintenance',
+          '/404',
+          '/500'
+        ];
+        const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? currentPath === '/' : currentPath.startsWith(r)));
+        if (!isPublic && !isRedirectingToLogin) {
+          isRedirectingToLogin = true;
+          try {
+            clearTokens();
+          } catch {}
+          const redirectPath = currentPath !== '/' ? currentPath : '/dashboard/default';
+          const ts = Date.now();
+          const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
+          setTimeout(() => window.location.replace(loginUrl), 0);
+          return Promise.reject(error);
+        }
+      }
       // fall through to generic 401 handling
     }
 
@@ -114,6 +149,41 @@ axiosServices.interceptors.response.use(
         } catch {}
 
         // Bypass cache và tránh loop
+        const redirectPath = currentPath !== '/' ? currentPath : '/dashboard/default';
+        const ts = Date.now();
+        const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;
+        setTimeout(() => window.location.replace(loginUrl), 0);
+        return Promise.reject(error);
+      }
+    }
+
+    // Generic 403 handling: treat as unauthorized for protected routes and redirect to login
+    if (status === 403) {
+      const currentPath = window.location.pathname || '/';
+      const PUBLIC_ROUTES = [
+        '/',
+        '/login',
+        '/register',
+        '/forgot-password',
+        '/reset-password',
+        '/check-mail',
+        '/code-verification',
+        '/auth/login',
+        '/auth/register',
+        '/auth/forgot-password',
+        '/auth/reset-password',
+        '/auth/check-mail',
+        '/auth/code-verification',
+        '/maintenance',
+        '/404',
+        '/500'
+      ];
+      const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? currentPath === '/' : currentPath.startsWith(r)));
+      if (!isPublic && !isRedirectingToLogin) {
+        isRedirectingToLogin = true;
+        try {
+          clearTokens();
+        } catch {}
         const redirectPath = currentPath !== '/' ? currentPath : '/dashboard/default';
         const ts = Date.now();
         const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}&ts=${ts}`;

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 // project-imports
@@ -31,14 +32,9 @@ const PUBLIC_ROUTES = [
 
 export default function AuthGuard({ children }: GuardProps) {
   // Tất cả hooks phải được gọi ở đầu component
-  const { isLoggedIn, isInitialized } = useAuth();
+  const { isLoggedIn, isInitialized, rehydrate } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // If auth context is not yet initialized, show loader
-  if (!isInitialized) {
-    return <Loader />;
-  }
 
   // Determine route visibility
   const pathname = location.pathname || '';
@@ -54,7 +50,22 @@ export default function AuthGuard({ children }: GuardProps) {
     return children;
   }
 
-  // If not logged in on a protected route, redirect to login
+  // If auth is not initialized and route is protected, attempt one-time rehydrate
+  const attemptedRef = useRef(false);
+  useEffect(() => {
+    if (!isPublicRoute && !isInitialized && !attemptedRef.current && typeof rehydrate === 'function') {
+      attemptedRef.current = true;
+      void rehydrate();
+    }
+  }, [isPublicRoute, isInitialized, rehydrate]);
+
+  if (!isInitialized) {
+    // Show loader only before we kick off rehydrate; after attempting, allow UI to render
+    if (!attemptedRef.current) return <Loader />;
+    return children;
+  }
+
+  // On protected routes: if not logged in after initialization, redirect to login
   if (!isLoggedIn) {
     const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
     const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;

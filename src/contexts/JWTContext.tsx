@@ -38,6 +38,35 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         return;
       }
 
+      // Bypass auth init on public routes (e.g., landing, login...)
+      try {
+        const currentPath = window.location.pathname || '/';
+        const PUBLIC_ROUTES = [
+          '/',
+          '/login',
+          '/register',
+          '/forgot-password',
+          '/reset-password',
+          '/check-mail',
+          '/code-verification',
+          '/auth/login',
+          '/auth/register',
+          '/auth/forgot-password',
+          '/auth/reset-password',
+          '/auth/check-mail',
+          '/auth/code-verification',
+          '/maintenance',
+          '/404',
+          '/500'
+        ];
+        const isPublic = PUBLIC_ROUTES.some((r) => (r === '/' ? currentPath === '/' : currentPath.startsWith(r)));
+        if (isPublic) {
+          // Do not initialize on public routes; defer to guard-driven rehydrate when navigating to protected
+          logger.log('🔐 JWTContext: Skipping auth init on public route');
+          return;
+        }
+      } catch {}
+
       try {
         const response = await authAPI.getCurrentUser();
         if (response?.success) {
@@ -191,9 +220,13 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
               logger.log('🔐 JWTContext: Rehydrate successful');
               return true;
             }
+            // Không thành công → coi như chưa đăng nhập
+            dispatch({ type: LOGOUT });
             hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
             return false;
           } catch {
+            // Lỗi → coi như chưa đăng nhập
+            dispatch({ type: LOGOUT });
             hasInitializedAuth.current = true; // Đánh dấu đã khởi tạo (dù thất bại)
             return false;
           }
