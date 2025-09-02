@@ -7,7 +7,9 @@ import { logger } from './logger';
 const axiosServices = axios.create({
   baseURL: import.meta.env.VITE_APP_API_URL || 'http://localhost:2412/',
   withCredentials: true,
-  timeout: 10000 // 10 second timeout
+  // Increase default timeout to accommodate slow endpoints (e.g., form creation)
+  // Allow override via env var VITE_APP_AXIOS_TIMEOUT_MS
+  timeout: Number(import.meta.env.VITE_APP_AXIOS_TIMEOUT_MS || 60000)
 });
 
 // Configure Axios to automatically send CSRF header based on XSRF-TOKEN cookie

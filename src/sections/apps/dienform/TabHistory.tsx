@@ -3,11 +3,9 @@ import { ChangeEvent, useEffect, useState } from 'react';
 // material-ui
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid2';
-import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -18,95 +16,43 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-// import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 // project-imports
+import { FormReportItem, getFormReports } from 'api/form';
 import MainCard from 'components/MainCard';
+import StatusChip from 'components/StatusChip';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // assets
-import { DocumentDownload, Eye, SearchNormal1 } from 'iconsax-react';
+import { SearchNormal1 } from 'iconsax-react';
 
 // types
-interface FormHistoryItem {
-  id: number;
-  name: string;
-  type: string;
-  createdAt: string;
-  status: string;
-  completedSurveys: number;
-  totalSurveys: number;
-  cost: number;
-}
-
-// Mock data for form history
-const mockFormHistory: FormHistoryItem[] = [
-  {
-    id: 1,
-    name: 'Khảo sát người dùng',
-    type: 'Manual',
-    createdAt: '2023-01-15',
-    status: 'Completed',
-    completedSurveys: 200,
-    totalSurveys: 200,
-    cost: 600000
-  },
-  {
-    id: 2,
-    name: 'Đánh giá sản phẩm',
-    type: 'Auto',
-    createdAt: '2023-01-20',
-    status: 'Processing',
-    completedSurveys: 85,
-    totalSurveys: 150,
-    cost: 450000
-  },
-  {
-    id: 3,
-    name: 'Phản hồi dịch vụ',
-    type: 'Manual',
-    createdAt: '2023-01-25',
-    status: 'Completed',
-    completedSurveys: 100,
-    totalSurveys: 100,
-    cost: 300000
-  },
-  {
-    id: 4,
-    name: 'Khảo sát thị hiếu',
-    type: 'Auto',
-    createdAt: '2023-02-01',
-    status: 'Cancelled',
-    completedSurveys: 20,
-    totalSurveys: 100,
-    cost: 60000
-  }
-];
-
-// Define column keys for sorting
-type ColumnKey = 'name' | 'type' | 'createdAt' | 'status' | 'completedSurveys' | 'cost';
-
-// Define sort order
+type ColumnKey = 'formName' | 'type' | 'createdAt' | 'status' | 'completedSurvey' | 'totalCost' | 'estimatedCompletionDate';
 type Order = 'asc' | 'desc';
 
 // ==============================|| DIENFORM - HISTORY ||============================== //
 
 export default function TabHistory() {
   // States
-  const [formHistory, setFormHistory] = useState<FormHistoryItem[]>([]);
-  const [filteredHistory, setFilteredHistory] = useState<FormHistoryItem[]>([]);
+  const [formHistory, setFormHistory] = useState<FormReportItem[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [search, setSearch] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
 
-  // Pagination states (align with custom TablePagination)
+  // Pagination states
   const [pageIndex, setPageIndex] = useState<number>(0);
   const [pageSize, setPageSize] = useState<number>(10);
+  const [totalElements, setTotalElements] = useState<number>(0);
+  const [totalPages, setTotalPages] = useState<number>(0);
 
   // Sorting states
   const [orderBy, setOrderBy] = useState<ColumnKey>('createdAt');
@@ -114,39 +60,34 @@ export default function TabHistory() {
 
   // Handle search input change
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const searchValue = event.target.value;
-    setSearch(searchValue);
-    applyFilters(searchValue, statusFilter);
+    setSearch(event.target.value);
   };
 
   // Handle status filter change
   const handleStatusFilterChange = (event: SelectChangeEvent<string>) => {
-    const status = event.target.value;
-    setStatusFilter(status);
-    applyFilters(search, status);
+    setStatusFilter(event.target.value);
   };
 
-  // Apply filters based on search term and status
-  const applyFilters = (searchTerm: string, status: string) => {
-    let filtered = formHistory;
 
-    // Apply search filter
-    if (searchTerm) {
-      const lowerSearchTerm = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.name.toLowerCase().includes(lowerSearchTerm) ||
-          item.type.toLowerCase().includes(lowerSearchTerm) ||
-          item.status.toLowerCase().includes(lowerSearchTerm)
-      );
-    }
 
-    // Apply status filter
-    if (status && status !== 'all') {
-      filtered = filtered.filter((item) => item.status === status);
-    }
+  // Handle type filter change
+  const handleTypeFilterChange = (event: SelectChangeEvent<string>) => {
+    setTypeFilter(event.target.value);
+  };
 
-    setFilteredHistory(filtered);
+  // Handle date changes
+  const handleStartDateChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setStartDate(event.target.value);
+  };
+
+  const handleEndDateChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setEndDate(event.target.value);
+  };
+
+  // Apply filters and fetch data
+  const applyFilters = async () => {
+    setPageIndex(0); // Reset to first page when applying filters
+    await fetchFormReports();
   };
 
   // Build state for ReactTablePagination
@@ -181,92 +122,64 @@ export default function TabHistory() {
     setOrderBy(property);
   };
 
-  // Sort function for table data
-  const sortData = (data: FormHistoryItem[]) => {
-    return data.slice().sort((a, b) => {
-      const isAsc = order === 'asc';
+  // Fetch form reports from API
+  const fetchFormReports = async () => {
+    setLoading(true);
 
-      switch (orderBy) {
-        case 'name':
-        case 'type':
-        case 'status':
-          return isAsc ? a[orderBy].localeCompare(b[orderBy]) : b[orderBy].localeCompare(a[orderBy]);
+    try {
+      const params = {
+        searchTerm: search || undefined,
+        status: statusFilter !== 'all' ? statusFilter : undefined,
+        type: typeFilter !== 'all' ? typeFilter : undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+        page: pageIndex,
+        size: pageSize,
+        sortBy: orderBy,
+        sortDirection: order
+      };
 
-        case 'createdAt':
-          return isAsc
-            ? new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-            : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-
-        case 'completedSurveys':
-        case 'cost':
-          return isAsc ? a[orderBy] - b[orderBy] : b[orderBy] - a[orderBy];
-
-        default:
-          return 0;
-      }
-    });
-  };
-
-  // Export to Excel function
-  const handleExportToExcel = () => {
-    console.log('Exporting data to Excel:', filteredHistory);
-    alert('Exporting data to Excel (This is a placeholder)');
-  };
-
-  // View form details function
-  const handleViewDetails = (id: number) => {
-    console.log('Viewing details for form ID:', id);
-  };
-
-  // Get chip color based on status
-  const getStatusChipColor = (status: string) => {
-    switch (status) {
-      case 'Completed':
-        return 'success';
-      case 'Processing':
-        return 'warning';
-      case 'Cancelled':
-        return 'error';
-      default:
-        return 'default';
+      const response = await getFormReports(params);
+      setFormHistory(response.content);
+      setTotalElements(response.totalElements);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error('Error fetching form reports:', error);
+      // You can add error handling here (e.g., show snackbar)
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Load form history on component mount
+  // Fetch data when filters, pagination, or sorting changes
   useEffect(() => {
-    const fetchFormHistory = async () => {
-      setLoading(true);
+    fetchFormReports();
+  }, [pageIndex, pageSize, orderBy, order]);
 
-      try {
-        // Simulate API call with setTimeout
-        setTimeout(() => {
-          setFormHistory(mockFormHistory);
-          setFilteredHistory(mockFormHistory);
-          setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching form history:', error);
-        setLoading(false);
-      }
-    };
 
-    fetchFormHistory();
-  }, []);
+
+  // View form details function
+  const handleViewDetails = (id: string) => {
+    console.log('Viewing details for form ID:', id);
+  };
+
+
+
+  // Format date for display
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('vi-VN');
+  };
 
   return (
     <Grid container spacing={GRID_COMMON_SPACING}>
       <Grid size={12}>
         <MainCard
           title="Lịch sử điền form"
-          secondary={
-            <Button variant="contained" startIcon={<DocumentDownload />} onClick={handleExportToExcel}>
-              Xuất Excel
-            </Button>
-          }
           sx={MAINCARD_STYLE}
         >
           <Grid container spacing={2} sx={{ mb: 2 }}>
-            <Grid size={{ xs: 12, sm: 8, md: 6 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
               <FormControl fullWidth>
                 <OutlinedInput
                   id="search-form-history"
@@ -281,7 +194,7 @@ export default function TabHistory() {
                 />
               </FormControl>
             </Grid>
-            <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
               <FormControl fullWidth>
                 <InputLabel id="status-filter-label">Trạng thái</InputLabel>
                 <Select
@@ -292,19 +205,63 @@ export default function TabHistory() {
                   label="Trạng thái"
                 >
                   <MenuItem value="all">Tất cả</MenuItem>
-                  <MenuItem value="Completed">Hoàn thành</MenuItem>
-                  <MenuItem value="Processing">Đang xử lý</MenuItem>
-                  <MenuItem value="Cancelled">Đã hủy</MenuItem>
+                  <MenuItem value="COMPLETED">Hoàn thành</MenuItem>
+                  <MenuItem value="IN_PROCESS">Đang xử lý</MenuItem>
+                  <MenuItem value="QUEUED">Đang chờ</MenuItem>
+                  <MenuItem value="FAILED">Thất bại</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
+
+            <Grid size={{ xs: 12, sm: 6, md: 2 }}>
+              <FormControl fullWidth>
+                <InputLabel id="type-filter-label">Loại</InputLabel>
+                <Select
+                  labelId="type-filter-label"
+                  id="type-filter"
+                  value={typeFilter}
+                  onChange={handleTypeFilterChange}
+                  label="Loại"
+                >
+                  <MenuItem value="all">Tất cả</MenuItem>
+                  <MenuItem value="Điền theo data">Điền theo data</MenuItem>
+                  <MenuItem value="Điền theo tỉ lệ">Điền theo tỉ lệ</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Từ ngày"
+                value={startDate}
+                onChange={handleStartDateChange}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                type="date"
+                label="Đến ngày"
+                value={endDate}
+                onChange={handleEndDateChange}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Grid>
           </Grid>
+
+          <Box sx={{ mb: 2, textAlign: 'center' }}>
+            <Button variant="contained" onClick={applyFilters} disabled={loading}>
+              Áp dụng bộ lọc
+            </Button>
+          </Box>
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
               <CircularProgress />
             </Box>
-          ) : filteredHistory.length === 0 ? (
+          ) : formHistory.length === 0 ? (
             <Box sx={{ textAlign: 'center', py: 4 }}>
               <Typography variant="h6" color="textSecondary">
                 Không tìm thấy dữ liệu
@@ -319,9 +276,9 @@ export default function TabHistory() {
                       <TableCell>STT</TableCell>
                       <TableCell>
                         <TableSortLabel
-                          active={orderBy === 'name'}
-                          direction={orderBy === 'name' ? order : 'asc'}
-                          onClick={() => handleRequestSort('name')}
+                          active={orderBy === 'formName'}
+                          direction={orderBy === 'formName' ? order : 'asc'}
+                          onClick={() => handleRequestSort('formName')}
                         >
                           Tên Form
                         </TableSortLabel>
@@ -355,48 +312,54 @@ export default function TabHistory() {
                       </TableCell>
                       <TableCell>
                         <TableSortLabel
-                          active={orderBy === 'completedSurveys'}
-                          direction={orderBy === 'completedSurveys' ? order : 'asc'}
-                          onClick={() => handleRequestSort('completedSurveys')}
+                          active={orderBy === 'completedSurvey'}
+                          direction={orderBy === 'completedSurvey' ? order : 'asc'}
+                          onClick={() => handleRequestSort('completedSurvey')}
                         >
                           Lượt điền
                         </TableSortLabel>
                       </TableCell>
                       <TableCell>
                         <TableSortLabel
-                          active={orderBy === 'cost'}
-                          direction={orderBy === 'cost' ? order : 'asc'}
-                          onClick={() => handleRequestSort('cost')}
+                          active={orderBy === 'totalCost'}
+                          direction={orderBy === 'totalCost' ? order : 'asc'}
+                          onClick={() => handleRequestSort('totalCost')}
                         >
                           Chi phí (VND)
                         </TableSortLabel>
                       </TableCell>
-                      <TableCell align="center">Thao tác</TableCell>
+                      <TableCell>
+                        <TableSortLabel
+                          active={orderBy === 'estimatedCompletionDate'}
+                          direction={orderBy === 'estimatedCompletionDate' ? order : 'asc'}
+                          onClick={() => handleRequestSort('estimatedCompletionDate')}
+                        >
+                          Ngày dự kiến
+                        </TableSortLabel>
+                      </TableCell>
+                      {/* <TableCell align="center">Thao tác</TableCell> */}
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {sortData(filteredHistory)
-                      .slice(pageIndex * pageSize, pageIndex * pageSize + pageSize)
-                      .map((item, index) => (
-                        <TableRow key={item.id} hover>
-                          <TableCell>{pageIndex * pageSize + index + 1}</TableCell>
-                          <TableCell>{item.name}</TableCell>
-                          <TableCell>{item.type}</TableCell>
-                          <TableCell>{item.createdAt}</TableCell>
-                          <TableCell>
-                            <Chip label={item.status} color={getStatusChipColor(item.status)} size="small" />
-                          </TableCell>
-                          <TableCell>
-                            {item.completedSurveys}/{item.totalSurveys}
-                          </TableCell>
-                          <TableCell>{new Intl.NumberFormat('vi-VN').format(item.cost)}</TableCell>
-                          <TableCell align="center">
-                            <IconButton color="primary" size="small" onClick={() => handleViewDetails(item.id)}>
-                              <Eye />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                    {formHistory.map((item, index) => (
+                      <TableRow key={item.id} hover>
+                        <TableCell>{pageIndex * pageSize + index + 1}</TableCell>
+                        <TableCell>{item.formName}</TableCell>
+                        <TableCell>{item.type}</TableCell>
+                        <TableCell>{formatDate(item.createdAt)}</TableCell>
+                        <TableCell>
+                          <StatusChip status={item.status} size="small" />
+                        </TableCell>
+                        <TableCell>{item.completedSurvey}/{item.surveyCount}</TableCell>
+                        <TableCell>{new Intl.NumberFormat('vi-VN').format(item.totalCost)}</TableCell>
+                        <TableCell>{formatDate(item.estimatedCompletionDate)}</TableCell>
+                        {/* <TableCell align="center">
+                          <IconButton color="primary" size="small" onClick={() => handleViewDetails(item.id)}>
+                            <Eye />
+                          </IconButton>
+                        </TableCell> */}
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </TableContainer>
@@ -406,7 +369,7 @@ export default function TabHistory() {
                   setPageSize={setPageSize as any}
                   setPageIndex={setPageIndex as any}
                   getState={getTableState as any}
-                  getPageCount={() => Math.ceil(filteredHistory.length / pageSize)}
+                  getPageCount={() => totalPages}
                   initialPageSize={10}
                 />
               </Box>

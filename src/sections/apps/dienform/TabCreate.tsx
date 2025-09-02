@@ -186,6 +186,43 @@ export default function TabCreate() {
         <MainCard title="Hướng dẫn" sx={MAINCARD_STYLE}>
           <Grid container>
             <Stack sx={{ width: '100%', gap: 2 }}>
+            <Stack sx={{ gap: 1.25 }}>
+                <Chip
+                  variant="outlined"
+                  color="warning"
+                  icon={<InfoCircle size={16} />}
+                  label={
+                    <Typography component="span" sx={{ fontWeight: 700 }}>
+                      ⚠️ Lưu ý quan trọng cho Form có câu hỏi điều hướng
+                    </Typography>
+                  }
+                  sx={(theme) => ({
+                    px: 1,
+                    color: theme.palette.warning.main,
+                    bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.warning.main, 0.12) : alpha(theme.palette.warning.main, 0.08),
+                    borderColor: alpha(theme.palette.warning.main, 0.35),
+                    '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.5 }
+                  })}
+                />
+                <Typography variant="body2" color="text.secondary">
+                  Để chương trình có thể quét được <strong>toàn bộ câu hỏi</strong> trong form, bạn cần:
+                </Typography>
+                <Box component="ul" sx={{ pl: 3, m: 0, color: 'text.secondary' }}>
+                  <Box component="li">
+                    <Typography variant="body2">
+                      <strong>Bỏ điều hướng trang:</strong> Tắt "Chuyển tới phần dựa trên câu trả lời"
+                    </Typography>
+                  </Box>
+                  <Box component="li">
+                    <Typography variant="body2">
+                      <strong>Chuyển nút Gửi:</strong> Đặt nút gửi ở câu hỏi cuối cùng thay vì mỗi trang
+                    </Typography>
+                  </Box>
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  Thiết lập này đảm bảo hệ thống có thể truy cập và xử lý tất cả câu hỏi trong form một cách chính xác.
+                </Typography>
+              </Stack>
               <Stack sx={{ gap: 1.25 }}>
                 <Chip
                   variant="outlined"
@@ -273,45 +310,6 @@ export default function TabCreate() {
                     boxShadow: 0
                   }}
                 />
-              </Stack>
-
-              <Stack sx={{ gap: 1 }}>
-                <Chip
-                  variant="outlined"
-                  color="info"
-                  icon={<InfoCircle size={16} />}
-                  label={
-                    <Typography component="span" sx={{ fontWeight: 700 }}>
-                      Link hợp lệ/không hợp lệ
-                    </Typography>
-                  }
-                  sx={(theme) => ({
-                    px: 1,
-                    color: theme.palette.info.main,
-                    bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.info.main, 0.12) : alpha(theme.palette.info.main, 0.08),
-                    borderColor: alpha(theme.palette.info.main, 0.35),
-                    '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.5 }
-                  })}
-                />
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <Alert severity="success" iconMapping={{ success: <TickCircle /> }}>
-                    <Stack direction="row" sx={{ alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                      <Chip size="small" color="success" label="Hợp lệ" />
-                      <Typography variant="body2" sx={{ fontFamily: 'mono', wordBreak: 'break-all' }}>
-                        Ví dụ: https://docs.google.com/forms/d/e/1FAlpQLSdUJNsCKq.../viewform
-                      </Typography>
-                    </Stack>
-                  </Alert>
-                  <Alert severity="error" iconMapping={{ error: <CloseCircle /> }}>
-                    <Stack direction="row" sx={{ alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                      <Chip size="small" color="error" label="Không hợp lệ" />
-                      <Typography variant="body2" sx={{ fontFamily: 'mono', wordBreak: 'break-all' }}>
-                        Không dùng link dạng <strong>.../edit .../preview</strong> hoặc link chỉnh sửa, xem trước form.
-                      </Typography>
-                    </Stack>
-                  </Alert>
-                </Box>
               </Stack>
             </Stack>
           </Grid>

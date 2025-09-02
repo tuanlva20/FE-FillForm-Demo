@@ -35,15 +35,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // assets
@@ -271,9 +271,103 @@ export default function TabFillInData() {
 
       // Auto-map columns based on similarity (if provided by backend)
       if (response.autoMappings) {
-        response.autoMappings.forEach((mapping) => {
-          initialMappings.set(mapping.questionId, mapping.columnName);
+        console.log('Processing automappings:', response.autoMappings);
+        
+        // Test case: Log the structure of automappings
+        response.autoMappings.forEach((mapping, index) => {
+          console.log(`Automapping ${index}:`, {
+            questionId: mapping.questionId,
+            questionTitle: mapping.questionTitle,
+            columnName: mapping.columnName,
+            confidence: mapping.confidence
+          });
         });
+        
+        // Group automappings by questionId to handle grid questions properly
+        const automappingsByQuestion = new Map<string, any[]>();
+        response.autoMappings.forEach((mapping) => {
+          if (!automappingsByQuestion.has(mapping.questionId)) {
+            automappingsByQuestion.set(mapping.questionId, []);
+          }
+          automappingsByQuestion.get(mapping.questionId)!.push(mapping);
+        });
+        
+        console.log('Automappings grouped by question:', automappingsByQuestion);
+        
+        automappingsByQuestion.forEach((mappings, questionId) => {
+          const question = response.questions.find(q => q.id === questionId);
+          if (!question) {
+            console.log('Question not found for ID:', questionId);
+            return;
+          }
+
+          console.log('Processing question:', question.title, 'Type:', question.type);
+
+          if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+            // For grid questions, we have multiple mappings for the same question
+            const rows = (question.options || []).filter((opt: any) => opt?.value && String(opt.value).startsWith('row'));
+            console.log('Grid question rows:', rows.map(r => r.text));
+            
+            // Process each mapping for this grid question
+            mappings.forEach((mapping) => {
+              console.log('Processing mapping for grid:', mapping.questionTitle);
+              
+              // Try to find matching row using multiple strategies
+              let matchingRow = null;
+              
+              // Strategy 1: Exact match
+              matchingRow = rows.find(row => row.text === mapping.questionTitle);
+              
+              // Strategy 2: Contains match
+              if (!matchingRow) {
+                matchingRow = rows.find(row => 
+                  row.text.includes(mapping.questionTitle) || 
+                  mapping.questionTitle.includes(row.text)
+                );
+              }
+              
+              // Strategy 3: Key-based match (GN1, CN1, etc.)
+              if (!matchingRow) {
+                const keyMatch = mapping.questionTitle.match(/(GN\d+|CN\d+|CTO\d+|YT\d+|HS\d+)/);
+                if (keyMatch) {
+                  const key = keyMatch[1];
+                  console.log('Trying to match by key:', key);
+                  matchingRow = rows.find(row => row.text.includes(key));
+                }
+              }
+              
+              // Strategy 4: Semantic match based on content
+              if (!matchingRow) {
+                const questionTitleLower = mapping.questionTitle.toLowerCase();
+                matchingRow = rows.find(row => {
+                  const rowTextLower = row.text.toLowerCase();
+                  return (
+                    (questionTitleLower.includes('gợi nhớ') && rowTextLower.includes('gợi nhớ')) ||
+                    (questionTitleLower.includes('cập nhật') && rowTextLower.includes('cập nhật')) ||
+                    (questionTitleLower.includes('chương trình') && rowTextLower.includes('chương trình')) ||
+                    (questionTitleLower.includes('mục đích') && rowTextLower.includes('mục đích'))
+                  );
+                });
+              }
+
+              if (matchingRow) {
+                const key = `${question.id}:${matchingRow.text}`;
+                initialMappings.set(key, mapping.columnName);
+                console.log('Successfully mapped grid row:', key, '->', mapping.columnName);
+              } else {
+                console.log('No matching row found for:', mapping.questionTitle);
+                // Don't create fallback mapping here to avoid conflicts
+              }
+            });
+          } else {
+            // For non-grid questions, map directly
+            const mapping = mappings[0]; // Should only be one mapping for non-grid
+            initialMappings.set(mapping.questionId, mapping.columnName);
+            console.log('Mapped non-grid question:', mapping.questionId, '->', mapping.columnName);
+          }
+        });
+        
+        console.log('Final initial mappings:', Array.from(initialMappings.entries()));
       }
 
       // Fuzzy auto-mapping for grid + non-grid (fill only empty ones)

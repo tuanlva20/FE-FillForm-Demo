@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { paymentsAPI } from 'api/payments';
 import { usePayment } from 'contexts/PaymentContext';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { logger } from 'utils/logger';
 import { getSocket } from 'utils/socket';
 import useAuth from './useAuth';
@@ -30,6 +30,7 @@ export default function useBalance() {
     },
     staleTime: 30_000,
     retry: 1,
+    refetchOnWindowFocus: false,
     // Clear cache when component unmounts to prevent accumulation
     gcTime: 0
   });
@@ -49,9 +50,17 @@ export default function useBalance() {
     const onConnect = () => {
       logger.log('🔌 Connected. Joining balance room');
       socket.emit('join_balance_room', { userId: user.id });
+      
+      // Debug: Log all available socket events
+      logger.log('🔍 Available socket events:', Object.keys(socket._events || {}));
     };
 
-    if (!socket.connected) socket.connect();
+    if (!socket.connected) {
+      logger.log('🔌 Socket not connected, attempting to connect...');
+      socket.connect();
+    } else {
+      logger.log('🔌 Socket already connected');
+    }
     onConnect();
 
     const handleBalanceUpdate = (payload: any) => {
@@ -88,8 +97,14 @@ export default function useBalance() {
         amountAdded
       });
 
-      // Update the balance
+      // Force update the balance in cache and trigger re-render
       queryClient.setQueryData<number>(QUERY_KEY, newBalance);
+      
+      // Also invalidate the query to ensure fresh data
+      queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      
+      // Force a refetch to ensure UI updates
+      refetch();
 
       // Show popup notification if money was added
       // Note: Even during payment confirmation, we want to show the success notification
@@ -101,6 +116,18 @@ export default function useBalance() {
 
     socket.on('connect', onConnect);
     socket.on('balance_update', handleBalanceUpdate);
+
+    // Listen for the specific BE message format: 42["balance_update",{...}]
+    socket.on('42', (message: any) => {
+      logger.log('📨 Socket message 42 received:', message);
+      
+      // Handle the specific format: ["balance_update", {"userId":"...", "balance":..., "updatedAt":"..."}]
+      if (Array.isArray(message) && message.length === 2 && message[0] === 'balance_update') {
+        logger.log('💸 Message 42 balance_update detected:', message);
+        const balanceData = message[1];
+        handleBalanceUpdate(balanceData);
+      }
+    });
 
     // Also listen for raw messages in case the event is emitted differently
     socket.on('message', (message: any) => {
@@ -117,6 +144,23 @@ export default function useBalance() {
       }
     });
 
+    // Listen for any message that might contain balance updates
+    if (socket.onAny) {
+      socket.onAny((eventName: string, ...args: any[]) => {
+        logger.log('🔍 Socket event received:', eventName, args);
+        
+        // Check if any of the arguments contain balance update data
+        for (const arg of args) {
+          if (Array.isArray(arg) && arg.length === 2 && arg[0] === 'balance_update') {
+            logger.log('💸 Balance update found in event:', eventName, arg);
+            const balanceData = arg[1];
+            handleBalanceUpdate(balanceData);
+            break;
+          }
+        }
+      });
+    }
+
     // Debug: Listen for all events (Socket.IO v2.4.0 compatible)
     const originalEmit = socket.emit;
     socket.emit = function (event: string, ...args: any[]) {
@@ -128,11 +172,15 @@ export default function useBalance() {
         socket.off('connect', onConnect);
         socket.off('balance_update', handleBalanceUpdate);
         socket.off('message');
+        socket.off('42');
+        if (socket.offAny) {
+          socket.offAny();
+        }
         // Restore original emit function
         socket.emit = originalEmit;
       } catch {}
     };
-  }, [isLoggedIn, user?.id, queryClient]);
+  }, [isLoggedIn, user?.id, queryClient, refetch]);
 
   const balance = useMemo(() => {
     const finalBalance = data ?? 0;
@@ -150,29 +198,29 @@ export default function useBalance() {
     isLoading,
     isError,
     refetch,
-    refresh: async () => {
+    refresh: useCallback(async () => {
       await paymentsAPI.refreshBalance();
       // Invalidate and refetch balance data
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
-    },
+    }, [queryClient]),
     // Force clear cache and refetch
-    forceRefresh: async () => {
+    forceRefresh: useCallback(async () => {
       // Clear cache completely
       queryClient.removeQueries({ queryKey: QUERY_KEY });
       // Refetch fresh data
       await refetch();
-    },
+    }, [queryClient, refetch]),
     // Debug socket connection
-    debugSocket: () => {
+    debugSocket: useCallback(() => {
       const socket = getSocket();
       logger.log('🔌 Socket debug info:', {
         connected: socket.connected,
         id: socket.id,
         userId: user?.id
       });
-    },
+    }, [user?.id]),
     // Test notification
-    testNotification: () => {
+    testNotification: useCallback(() => {
       const currentBalance = queryClient.getQueryData<number>(QUERY_KEY) || 0;
       const testAmount = 50000;
       queryClient.setQueryData<number>(QUERY_KEY, currentBalance + testAmount);
@@ -180,6 +228,6 @@ export default function useBalance() {
       if (currentStepper !== 'Xác nhận thanh toán') {
         showPaymentSuccess(testAmount);
       }
-    }
+    }, [currentStepper, queryClient, showPaymentSuccess])
   };
 }

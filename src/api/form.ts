@@ -123,6 +123,7 @@ export interface DataMappingResponse {
 
 export interface AutoMapping {
   questionId: string;
+  questionTitle: string;
   columnName: string;
   confidence: number;
 }
@@ -141,6 +142,59 @@ export interface DataFillRequestDTO {
   isHumanLike: boolean;
   startDate?: string;
   endDate?: string;
+}
+
+// Form Report Types
+export interface FormReportItem {
+  id: string;
+  formName: string;
+  formType: string;
+  type: string;
+  createdAt: string;
+  status: string;
+  statusDisplayName: string;
+  completionProgress: string;
+  totalCost: number;
+  costPerSurvey: number;
+  surveyCount: number;
+  completedSurvey: number;
+  failedSurvey: number;
+  formUrl: string;
+  formStatus: string;
+  formStatusDisplayName: string;
+  startDate: string;
+  endDate: string;
+  estimatedCompletionDate: string;
+  priority: number;
+  queuePosition: number | null;
+  queuedAt: string | null;
+  retryCount: number;
+  maxRetries: number;
+}
+
+export interface FormReportResponse {
+  content: FormReportItem[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  isFirst: boolean;
+  isLast: boolean;
+}
+
+export interface FormReportParams {
+  searchTerm?: string;
+  status?: string;
+  formStatus?: string;
+  type?: string;
+  startDate?: string;
+  endDate?: string;
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDirection?: 'asc' | 'desc';
 }
 
 // API endpoints
@@ -198,4 +252,22 @@ export const checkDataMapping = async (data: DataMappingRequest): Promise<DataMa
 export const createDataFillRequest = async (data: DataFillRequestDTO) => {
   const response = await axiosServices.post(API_ENDPOINTS.DATA_FILL_REQUEST, data);
   return response.data;
+};
+
+export const getFormReports = async (params: FormReportParams = {}): Promise<FormReportResponse> => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
+  if (params.status) queryParams.append('status', params.status);
+  if (params.formStatus) queryParams.append('formStatus', params.formStatus);
+  if (params.type) queryParams.append('type', params.type);
+  if (params.startDate) queryParams.append('startDate', params.startDate);
+  if (params.endDate) queryParams.append('endDate', params.endDate);
+  if (params.page !== undefined) queryParams.append('page', params.page.toString());
+  if (params.size !== undefined) queryParams.append('size', params.size.toString());
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params.sortDirection) queryParams.append('sortDirection', params.sortDirection);
+
+  const response = await axiosServices.get(`/api/v1/form-reports?${queryParams.toString()}`);
+  return response.data.content;
 };

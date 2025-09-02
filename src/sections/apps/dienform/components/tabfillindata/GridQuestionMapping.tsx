@@ -24,9 +24,16 @@ export default function GridQuestionMapping({ question, sheetColumns, columnMapp
     .filter((opt: any) => opt?.value && String(opt.value).startsWith('row'))
     .sort((a: any, b: any) => a.position - b.position);
 
+  // Debug logging
+  console.log('GridQuestionMapping - Question:', question.title);
+  console.log('GridQuestionMapping - Rows:', rows.map(r => r.text));
+  console.log('GridQuestionMapping - Column mappings:', Array.from(columnMappings.entries()));
+
   const getSelectedIndex = (rowText: string): number => {
-    const mappedName = columnMappings.get(`${question.id}:${rowText}`) || '';
+    const key = `${question.id}:${rowText}`;
+    const mappedName = columnMappings.get(key) || '';
     const idx = sheetColumns.findIndex((c) => c === mappedName);
+    console.log(`Getting selected index for key "${key}": mappedName="${mappedName}", index=${idx}`);
     return idx >= 0 ? idx : -1;
   };
 
