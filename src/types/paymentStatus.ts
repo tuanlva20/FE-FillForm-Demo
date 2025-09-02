@@ -1,5 +1,5 @@
 
-export type PaymentStatusType = 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT';
+export type PaymentStatusType = 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT' | 'CANCELLED';
 
 export interface PaymentStatusConfig {
   value: PaymentStatusType;
@@ -65,6 +65,15 @@ export const PAYMENT_STATUS_CONFIG: Record<PaymentStatusType, PaymentStatusConfi
     color: '#2196F3',
     backgroundColor: '#E3F2FD',
     description: 'Số tiền thanh toán vượt quá giá trị đơn hàng'
+  },
+  CANCELLED: {
+    value: 'CANCELLED',
+    label: 'Hủy',
+    title: 'Đơn hàng đã hủy',
+    icon: 'mdi:cancel',
+    color: '#9E9E9E',
+    backgroundColor: '#EEEEEE',
+    description: 'Đơn hàng đã bị hủy bởi người dùng hoặc hệ thống'
   }
 };
 

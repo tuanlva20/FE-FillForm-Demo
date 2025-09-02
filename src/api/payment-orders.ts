@@ -10,7 +10,7 @@ export interface PaymentOrderData {
   amount: number;
   paymentType: 'DEPOSIT' | 'WITHDRAWAL' | 'PROMOTIONAL';
   paymentTypeDisplayName: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT';
+  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT' | 'CANCELLED';
   statusDisplayName: string;
   description: string;
   transactionId: string;
@@ -25,7 +25,7 @@ export interface PaymentOrderSearchRequest {
   page?: number;
   size?: number;
   paymentType?: 'DEPOSIT' | 'WITHDRAWAL' | 'PROMOTIONAL';
-  status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT';
+  status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT' | 'CANCELLED';
   userName?: string;
   userEmail?: string;
   isPromotional?: boolean;
@@ -48,7 +48,7 @@ export const getPaymentOrders = async (params: {
   page?: number;
   size?: number;
   paymentType?: 'DEPOSIT' | 'WITHDRAWAL' | 'PROMOTIONAL';
-  status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT';
+  status?: 'PENDING' | 'COMPLETED' | 'FAILED' | 'EXPIRED' | 'MISMATCH' | 'OVERPAYMENT' | 'CANCELLED';
   userName?: string;
   userEmail?: string;
   isPromotional?: boolean;

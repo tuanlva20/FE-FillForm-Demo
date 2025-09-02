@@ -1,4 +1,6 @@
+import useBalance from 'hooks/useBalance';
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
+import DepositDialog from 'sections/nap-tien/DepositDialog';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -42,13 +44,13 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-  AnswerDistribution,
-  createFillRequest,
-  FillRequestDTO,
-  FormData,
-  FormDetailResponse,
-  getAllUserForms,
-  getFormDetail
+    AnswerDistribution,
+    createFillRequest,
+    FillRequestDTO,
+    FormData,
+    FormDetailResponse,
+    getAllUserForms,
+    getFormDetail
 } from 'api/form';
 
 // iconsax-react
@@ -100,6 +102,8 @@ export default function TabFillExpectedRatio() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
   const [selectedFillRequest, setSelectedFillRequest] = useState<FillRequestDTO | null>(null);
+  const { balance } = useBalance();
+  const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
 
   // State for loading
   const [loading, setLoading] = useState<boolean>(false);
@@ -833,6 +837,15 @@ export default function TabFillExpectedRatio() {
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
     try {
+      // Balance check before preparing payload
+      const totalCost = formValues.submissionCount * formValues.pricePerSurvey;
+      if ((balance ?? 0) < totalCost) {
+        setIsAutoFillModalOpen(false);
+        setIsDepositOpen(true);
+        setErrorSnackMessage('Số dư không đủ. Vui lòng nạp tiền để tiếp tục.');
+        setErrorSnackOpen(true);
+        return;
+      }
       // Prepare answer distributions
       const answerDistributions: AnswerDistribution[] = [];
 
@@ -1822,6 +1835,9 @@ export default function TabFillExpectedRatio() {
           formName={selectedForm?.name || ''}
           onSubmit={handleCreateFillRequest}
         />
+
+        {/* Deposit Dialog for insufficient balance */}
+        <DepositDialog open={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
 
         <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />
 

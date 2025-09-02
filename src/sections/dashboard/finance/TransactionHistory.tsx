@@ -89,10 +89,10 @@ export default function PaymentOrdersHistoryCard() {
       }
 
       const response = await getPaymentOrders(params);
-      
-      setPaymentOrders(response.data || []);
-      setTotalPages(response.pagination?.totalPages || 0);
-      setTotalElements(response.pagination?.totalElements || 0);
+      // Align with BE shape: { status, content, pageSize, pageNumber, totalPages, totalElements }
+      setPaymentOrders(response.content || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
     } catch (err) {
       console.error('Error fetching payment orders:', err);
       const errorMessage = handleApiError(err, 'Không thể tải dữ liệu giao dịch. Vui lòng thử lại sau.');
@@ -126,8 +126,27 @@ export default function PaymentOrdersHistoryCard() {
   }, [paymentOrders]);
 
   const getTableState = () => ({
-    pagination: { pageIndex, pageSize }
-  });
+    pagination: { pageIndex, pageSize },
+    columnVisibility: {},
+    columnOrder: [],
+    columnPinning: { left: [], right: [] },
+    rowSelection: {},
+    sorting: [],
+    columnFilters: [],
+    globalFilter: '',
+    expanded: {},
+    columnSizing: {},
+    columnSizingInfo: {
+      startOffset: null,
+      columnSizingStart: [],
+      isResizingColumn: false,
+      deltaOffset: null,
+      deltaPercentage: null,
+      startSize: null
+    },
+    rowPinning: { top: [], bottom: [] },
+    grouping: []
+  } as any);
 
   const getPageCount = () => totalPages;
 
@@ -141,6 +160,8 @@ export default function PaymentOrdersHistoryCard() {
         return 'PENDING';
       case 'FAILED':
         return 'FAILED';
+      case 'CANCELLED':
+        return 'CANCELLED';
       case 'EXPIRED':
         return 'FAILED';
       case 'MISMATCH':

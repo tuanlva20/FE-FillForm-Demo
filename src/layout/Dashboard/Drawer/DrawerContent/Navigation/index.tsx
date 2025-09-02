@@ -1,19 +1,20 @@
 import { Fragment, useLayoutEffect, useState } from 'react';
 
 // material-ui
-import useMediaQuery from '@mui/material/useMediaQuery';
+import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import useMediaQuery from '@mui/material/useMediaQuery';
 
 // project-imports
-import NavGroup from './NavGroup';
-import NavItem from './NavItem';
 import { useGetMenu, useGetMenuMaster } from 'api/menu';
-import { MenuOrientation, HORIZONTAL_MAX_ITEM } from 'config';
+import { HORIZONTAL_MAX_ITEM, MenuOrientation } from 'config';
+import useAuth from 'hooks/useAuth';
 import useConfig from 'hooks/useConfig';
 import menuItem from 'menu-items';
 import { MenuFromAPI } from 'menu-items/dashboard';
+import NavGroup from './NavGroup';
+import NavItem from './NavItem';
 
 // types
 import { NavItemType } from 'types/menu';
@@ -36,25 +37,25 @@ export default function Navigation() {
   const { menuLoading } = useGetMenu();
   const { menuMaster } = useGetMenuMaster();
   const drawerOpen = menuMaster.isDashboardDrawerOpened;
+  const { user } = useAuth();
 
   const [selectedID, setSelectedID] = useState<string | undefined>('');
   const [selectedItems, setSelectedItems] = useState<string | undefined>('');
   const [selectedLevel, setSelectedLevel] = useState<number>(0);
   const [menuItems, setMenuItems] = useState<{ items: NavItemType[] }>({ items: [] });
 
-  let dashboardMenu = MenuFromAPI();
+  const dashboardMenu = MenuFromAPI();
   useLayoutEffect(() => {
-    if (menuLoading && !isFound(menuItem, 'group-dashboard-loading')) {
-      menuItem.items.splice(0, 0, dashboardMenu);
-      setMenuItems({ items: [...menuItem.items] });
-    } else if (!menuLoading && dashboardMenu?.id !== undefined && !isFound(menuItem, 'group-dashboard')) {
+    // Always refresh the first dashboard group according to current role/loading state
+    const firstId = menuItem.items[0]?.id;
+    if (firstId === 'group-dashboard' || firstId === 'group-dashboard-loading') {
       menuItem.items.splice(0, 1, dashboardMenu);
-      setMenuItems({ items: [...menuItem.items] });
     } else {
-      setMenuItems({ items: [...menuItem.items] });
+      menuItem.items.splice(0, 0, dashboardMenu);
     }
+    setMenuItems({ items: [...menuItem.items] });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menuLoading]);
+  }, [menuLoading, user?.role]);
 
   const isHorizontal = menuOrientation === MenuOrientation.HORIZONTAL && !downLG;
 

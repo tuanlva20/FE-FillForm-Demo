@@ -40,6 +40,10 @@ export default function StatusChip({ status, fillRequest, size = 'medium', varia
     color = 'error';
     icon = <ErrorIcon />;
     label = 'Không thành công';
+  } else if (up === 'CANCELLED') {
+    color = 'default';
+    icon = <ErrorIcon />;
+    label = 'Hủy';
   } else if (up === 'QUEUED') {
     color = 'warning';
     icon = <Clock size={16} />;

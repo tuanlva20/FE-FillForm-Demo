@@ -46,16 +46,16 @@ const widget: NavItemType = {
       id: 'statistics',
       title: 'Trang chủ',
       type: 'item',
-      url: '/home',
+      url: '/#',
       icon: icons.statistics
     },
-    {
-      id: 'data',
-      title: 'Liên hệ',
-      type: 'item',
-      url: '/contact',
-      icon: icons.data
-    },
+    // {
+    //   id: 'data',
+    //   title: 'Liên hệ',
+    //   type: 'item',
+    //   url: '/',
+    //   icon: icons.data
+    // },
     {
       id: 'chart',
       title: 'Nạp tiền',

@@ -25,6 +25,8 @@ import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
 
 // components
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
+import useBalance from 'hooks/useBalance';
+import DepositDialog from 'sections/nap-tien/DepositDialog';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import PaymentModal from './components/PaymentModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
@@ -33,15 +35,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-  checkDataMapping,
-  createDataFillRequest,
-  DataFillRequestDTO,
-  DataMappingRequest,
-  DataMappingResponse,
-  FormData,
-  FormDetailResponse,
-  getAllUserForms,
-  getFormDetail
+    checkDataMapping,
+    createDataFillRequest,
+    DataFillRequestDTO,
+    DataMappingRequest,
+    DataMappingResponse,
+    FormData,
+    FormDetailResponse,
+    getAllUserForms,
+    getFormDetail
 } from 'api/form';
 
 // assets
@@ -70,6 +72,8 @@ export default function TabFillInData() {
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState<boolean>(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState<boolean>(false);
   const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
+  const { balance } = useBalance();
+  const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
 
   // State for form inputs
   const [formLink, setFormLink] = useState<string>('');
@@ -368,6 +372,16 @@ export default function TabFillInData() {
 
     try {
       setLoading(true);
+
+      // Check balance before creating request
+      const totalCost = formValues.submissionCount * formValues.pricePerSurvey;
+      if ((balance ?? 0) < totalCost) {
+        setIsAutoFillModalOpen(false); // keep state in memory; modal can be reopened
+        setIsDepositOpen(true);
+        setErrorSnackMessage('Số dư không đủ. Vui lòng nạp tiền để tiếp tục.');
+        setErrorSnackOpen(true);
+        return;
+      }
 
       const request: DataFillRequestDTO = {
         formId: selectedFormId,
@@ -793,6 +807,7 @@ export default function TabFillInData() {
 
       {/* Modals */}
       <PaymentModal open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+      <DepositDialog open={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
 
       <AutoFillFormModal
         open={isAutoFillModalOpen}
