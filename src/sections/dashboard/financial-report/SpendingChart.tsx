@@ -86,15 +86,15 @@ export default function SpendingChart() {
             <XAxis 
               dataKey="date" 
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
+              tickFormatter={(value: string | number) => new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' })}
             />
             <YAxis 
               tick={{ fontSize: 12 }}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+              tickFormatter={(value: number) => `${(value / 1000).toFixed(0)}k`}
             />
             <Tooltip 
               formatter={(value: number) => [`${value.toLocaleString('vi-VN')} VND`, '']}
-              labelFormatter={(label) => new Date(label).toLocaleDateString('vi-VN', { 
+              labelFormatter={(label: string | number) => new Date(label).toLocaleDateString('vi-VN', { 
                 day: '2-digit', 
                 month: '2-digit', 
                 year: 'numeric' 

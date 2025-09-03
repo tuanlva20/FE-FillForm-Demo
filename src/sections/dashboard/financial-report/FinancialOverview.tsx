@@ -1,5 +1,6 @@
 import { AccountBalance, CardGiftcard, Payment } from '@mui/icons-material';
-import { Box, Card, CardContent, Grid, Typography } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
+import Grid from '@mui/material/Grid2';
 import { getFinancialOverview } from 'api/payment';
 import { useEffect, useState } from 'react';
 import { formatAmount } from 'utils/paymentUtils';
