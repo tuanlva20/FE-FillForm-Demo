@@ -752,7 +752,7 @@ export default function TabFillInData() {
               )}
 
               {/* Show unmapped questions if any */}
-              {mappingData.unmappedQuestions && mappingData.unmappedQuestions.length > 0 && (
+              {/* {mappingData.unmappedQuestions && mappingData.unmappedQuestions.length > 0 && (
                 <Alert color="info" icon={<InfoCircle variant="Bold" />} sx={{ mb: 3 }}>
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>
                     Câu hỏi không tìm thấy trong sheet:
@@ -763,7 +763,7 @@ export default function TabFillInData() {
                     ))}
                   </ul>
                 </Alert>
-              )}
+              )} */}
 
               {/* Header Row */}
               <Box sx={{ mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>

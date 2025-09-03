@@ -11,7 +11,7 @@ import PaymentSuccessPopup from 'components/PaymentSuccessPopup';
 import RTLLayout from 'components/RTLLayout';
 import ScrollTop from 'components/ScrollTop';
 import Notistack from 'components/third-party/Notistack';
-import Metrics from 'metrics';
+// import Metrics from 'metrics';
 
 // providers
 import { JWTProvider as AuthProvider } from 'contexts/JWTContext';
@@ -58,7 +58,7 @@ export default function App() {
           </Locales>
         </RTLLayout>
       </ThemeCustomization>
-      <Metrics />
+      {/* <Metrics /> */}
     </>
   );
 }

@@ -95,37 +95,6 @@ export default function SurveyBanner() {
                 Bạn là sinh viên bận rộn hay cần chạy luận văn gấp? Khaosat.tech giúp bạn tự động điền khảo sát, bảng câu hỏi chỉ trong tích
                 tắc! Tiết kiệm thời gian, tăng hiệu quả – thử ngay hôm nay!
               </Typography>
-
-              {/* CTA Button */}
-              <Box sx={{ pt: 1 }}>
-                <Button
-                  href="#"
-                  variant="contained"
-                  size="small"
-                  endIcon={<ArrowRight />}
-                  onMouseEnter={() => setIsHovered(true)}
-                  onMouseLeave={() => setIsHovered(false)}
-                  sx={{
-                    bgcolor: theme.palette.background.paper,
-                    color: theme.palette.primary.main,
-                    px: 4,
-                    py: 1.5,
-                    fontSize: '1.1rem',
-                    fontWeight: 600,
-                    borderRadius: 2,
-                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                    transform: isHovered ? 'translateY(-2px)' : 'translateY(0)',
-                    transition: 'all 0.3s ease',
-                    '&:hover': {
-                      bgcolor: theme.palette.background.paper,
-                      boxShadow: '0 12px 35px rgba(0,0,0,0.2)',
-                      transform: 'translateY(-2px) scale(1.02)'
-                    }
-                  }}
-                >
-                  Đăng Ký Ngay
-                </Button>
-              </Box>
             </Stack>
           </Grid>
 

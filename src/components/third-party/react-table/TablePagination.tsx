@@ -7,7 +7,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Pagination from '@mui/material/Pagination';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 // third-party
@@ -36,7 +35,12 @@ export default function TablePagination({ getPageCount, setPageIndex, setPageSiz
   }
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => setPageSize(initialPageSize || 10), []);
+  useEffect(() => {
+    // Only set pageSize if no initialPageSize is provided
+    if (!initialPageSize) {
+      setPageSize(10);
+    }
+  }, []);
 
   const handleClose = () => {
     setOpen(false);

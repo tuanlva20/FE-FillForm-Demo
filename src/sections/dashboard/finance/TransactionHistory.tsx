@@ -48,7 +48,11 @@ export default function PaymentOrdersHistoryCard() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(() => {
+    // Load pageSize from localStorage or default to 5
+    const savedPageSize = localStorage.getItem('paymentOrdersPageSize');
+    return savedPageSize ? parseInt(savedPageSize, 10) : 5;
+  });
   const [paymentOrders, setPaymentOrders] = useState<PaymentOrderData[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
@@ -118,6 +122,17 @@ export default function PaymentOrdersHistoryCard() {
   useEffect(() => {
     setPageIndex(0);
   }, [debouncedSearchQuery, statusFilter]);
+
+  // Save pageSize to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('paymentOrdersPageSize', pageSize.toString());
+  }, [pageSize]);
+
+  // Handle page size change - reset to first page when changing page size
+  useEffect(() => {
+    // Reset to first page when page size changes
+    setPageIndex(0);
+  }, [pageSize]);
 
   // Get unique statuses for filter
   const uniqueStatuses = useMemo(() => {
@@ -354,7 +369,7 @@ export default function PaymentOrdersHistoryCard() {
               setPageIndex={setPageIndex}
               getState={getTableState}
               getPageCount={getPageCount}
-              initialPageSize={5}
+              initialPageSize={pageSize}
             />
           </Box>
         </>

@@ -9,7 +9,7 @@ interface DepositDialogProps {
 
 export default function DepositDialog({ open, onClose }: DepositDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" justifyContent="space-between">
           <Typography variant="h5">Nạp tiền vào tài khoản</Typography>
