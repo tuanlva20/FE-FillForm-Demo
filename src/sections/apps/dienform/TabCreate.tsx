@@ -31,7 +31,7 @@ const MenuProps = { PaperProps: { style: { maxHeight: ITEM_HEIGHT * 4.5 + ITEM_P
 import capQuyenFormImg from 'assets/images/dienformtudong/cap-quyen-google-form.png';
 import huongDanCaiDatImg from 'assets/images/dienformtudong/huong-dan-cai-dat.png';
 import { ErrorIcon } from 'assets/images/svg/icon';
-import { CloseCircle, InfoCircle, TickCircle } from 'iconsax-react';
+import { InfoCircle } from 'iconsax-react';
 
 // ==============================|| DIENFORM - CREATE ||============================== //
 
@@ -210,7 +210,7 @@ export default function TabCreate() {
                 <Box component="ul" sx={{ pl: 3, m: 0, color: 'text.secondary' }}>
                   <Box component="li">
                     <Typography variant="body2">
-                      <strong>Bỏ điều hướng trang:</strong> Tắt "Chuyển tới phần dựa trên câu trả lời"
+                      <strong>Đối với câu hỏi điều hướng tới phần:</strong> Tắt "Chuyển tới phần dựa trên câu trả lời"
                     </Typography>
                   </Box>
                   <Box component="li">
