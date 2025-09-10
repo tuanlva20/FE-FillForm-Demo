@@ -93,6 +93,7 @@ export interface FillRequestDTO {
   status?: string;
   answerDistributions?: AnswerDistribution[];
   completedSurvey?: number;
+  failedSurvey?: number;
   scheduledTime?: string;
   isHumanLike?: boolean;
   humanLike?: boolean;
