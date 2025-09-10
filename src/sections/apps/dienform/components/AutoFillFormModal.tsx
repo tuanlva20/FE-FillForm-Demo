@@ -43,6 +43,14 @@ interface AutoFillFormModalProps {
 }
 
 export default function AutoFillFormModal({ open, onClose, formName, onSubmit }: AutoFillFormModalProps) {
+  // Normalize date by removing time parts for reliable same-day comparisons
+  const normalizeToStartOfDay = (date: Date | null | undefined): Date | null => {
+    if (!date) return null;
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  };
+
   const [formValues, setFormValues] = useState({
     submissionCount: 1,
     pricePerSurvey: 450,
@@ -117,10 +125,15 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
   const handleSwitchChange = (event: ChangeEvent<HTMLInputElement>) => {
     if (event.target.name === 'isHumanLike') {
       const isChecked = event.target.checked;
+      const now = new Date();
+      
       setFormValues((prev) => ({
         ...prev,
         isHumanLike: isChecked,
-        pricePerSurvey: isChecked ? 350 + 100 : 350
+        pricePerSurvey: isChecked ? 350 + 100 : 350,
+        // Reset both date fields to current date when toggle is turned off
+        startDate: isChecked ? prev.startDate : now,
+        endDate: isChecked ? prev.endDate : now
       }));
     } else {
       setFormValues({
@@ -144,12 +157,24 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     // Clear start date error if validation passes
     const newErrors = { ...errors, startDate: undefined };
 
-    // Re-validate end date if it exists and new start date is after it
-    if (newValue && formValues.endDate && newValue > formValues.endDate) {
-      newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
-    } else if (formValues.endDate) {
-      // Clear end date error if it becomes valid
+    // Re-validate end date with normalized values (allow equal)
+    const normalizedStart = normalizeToStartOfDay(newValue);
+    const normalizedEnd = normalizeToStartOfDay(formValues.endDate);
+
+    const isEndBeforeStart =
+      normalizedStart !== null &&
+      normalizedEnd !== null &&
+      normalizedStart.getTime() > normalizedEnd.getTime();
+
+    // Determine if we'll auto-adjust endDate to the new startDate
+    const willAutoAdjustEndDate =
+      !!newValue && (!formValues.endDate || isEndBeforeStart);
+
+    // If we auto-adjust endDate or dates are valid/equal, clear the error
+    if (willAutoAdjustEndDate || !isEndBeforeStart) {
       newErrors.endDate = undefined;
+    } else {
+      newErrors.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
     }
 
     setErrors(newErrors);
@@ -157,7 +182,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       ...formValues,
       startDate: newValue,
       // Auto-set endDate to startDate if endDate is null or before startDate
-      endDate: newValue && (!formValues.endDate || newValue > formValues.endDate) ? newValue : formValues.endDate
+      endDate: willAutoAdjustEndDate ? newValue : formValues.endDate
     });
   };
 
@@ -172,8 +197,10 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       return;
     }
 
-    // Validate end date must be after start date
-    if (newValue && formValues.startDate && newValue < formValues.startDate) {
+    // Validate end date must not be before start date (allow equal)
+    const normalizedEnd = normalizeToStartOfDay(newValue);
+    const normalizedStart = normalizeToStartOfDay(formValues.startDate);
+    if (normalizedEnd && normalizedStart && normalizedEnd.getTime() < normalizedStart.getTime()) {
       setErrors({
         ...errors,
         endDate: 'Ngày kết thúc phải sau ngày bắt đầu'
@@ -370,6 +397,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                       }}
                       format="dd-MM-yyyy"
                       minDate={new Date()}
+                      disabled={!formValues.isHumanLike}
                       slotProps={{
                         textField: {
                           fullWidth: true,
@@ -401,6 +429,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                       }}
                       format="dd-MM-yyyy"
                       minDate={formValues.startDate || new Date()}
+                      disabled={!formValues.isHumanLike}
                       slotProps={{
                         textField: {
                           fullWidth: true,

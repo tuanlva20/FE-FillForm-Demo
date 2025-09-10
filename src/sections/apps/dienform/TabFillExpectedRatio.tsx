@@ -1110,8 +1110,6 @@ export default function TabFillExpectedRatio() {
           ? (() => {
               const local = new Date(formValues.endDate);
               local.setHours(23, 59, 59, 999);
-              // Trừ 8 tiếng từ endDate
-              local.setHours(local.getHours() - 8);
               const y = local.getFullYear();
               const m = String(local.getMonth() + 1).padStart(2, '0');
               const d = String(local.getDate()).padStart(2, '0');
