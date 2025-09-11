@@ -2,18 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 
 // material-ui
 import AppBar from '@mui/material/AppBar';
+import Box from '@mui/material/Box';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
 import Toolbar from '@mui/material/Toolbar';
-import Box from '@mui/material/Box';
 
 // project-imports
-import Localization from './Localization';
-import Profile from './Profile';
-import Search from './Search';
+// Localization removed as not needed
 import IconButton from 'components/@extended/IconButton';
 import Transitions from 'components/@extended/Transitions';
+import Profile from './Profile';
+import Search from './Search';
 
 // assets
 import { MoreSquare } from 'iconsax-react';
@@ -84,7 +84,7 @@ export default function MobileSection() {
                 <AppBar color="inherit">
                   <Toolbar>
                     <Search />
-                    <Localization />
+                    {/* Localization removed */}
                     <Profile />
                   </Toolbar>
                 </AppBar>
