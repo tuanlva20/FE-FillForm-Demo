@@ -172,7 +172,6 @@ export default function ExpectedRatioFormList({
               <TableCell align="center">Ngày kết thúc</TableCell>
               <TableCell align="center">Ngày dự kiến hoàn thành</TableCell>
               <TableCell align="center">Số lượng</TableCell>
-              <TableCell align="center">Số lượng đơn Fail</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
               <TableCell align="center">Hành động</TableCell>
             </TableRow>
@@ -198,7 +197,6 @@ export default function ExpectedRatioFormList({
                   <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
                   <TableCell align="center">{formatFullDateTime((request as any).estimatedCompletionDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
-                  <TableCell align="center" sx={{ color: 'error.main', fontWeight: 600 }}>{request.failedSurvey ?? 0}</TableCell>
                   <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
@@ -213,7 +211,7 @@ export default function ExpectedRatioFormList({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={11} align="center">
+                <TableCell colSpan={10} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchText ? 'Không tìm thấy yêu cầu điền nào phù hợp' : 'Chưa có yêu cầu điền nào cho form này'}
                   </Typography>

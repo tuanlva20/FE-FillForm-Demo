@@ -147,7 +147,6 @@ export default function FillRequestList({
               <TableCell align="center">Ngày kết thúc</TableCell>
               <TableCell align="center">Ngày dự kiến hoàn thành</TableCell>
               <TableCell align="center">Số lượng</TableCell>
-              <TableCell align="center">Số lượng đơn Fail</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
               {/* <TableCell align="center">Hành động</TableCell> */}
             </TableRow>
@@ -155,7 +154,7 @@ export default function FillRequestList({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography variant="body1" color="textSecondary">
                     Đang tải...
                   </Typography>
@@ -181,7 +180,6 @@ export default function FillRequestList({
                   <TableCell align="center">{formatDate(request.endDate || '')}</TableCell>
                   <TableCell align="center">{formatDateTime((request as any).estimatedCompletionDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
-                  <TableCell align="center" sx={{ color: 'error.main', fontWeight: 600 }}>{request.failedSurvey ?? 0}</TableCell>
                   <TableCell align="center">{getStatusChip(request)}</TableCell>
                   {/* <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
@@ -200,7 +198,7 @@ export default function FillRequestList({
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={10} align="center">
+                <TableCell colSpan={9} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchQuery ? 'Không tìm thấy yêu cầu nào phù hợp' : 'Chưa có yêu cầu điền form nào'}
                   </Typography>
