@@ -43,16 +43,18 @@ export default function TabCreate() {
   const [error, setError] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
 
-  // Validate Google Form link
+  // Validate Google Form edit link
   const validateGoogleFormLink = (link: string): boolean => {
     if (!link.trim()) return true; // Allow empty for initial state
 
     try {
       const url = new URL(link);
-      const isGoogleForms = url.hostname === 'docs.google.com' && url.pathname.includes('/forms/');
-      const isViewForm = url.pathname.includes('/viewform') || url.searchParams.has('usp');
+      const path = url.pathname;
+      const isGoogleForms = url.hostname === 'docs.google.com' && path.includes('/forms/');
+      // Accept edit links like /forms/d/<id>/edit with optional trailing slash; allow query params
+      const isEditForm = /\/forms\/d\/[^/]+\/edit\/?$/.test(path) || path.includes('/edit');
 
-      return isGoogleForms && isViewForm;
+      return isGoogleForms && isEditForm;
     } catch {
       return false;
     }
@@ -65,9 +67,9 @@ export default function TabCreate() {
     // Clear previous errors
     setError(null);
 
-    // Validate link format
+    // Validate edit link format
     if (value.trim() && !validateGoogleFormLink(value)) {
-      setLinkError('Link không hợp lệ. Vui lòng sử dụng link trả lời của Google Form (dạng /viewform)');
+      setLinkError('Link không hợp lệ. Vui lòng sử dụng link Edit của Google Form (dạng /edit)');
     } else {
       setLinkError(null);
     }
@@ -75,12 +77,12 @@ export default function TabCreate() {
 
   const handleCreateForm = async () => {
     if (!formLink) {
-      setError('Vui lòng điền link trả lời của form');
+      setError('Vui lòng điền link Edit của form');
       return;
     }
 
     if (!validateGoogleFormLink(formLink)) {
-      setError('Link không hợp lệ. Vui lòng sử dụng link trả lời của Google Form (dạng /viewform)');
+      setError('Link không hợp lệ. Vui lòng sử dụng link Edit của Google Form (dạng /edit)');
       return;
     }
 
@@ -144,11 +146,11 @@ export default function TabCreate() {
             </Grid>
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack sx={{ gap: 1 }}>
-                <InputLabel htmlFor="link-edit-form">Link trả lời của form</InputLabel>
+                <InputLabel htmlFor="link-edit-form">Link Edit của form</InputLabel>
                 <TextField
                   fullWidth
                   id="link-edit-form"
-                  placeholder="Điền link trả lời của form (hướng dẫn bên dưới)..."
+                  placeholder="Điền link Edit của form (dạng /edit, hướng dẫn bên dưới)..."
                   value={formLink}
                   onChange={handleFormLinkChange}
                   error={!!linkError || (!!error && !formLink)}
@@ -245,7 +247,7 @@ export default function TabCreate() {
                   Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
                   <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời</strong>
                   <br />
-                  Sau đó nhấn <strong>Sao chép đường liên kết của người trả lời</strong> và dán vào <strong>"Link trả lời của form"</strong>
+                  Sau đó nhấn <strong>Sao chép đường liên kết chỉnh sửa</strong> và dán vào <strong>"Link Edit của form"</strong>
                   . Thiết lập này giúp hệ thống truy cập được (tránh lỗi không thể truy cập/accessible).
                 </Typography>
                 <Box
