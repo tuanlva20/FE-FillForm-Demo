@@ -13,7 +13,7 @@ import MainCard from 'components/MainCard';
 import { APP_DEFAULT_PATH, GRID_COMMON_SPACING } from 'config';
 
 // assets
-import { DocumentText, Lock, Profile, Profile2User } from 'iconsax-react';
+import { Data, DocumentText, Profile, Profile2User } from 'iconsax-react';
 
 // ==============================|| PROFILE - ACCOUNT ||============================== //
 
@@ -62,8 +62,23 @@ export default function AccountProfile() {
   }
 
   useEffect(() => {
-    if (pathname === '/apps/dienform/create') {
-      setValue(0);
+    // Update tab value based on current pathname
+    switch (pathname) {
+      case '/apps/dienform/create':
+        setValue(0);
+        break;
+      case '/apps/dienform/fill-expected-ratio':
+        setValue(1);
+        break;
+      case '/apps/dienform/fill-in-data':
+        setValue(2);
+        break;
+      case '/apps/dienform/history':
+        setValue(3);
+        break;
+      default:
+        setValue(0);
+        break;
     }
   }, [pathname]);
 
@@ -89,7 +104,7 @@ export default function AccountProfile() {
                 icon={<TableDocument />}
                 iconPosition="start"
               /> */}
-              <Tab label="Điền theo data có trước" component={Link} to="/apps/dienform/fill-in-data" icon={<Lock />} iconPosition="start" />
+              <Tab label="Điền theo data có trước" component={Link} to="/apps/dienform/fill-in-data" icon={<Data />} iconPosition="start" />
               <Tab label="Lịch sử" component={Link} to="/apps/dienform/history" icon={<Profile2User />} iconPosition="start" />
             </Tabs>
           </Box>

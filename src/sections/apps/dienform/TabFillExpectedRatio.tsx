@@ -44,13 +44,13 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail
+  AnswerDistribution,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // iconsax-react
@@ -193,6 +193,23 @@ export default function TabFillExpectedRatio() {
       try {
         const list = await getAllUserForms();
         setForms(Array.isArray(list) ? list : []);
+        
+        // Check if there's a selected form from sessionStorage
+        const selectedFormForRatio = sessionStorage.getItem('selectedFormForRatio');
+        if (selectedFormForRatio) {
+          try {
+            const formData = JSON.parse(selectedFormForRatio);
+            // Find the form in the list and set it as selected
+            const foundForm = list.find((form: FormData) => form.id === formData.id);
+            if (foundForm) {
+              setSelectedFormId(foundForm.id);
+            }
+            // Clear the sessionStorage after use
+            sessionStorage.removeItem('selectedFormForRatio');
+          } catch (err) {
+            console.error('Error parsing selected form data:', err);
+          }
+        }
       } catch (err: any) {
         logger.error('Error fetching forms:', err);
         setError(handleFormError(err, 'fetch'));
@@ -233,7 +250,7 @@ export default function TabFillExpectedRatio() {
           newQuestionOptions.set(question.id, optionsMap);
 
           // Initialize custom data state for text fields
-          if (question.type === 'text') {
+          if (question.type === 'text' || question.type === 'paragraph') {
             newCustomData.set(question.id, { useCustomData: false, data: '' });
           }
 
@@ -469,7 +486,7 @@ export default function TabFillExpectedRatio() {
 
       newQuestionOptions.set(question.id, optionsMap);
 
-      if (question.type === 'text') {
+      if (question.type === 'text' || question.type === 'paragraph') {
         newCustomData.set(question.id, { useCustomData: false, data: '' });
       }
 
@@ -505,7 +522,7 @@ export default function TabFillExpectedRatio() {
 
       logger.log(`Processing question ${questionId} (${question.type}):`, dists);
 
-      if (question.type === 'text') {
+      if (question.type === 'text' || question.type === 'paragraph') {
         // For text questions, collect all valueStrings and join them
         const textLines = dists
           .filter((dist) => dist.valueString)
@@ -717,7 +734,7 @@ export default function TabFillExpectedRatio() {
       if (!question) return;
       const optId = dist.optionId || dist.option?.id;
       const opt = question.options.find((o) => o.id === optId);
-      if (opt && opt.value === '__other_option__' && typeof dist.valueString === 'string') {
+      if (opt && (opt.value === '__other_option__' || opt.value === 'otherOption') && typeof dist.valueString === 'string') {
         const arr = otherLinesMap.get(qId) || [];
         arr.push(dist.valueString);
         otherLinesMap.set(qId, arr);
@@ -778,7 +795,7 @@ export default function TabFillExpectedRatio() {
 
             newQuestionOptions.set(question.id, optionsMap);
 
-            if (question.type === 'text') {
+            if (question.type === 'text' || question.type === 'paragraph') {
               newCustomData.set(question.id, { useCustomData: false, data: '' });
             }
 
@@ -870,7 +887,7 @@ export default function TabFillExpectedRatio() {
               const optMeta = question.options.find((o) => o.id === optionId);
               // Skip if option id does not belong to this question (avoid cross-form/cross-question ids)
               if (!optMeta) return;
-              if (optMeta.value === '__other_option__') {
+              if (optMeta.value === '__other_option__' || optMeta.value === 'otherOption') {
                 const raw = otherOptionInputs.get(questionId) || '';
                 const lines = raw
                   .split('\n')
@@ -967,7 +984,7 @@ export default function TabFillExpectedRatio() {
               });
             });
           }
-        } else if (question.type === 'text') {
+        } else if (question.type === 'text' || question.type === 'paragraph') {
           const customDataEntry = customData.get(question.id);
           if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
             const lines = customDataEntry.data
@@ -1343,7 +1360,7 @@ export default function TabFillExpectedRatio() {
 
             // Detect "other" option either by explicit optionValue or by lookup
             const optMeta = optionLookup.get(optionId);
-            if ((optionValue === '__other_option__' || optMeta?.value === '__other_option__') && sampleValues?.length > 0) {
+            if ((optionValue === '__other_option__' || optionValue === 'otherOption' || optMeta?.value === '__other_option__' || optMeta?.value === 'otherOption') && sampleValues?.length > 0) {
               otherOptionSamples = sampleValues;
             }
           });
@@ -1402,10 +1419,47 @@ export default function TabFillExpectedRatio() {
     (question: any) => {
       return (
         <Box sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
-            {question.title}
-          </Typography>
-          {question.type === 'text' ? (
+          {question.type === 'section' ? (
+            // Section type is handled by QuestionGroup's SectionHeader, so render nothing here to avoid duplication
+            null
+          ) : question.type === 'description' ? (
+            // Description type - show as a clean white component like the image
+            <Box sx={{ 
+              mb: 2, 
+              p: 2, 
+              bgcolor: 'background.paper', 
+              borderRadius: 1,
+              border: '1px solid',
+              borderColor: 'divider'
+            }}>
+              <Typography variant="h6" sx={{ 
+                color: 'text.primary',
+                fontWeight: 600,
+                textAlign: 'center',
+                borderTop: '1px solid',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+                py: 1,
+                mb: 2
+              }}>
+                {question.title}
+              </Typography>
+              {question.description && (
+                <Typography variant="body1" sx={{
+                  color: 'text.secondary',
+                  textAlign: 'center',
+                  lineHeight: 1.6
+                }}>
+                  {question.description}
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            <>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
+                {question.title}
+              </Typography>
+              {question.type === 'text' || question.type === 'paragraph' ? (
             <>
               <FormControlLabel
                 control={
@@ -1540,8 +1594,8 @@ export default function TabFillExpectedRatio() {
                 const questionMap = questionOptions.get(question.id);
                 const percentage = questionMap?.get(option.id) || 0;
                 logger.log(`Rendering option ${option.id} for question ${question.id}: ${percentage}%`);
-                const isOtherOption = option.value === '__other_option__';
-                const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+                const isOtherOption = option.value === '__other_option__' || option.value === 'otherOption';
+                const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__' || opt.value === 'otherOption');
                 const otherPercent = otherOpt ? questionOptions.get(question.id)?.get(otherOpt.id) || 0 : 0;
                 const showOtherTextarea = isOtherOption && otherPercent > 0;
 
@@ -1592,7 +1646,7 @@ export default function TabFillExpectedRatio() {
           )}
           {/* Other option free text input */}
           {(() => {
-            const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__');
+            const otherOpt = question.options.find((opt: any) => opt.value === '__other_option__' || opt.value === 'otherOption');
             const otherPercent = otherOpt ? questionOptions.get(question.id)?.get(otherOpt.id) || 0 : 0;
             if (otherOpt && otherPercent > 0) {
               return (
@@ -1639,11 +1693,17 @@ export default function TabFillExpectedRatio() {
             question.type !== 'date' &&
             question.type !== 'multiple_choice_grid' &&
             question.type !== 'checkbox_grid' &&
-            question.type !== 'text' && (
+            question.type !== 'text' &&
+            question.type !== 'paragraph' &&
+            question.type !== 'section' &&
+            question.type !== 'description' && (
               <Alert color="error" icon={<ErrorIcon />} sx={{ mt: 2 }}>
                 {balanceErrors.get(question.id)}
               </Alert>
             )}
+              <Divider sx={{ my: 2, borderColor: 'divider' }} />
+            </>
+          )}
         </Box>
       );
     },

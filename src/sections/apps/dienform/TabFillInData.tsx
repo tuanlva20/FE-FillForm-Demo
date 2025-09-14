@@ -35,15 +35,15 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-  checkDataMapping,
-  createDataFillRequest,
-  DataFillRequestDTO,
-  DataMappingRequest,
-  DataMappingResponse,
-  FormData,
-  FormDetailResponse,
-  getAllUserForms,
-  getFormDetail
+    checkDataMapping,
+    createDataFillRequest,
+    DataFillRequestDTO,
+    DataMappingRequest,
+    DataMappingResponse,
+    FormData,
+    FormDetailResponse,
+    getAllUserForms,
+    getFormDetail
 } from 'api/form';
 
 // assets
@@ -65,7 +65,7 @@ export default function TabFillInData() {
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [selectedForm, setSelectedForm] = useState<FormDetailResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [errorAlert, setErrorAlert] = useState<{ title: string; description: string; showEncryption?: boolean } | null>(null);
+  const [errorAlert, setErrorAlert] = useState<{ title: string; description: string; showEncryption?: boolean; showFormSettingsLink?: boolean } | null>(null);
 
   // State for payment modal
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
@@ -122,7 +122,22 @@ export default function TabFillInData() {
         const list = await getAllUserForms();
         setForms(Array.isArray(list) ? list : []);
 
-        // Don't select any form by default - user must choose
+        // Check if there's a selected form from sessionStorage
+        const selectedFormForData = sessionStorage.getItem('selectedFormForData');
+        if (selectedFormForData) {
+          try {
+            const formData = JSON.parse(selectedFormForData);
+            // Find the form in the list and set it as selected
+            const foundForm = list.find((form: FormData) => form.id === formData.id);
+            if (foundForm) {
+              setSelectedFormId(foundForm.id);
+            }
+            // Clear the sessionStorage after use
+            sessionStorage.removeItem('selectedFormForData');
+          } catch (err) {
+            console.error('Error parsing selected form data:', err);
+          }
+        }
       } catch (err: any) {
         console.error('Error fetching forms:', err);
         const msg = handleFormError(err, 'fetch');
@@ -193,8 +208,20 @@ export default function TabFillInData() {
   };
 
   // Helper: build alert from create fill request error
-  const buildAlertForCreateFillRequestError = (err: any): { title: string; description: string; showEncryption?: boolean } => {
+  const buildAlertForCreateFillRequestError = (err: any): { title: string; description: string; showEncryption?: boolean; showFormSettingsLink?: boolean } => {
     const data = err?.response?.data ?? err;
+
+    // Check for specific SIGN_IN_REQUIRED error
+    if (data?.content && Array.isArray(data.content)) {
+      const signInError = data.content.find((item: any) => item.code === 'SIGN_IN_REQUIRED');
+      if (signInError) {
+        return {
+          title: 'Lỗi cài đặt form',
+          description: 'Vui lòng tắt Giới hạn 1 phản hồi/Limit to 1 response.',
+          showFormSettingsLink: true
+        };
+      }
+    }
 
     // Check if this is a validation error from backend
     if (data?.errorMessage) {
@@ -611,9 +638,42 @@ export default function TabFillInData() {
           {errorAlert && (
             <Alert color="error" variant="border" icon={<ErrorIcon />} sx={{ mb: 2 }}>
               <AlertTitle>{errorAlert.title}</AlertTitle>
-              <Typography variant="h6" sx={{ mb: errorAlert.showEncryption ? 2 : 0 }}>
+              <Typography variant="h6" sx={{ mb: (errorAlert.showEncryption || errorAlert.showFormSettingsLink) ? 2 : 0 }}>
                 {errorAlert.description}
               </Typography>
+              {errorAlert.showFormSettingsLink && (
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 2,
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'primary.light'
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="body2" color="primary.main" fontWeight="600">
+                      💡 Gợi ý:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Xem hướng dẫn:
+                    </Typography>
+                    <Link
+                      href="/apps/dienform/create"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
+                      Tại đây
+                    </Link>
+                  </Stack>
+                </Box>
+              )}
               {errorAlert.showEncryption && (
                 <Box
                   sx={{

@@ -172,6 +172,15 @@ export const handleFormError = (err: any, operation: 'create' | 'update' | 'dele
     fetch: 'Có lỗi xảy ra khi tải thông tin form. Vui lòng thử lại.'
   };
 
+  // Check for specific SIGN_IN_REQUIRED error
+  const data = err?.response?.data ?? err;
+  if (data?.content && Array.isArray(data.content)) {
+    const signInError = data.content.find((item: any) => item.code === 'SIGN_IN_REQUIRED');
+    if (signInError) {
+      return 'Lỗi cài đặt form: Vui lòng tắt Giới hạn 1 phản hồi/Limit to 1 response. Xem hướng dẫn: Tại đây';
+    }
+  }
+
   return handleApiError(err, operationMessages[operation]);
 };
 

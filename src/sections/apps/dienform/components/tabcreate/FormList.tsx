@@ -18,31 +18,29 @@ import Tooltip from '@mui/material/Tooltip';
 // project-imports
 import MainCard from 'components/MainCard';
 import { TablePagination } from 'components/third-party/react-table';
-import AlertFormDelete from '../AlertFormDelete';
 
 // utils
 import { formatDate } from 'utils/DateUtil';
 
 // api
-import { deleteForm, FormData, getFormList } from 'api/form';
+import { FormData, getFormList } from 'api/form';
 
 // third-party
 import { TableState } from '@tanstack/react-table';
 
 // assets
-import { Trash } from 'iconsax-react';
+import { Data, DocumentText } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // ==============================|| FORM LIST ||============================== //
 
 interface FormListProps {
   refreshTrigger?: boolean;
+  onFillByRatio?: (form: FormData) => void;
+  onFillByData?: (form: FormData) => void;
 }
 
-export default function FormList({ refreshTrigger }: FormListProps) {
-  const [open, setOpen] = useState<boolean>(false);
-  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
-  const [deleteFormName, setDeleteFormName] = useState<string>('');
+export default function FormList({ refreshTrigger, onFillByRatio, onFillByData }: FormListProps) {
   const [forms, setForms] = useState<FormData[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,29 +70,6 @@ export default function FormList({ refreshTrigger }: FormListProps) {
   useEffect(() => {
     fetchForms();
   }, [fetchForms, refreshTrigger]);
-
-  const handleDeleteClick = (id: string, name: string) => {
-    setDeleteFormId(id);
-    setDeleteFormName(name);
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (deleteFormId) {
-      try {
-        await deleteForm(deleteFormId);
-        fetchForms(); // Refresh the list after deletion
-      } catch (err) {
-        console.error('Error deleting form:', err);
-        setError('Không thể xóa form. Vui lòng thử lại sau.');
-      }
-    }
-    setOpen(false);
-  };
 
   const getTableState = (): TableState => {
     return {
@@ -149,8 +124,7 @@ export default function FormList({ refreshTrigger }: FormListProps) {
                 <TableCell>STT</TableCell>
                 <TableCell>Tên Form</TableCell>
                 <TableCell>Ngày Tạo</TableCell>
-                {/* <TableCell>Link</TableCell> */}
-                {/* <TableCell align="center">Hành động</TableCell> */}
+                <TableCell align="center">Hành động</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -172,20 +146,28 @@ export default function FormList({ refreshTrigger }: FormListProps) {
                     <TableCell>{pageIndex * pageSize + index + 1}</TableCell>
                     <TableCell>{form.name}</TableCell>
                     <TableCell>{formatDate(form.createdAt)}</TableCell>
-                    {/* <TableCell>{form.editLink}</TableCell> */}
-                    {/* <TableCell align="center">
-                      <Stack direction="row" sx={{ justifyContent: 'center', alignItems: 'center' }}>
-                        <Tooltip title="Delete">
+                    <TableCell align="center">
+                      <Stack direction="row" sx={{ justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+                        <Tooltip title="Điền theo tỉ lệ">
                           <IconButton
-                            color="error"
+                            color="primary"
                             size="small"
-                            onClick={() => handleDeleteClick(form.id, form.name)}
+                            onClick={() => onFillByRatio?.(form)}
                           >
-                            <Trash />
+                            <DocumentText />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Điền theo data">
+                          <IconButton
+                            color="secondary"
+                            size="small"
+                            onClick={() => onFillByData?.(form)}
+                          >
+                            <Data />
                           </IconButton>
                         </Tooltip>
                       </Stack>
-                    </TableCell> */}
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -198,8 +180,6 @@ export default function FormList({ refreshTrigger }: FormListProps) {
           <TablePagination setPageSize={setPageSize} setPageIndex={setPageIndex} getState={getTableState} getPageCount={() => totalPages} />
         </Box>
       </MainCard>
-
-      <AlertFormDelete id={deleteFormId} title={deleteFormName} open={open} handleClose={handleClose} handleConfirm={handleDeleteConfirm} />
     </>
   );
 }

@@ -82,6 +82,51 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
     };
   }, [stopPolling]);
 
+  // Function để reset form về trạng thái ban đầu
+  const resetFormToInitialState = () => {
+    setSampleCount(2);
+    setRequirements({
+      distributionRequirements: []
+    });
+    setIsValidating(false);
+    setValidationResult(null);
+    setDistributionErrors(new Map());
+    setIsGettingAnswerAttributes(false);
+    setAnswerAttributes(new Map());
+    setValidationStep('idle');
+    setProcessingStep('idle');
+    stopPolling();
+    resetPolling();
+  };
+
+  // Function để xử lý lỗi AI quá tải
+  const handleAIOverloadError = (errorMessage: string) => {
+    // Kiểm tra nếu là lỗi AI quá tải
+    if (errorMessage.includes('overloaded') || errorMessage.includes('503') || errorMessage.includes('UNAVAILABLE') || errorMessage.includes('The model is overloaded')) {
+      setValidationResult({
+        isValid: false,
+        estimatedTokens: 0,
+        error: 'Hệ thống AI quá tải. Vui lòng thử lại sau ít phút!'
+      });
+      setValidationStep('error');
+      setProcessingStep('error');
+      stopPolling();
+      return true;
+    }
+    return false;
+  };
+
+  // Function để xử lý response từ polling có thể chứa error
+  const handlePollingResponse = (result: any) => {
+    // Kiểm tra nếu response có errorMessage
+    if (result.content?.errorMessage) {
+      if (handleAIOverloadError(result.content.errorMessage)) {
+        return false; // Đã xử lý lỗi, không tiếp tục
+      }
+    }
+    return true; // Tiếp tục xử lý bình thường
+  };
+
   // Bỏ auto validation - chỉ validate khi user submit
 
   // Validate distribution requirements
@@ -140,6 +185,11 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
             // Polling thành công
             logger.log('Polling completed successfully:', result);
 
+            // Kiểm tra nếu response có lỗi
+            if (!handlePollingResponse(result)) {
+              return; // Đã xử lý lỗi, không tiếp tục
+            }
+
             // Tạo request với response từ polling
             const request: AISuggestionRequest = {
               formId: formData.id,
@@ -179,6 +229,12 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
           (error) => {
             // Polling thất bại
             logger.error('Polling failed:', error);
+            
+            // Kiểm tra lỗi AI quá tải
+            if (handleAIOverloadError(error)) {
+              return;
+            }
+            
             setProcessingStep('error');
             setValidationResult({
               isValid: false,
@@ -243,6 +299,11 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
               // Polling thành công
               logger.log('Polling completed successfully:', result);
 
+              // Kiểm tra nếu response có lỗi
+              if (!handlePollingResponse(result)) {
+                return; // Đã xử lý lỗi, không tiếp tục
+              }
+
               // Tạo request với response từ polling
               const request: AISuggestionRequest = {
                 formId: formData.id,
@@ -282,6 +343,12 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
             (error) => {
               // Polling thất bại
               logger.error('Polling failed:', error);
+              
+              // Kiểm tra lỗi AI quá tải
+              if (handleAIOverloadError(error)) {
+                return;
+              }
+              
               setProcessingStep('error');
               setValidationResult({
                 isValid: false,
@@ -291,19 +358,31 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
             }
           );
         } else {
+          // Kiểm tra lỗi AI quá tải từ response
+          const errorMessage = error.response?.data?.content?.errorMessage || 'Lỗi khi lấy thông tin câu trả lời';
+          if (handleAIOverloadError(errorMessage)) {
+            return;
+          }
+          
           setProcessingStep('error');
           setValidationResult({
             isValid: false,
             estimatedTokens: 0,
-            error: 'Lỗi khi lấy thông tin câu trả lời'
+            error: errorMessage
           });
         }
       } else {
+        // Kiểm tra lỗi AI quá tải từ response
+        const errorMessage = error.response?.data?.content?.errorMessage || 'Lỗi khi lấy thông tin câu trả lời';
+        if (handleAIOverloadError(errorMessage)) {
+          return;
+        }
+        
         setProcessingStep('error');
         setValidationResult({
           isValid: false,
           estimatedTokens: 0,
-          error: 'Lỗi khi lấy thông tin câu trả lời'
+          error: errorMessage
         });
       }
     }
@@ -400,11 +479,17 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
           await getAllAnswerAttributesForForm();
         }
       } else {
+        // Kiểm tra lỗi AI quá tải từ response
+        const errorMessage = error.response?.data?.content?.errorMessage || error.response?.data?.message || error.message || 'Lỗi khi kiểm tra yêu cầu';
+        if (handleAIOverloadError(errorMessage)) {
+          return;
+        }
+        
         setValidationStep('error');
         setValidationResult({
           isValid: false,
           estimatedTokens: 0,
-          error: error.response?.data?.message || error.message || 'Lỗi khi kiểm tra yêu cầu'
+          error: errorMessage
         });
       }
     }
@@ -414,12 +499,34 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
     const question = formData.questions.find((q) => q.id === questionId);
     if (!question || !question.options) return;
 
+    // Xử lý grid questions - cần lấy cả row và column options
+    let targetDistribution: { optionId: string; percentage: number }[] = [];
+    
+    if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
+      // Với grid questions, tạo distribution cho tất cả combinations của row và column
+      const rowOptions = question.options.filter(opt => opt.row === true);
+      const columnOptions = question.options.filter(opt => opt.row !== true);
+      
+      // Tạo combinations cho grid
+      rowOptions.forEach(rowOpt => {
+        columnOptions.forEach(colOpt => {
+          targetDistribution.push({
+            optionId: `${rowOpt.id}_${colOpt.id}`, // Tạo unique ID cho combination
+            percentage: 0
+          });
+        });
+      });
+    } else {
+      // Với các loại câu hỏi thông thường
+      targetDistribution = question.options.map((opt) => ({
+        optionId: opt.id,
+        percentage: 0
+      }));
+    }
+
     const newDistribution = {
       questionId,
-      targetDistribution: question.options.map((opt) => ({
-        optionId: opt.id,
-        percentage: 0 // Set giá trị mặc định là 0
-      }))
+      targetDistribution
     };
 
     setRequirements((prev) => ({
@@ -494,7 +601,18 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
 
   const numericQuestions = formData.questions.filter((q) => q.type === 'number' || q.type === 'slider' || q.type === 'rating');
 
-  const choiceQuestions = formData.questions.filter((q) => q.type === 'radio' || q.type === 'select' || q.type === 'checkbox');
+  // Lọc tất cả câu hỏi có options (có thể phân bổ) - bao gồm cả grid questions
+  const choiceQuestions = formData.questions.filter((q) => 
+    q.options && q.options.length > 0 && (
+      q.type === 'radio' || 
+      q.type === 'select' || 
+      q.type === 'checkbox' ||
+      q.type === 'multiple_choice_grid' ||
+      q.type === 'checkbox_grid' ||
+      q.type === 'rating' ||
+      q.type === 'slider'
+    )
+  );
 
   return (
     <Dialog
@@ -891,17 +1009,51 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
                   </Typography>
 
                   <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                    {choiceQuestions.map((question) => (
-                      <Button
-                        key={question.id}
-                        variant="outlined"
-                        size="small"
-                        onClick={() => addDistributionRequirement(question.id)}
-                        disabled={requirements.distributionRequirements?.some((d) => d.questionId === question.id)}
-                      >
-                        {question.title}
-                      </Button>
-                    ))}
+                    {choiceQuestions.map((question) => {
+                      const isGridQuestion = question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid';
+                      const isAlreadyAdded = requirements.distributionRequirements?.some((d) => d.questionId === question.id);
+                      
+                      return (
+                        <Button
+                          key={question.id}
+                          variant="outlined"
+                          size="small"
+                          onClick={() => addDistributionRequirement(question.id)}
+                          disabled={isAlreadyAdded}
+                          sx={{
+                            position: 'relative',
+                            textAlign: 'left',
+                            justifyContent: 'flex-start',
+                            minHeight: 40,
+                            ...(isGridQuestion && {
+                              borderColor: '#9575CD',
+                              color: '#673AB7',
+                              '&:hover': {
+                                backgroundColor: '#F3E5F5',
+                                borderColor: '#673AB7'
+                              }
+                            })
+                          }}
+                        >
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.2 }}>
+                              {question.title}
+                            </Typography>
+                            {isGridQuestion && (
+                              <Typography variant="caption" sx={{ 
+                                display: 'block', 
+                                color: '#9575CD', 
+                                fontSize: '0.7rem',
+                                lineHeight: 1,
+                                mt: 0.5
+                              }}>
+                                Grid ({question.type === 'multiple_choice_grid' ? 'Single' : 'Multiple'})
+                              </Typography>
+                            )}
+                          </Box>
+                        </Button>
+                      );
+                    })}
                   </Stack>
 
                   {requirements.distributionRequirements?.map((dist) => {
@@ -909,31 +1061,64 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
                     return (
                       <Box key={dist.questionId} sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                          <Typography variant="subtitle2">{question?.title}</Typography>
+                          <Box>
+                            <Typography variant="subtitle2">{question?.title}</Typography>
+                            {(question?.type === 'multiple_choice_grid' || question?.type === 'checkbox_grid') && (
+                              <Typography variant="caption" sx={{ color: '#9575CD', fontStyle: 'italic' }}>
+                                (Grid Question - {question.type === 'multiple_choice_grid' ? 'Single Choice' : 'Multiple Choice'})
+                              </Typography>
+                            )}
+                          </Box>
                           <Button size="small" color="error" onClick={() => removeDistributionRequirement(dist.questionId)}>
                             Xóa
                           </Button>
                         </Box>
                         <Stack spacing={1}>
                           {dist.targetDistribution.map((target) => {
-                            const option = question?.options?.find((opt) => opt.id === target.optionId);
-                            return (
-                              <Box key={target.optionId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="body2" sx={{ minWidth: 120 }}>
-                                  {option?.text}:
-                                </Typography>
-                                <TextField
-                                  type="number"
-                                  size="small"
-                                  value={target.percentage}
-                                  onChange={(e) => updateDistributionPercentage(dist.questionId, target.optionId, Number(e.target.value))}
-                                  inputProps={{ min: 0, max: 100 }}
-                                  sx={{ width: 80 }}
-                                  error={distributionErrors.has(dist.questionId)}
-                                />
-                                <Typography variant="body2">%</Typography>
-                              </Box>
-                            );
+                            // Xử lý hiển thị cho grid questions
+                            if (question?.type === 'multiple_choice_grid' || question?.type === 'checkbox_grid') {
+                              const [rowId, colId] = target.optionId.split('_');
+                              const rowOption = question?.options?.find((opt) => opt.id === rowId);
+                              const colOption = question?.options?.find((opt) => opt.id === colId);
+                              
+                              return (
+                                <Box key={target.optionId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ minWidth: 200 }}>
+                                    {rowOption?.text} - {colOption?.text}:
+                                  </Typography>
+                                  <TextField
+                                    type="number"
+                                    size="small"
+                                    value={target.percentage}
+                                    onChange={(e) => updateDistributionPercentage(dist.questionId, target.optionId, Number(e.target.value))}
+                                    inputProps={{ min: 0, max: 100 }}
+                                    sx={{ width: 80 }}
+                                    error={distributionErrors.has(dist.questionId)}
+                                  />
+                                  <Typography variant="body2">%</Typography>
+                                </Box>
+                              );
+                            } else {
+                              // Xử lý hiển thị cho câu hỏi thông thường
+                              const option = question?.options?.find((opt) => opt.id === target.optionId);
+                              return (
+                                <Box key={target.optionId} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Typography variant="body2" sx={{ minWidth: 120 }}>
+                                    {option?.text}:
+                                  </Typography>
+                                  <TextField
+                                    type="number"
+                                    size="small"
+                                    value={target.percentage}
+                                    onChange={(e) => updateDistributionPercentage(dist.questionId, target.optionId, Number(e.target.value))}
+                                    inputProps={{ min: 0, max: 100 }}
+                                    sx={{ width: 80 }}
+                                    error={distributionErrors.has(dist.questionId)}
+                                  />
+                                  <Typography variant="body2">%</Typography>
+                                </Box>
+                              );
+                            }
                           })}
                         </Stack>
 
@@ -1087,7 +1272,17 @@ export default function AISuggestionModal({ open, onClose, formData, onSubmit }:
 
       <DialogActions sx={{ px: 3, pb: 3, gap: 1 }}>
         <Button
-          onClick={onClose}
+          onClick={() => {
+            // Ngừng tất cả API calls và polling
+            stopPolling();
+            resetPolling();
+            
+            // Reset form về trạng thái ban đầu
+            resetFormToInitialState();
+            
+            // Đóng modal
+            onClose();
+          }}
           variant="outlined"
           startIcon={<CloseIcon />}
           sx={{

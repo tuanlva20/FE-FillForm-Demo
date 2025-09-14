@@ -3,7 +3,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { SectionData } from 'api/form';
 
 interface SectionHeaderProps {
-  sectionData: SectionData;
+  sectionData: SectionData | any; // Support both old and new format
 }
 
 export default function SectionHeader({ sectionData }: SectionHeaderProps) {
@@ -11,11 +11,14 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
 
   console.log('SectionHeader - sectionData:', sectionData);
 
-  // Display index is +1 from backend-provided section_index (only for UI)
-  const displaySectionIndex = (() => {
-    const n = Number.parseInt(String(sectionData.section_index), 10);
-    return Number.isFinite(n) ? n + 1 : sectionData.section_index;
-  })();
+  // Handle new format where section data is directly in the question object
+  const isNewFormat = sectionData.title && sectionData.description !== undefined;
+  
+  const sectionTitle = isNewFormat ? sectionData.title : sectionData.section_title;
+  const sectionDescription = isNewFormat ? sectionData.description : sectionData.section_description;
+  
+  // Use the section_index directly (already calculated in QuestionGroup)
+  const displaySectionIndex = sectionData.section_index;
 
   return (
     <Box
@@ -62,11 +65,11 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
               flex: 1
             }}
           >
-            {sectionData.section_title}
+            {sectionTitle}
           </Typography>
         </Stack>
 
-        {sectionData.section_description && (
+        {sectionDescription && (
           <Typography
             variant="body1"
             sx={{
@@ -77,7 +80,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
               py: 0.5
             }}
           >
-            {sectionData.section_description}
+            {sectionDescription}
           </Typography>
         )}
       </Stack>

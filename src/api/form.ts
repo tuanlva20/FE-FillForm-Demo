@@ -29,6 +29,8 @@ export interface Option {
   text: string;
   value: string;
   position: number;
+  columnOptions?: any;
+  row?: boolean;
 }
 
 export interface SectionData {
@@ -50,6 +52,16 @@ export interface Question {
   options: Option[];
   additionalData?: {
     sectionData?: SectionData;
+    itemId?: string;
+    itemType?: string;
+    questionId?: string;
+    paragraph?: string;
+    scaleLow?: string;
+    scaleHigh?: string;
+    scaleLowLabel?: string;
+    scaleHighLabel?: string;
+    gridType?: string;
+    questionGroupId?: string;
   };
 }
 

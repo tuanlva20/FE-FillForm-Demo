@@ -24,10 +24,14 @@ interface Props {
 const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChange, value }) => {
   // Rows & Columns - memoized để tránh recalculate
   const { rows, columns } = useMemo(() => {
-    const rows = (question.options || []).filter((opt) => opt.value && opt.value.startsWith('row'));
+    // Filter rows based on value pattern "row_X" or text pattern "Row X"
+    const rows = (question.options || []).filter((opt) => 
+      (opt.value && opt.value.startsWith('row_')) || 
+      (opt.text && opt.text.toLowerCase().startsWith('row'))
+    );
     const seen = new Set();
     const columns = (question.options || []).filter(
-      (opt) => opt.value && !opt.value.startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+      (opt) => !opt.value?.startsWith('row_') && !opt.text?.toLowerCase().startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
     );
     return { rows, columns };
   }, [question.options]);

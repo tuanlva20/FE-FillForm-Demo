@@ -13,7 +13,19 @@ interface GroupedQuestions {
   noSectionQuestions: Question[];
 }
 
-function normalizeSectionData(rawAdditionalData: unknown): SectionData | undefined {
+function normalizeSectionData(rawAdditionalData: unknown, question?: any): SectionData | undefined {
+  // Handle new format where section data is directly in the question object
+  if (question && question.type === 'section') {
+    return {
+      liIndex: question.additionalData?.itemId || '',
+      section_index: String(question.position || 0),
+      section_title: question.title || '',
+      containerXPath: '',
+      headingNormalized: question.title || '',
+      section_description: question.description || ''
+    };
+  }
+
   if (!rawAdditionalData) return undefined;
 
   let additional: any = rawAdditionalData;
@@ -56,57 +68,50 @@ function normalizeSectionData(rawAdditionalData: unknown): SectionData | undefin
 }
 
 export default function QuestionGroup({ questions, renderQuestion }: QuestionGroupProps) {
-  // Group questions by section
-  const groupedQuestions = questions.reduce<GroupedQuestions>(
-    (acc, question) => {
-      const sectionData = normalizeSectionData((question as any).additionalData);
+  // Sort all questions by position first
+  const sortedQuestions = [...questions].sort((a, b) => a.position - b.position);
+  
+  // Group questions by sections
+  const sections: Array<{ sectionData: any, questions: any[] }> = [];
+  let currentSection: any = null;
+  let currentSectionQuestions: any[] = [];
+  let sectionCounter = 0;
 
-      if (sectionData) {
-        const key = sectionData.section_index;
-        // Skip section with index 0
-        if (key === '0' || key === '0') {
-          acc.noSectionQuestions.push(question);
-        } else {
-          if (!acc.sections.has(key)) {
-            acc.sections.set(key, { sectionData, questions: [] });
-          }
-          acc.sections.get(key)!.questions.push(question);
-        }
-      } else {
-        acc.noSectionQuestions.push(question);
+  sortedQuestions.forEach((question) => {
+    const sectionData = normalizeSectionData((question as any).additionalData, question);
+    
+    if (sectionData) {
+      // Save previous section if exists
+      if (currentSection) {
+        sections.push({
+          sectionData: { ...currentSection, displayIndex: sectionCounter },
+          questions: currentSectionQuestions
+        });
       }
-
-      return acc;
-    },
-    { sections: new Map(), noSectionQuestions: [] }
-  );
-
-  // Sort sections by numeric section_index when possible
-  const sortedSections = Array.from(groupedQuestions.sections.entries()).sort(([a], [b]) => {
-    const ai = Number.parseInt(a as string, 10);
-    const bi = Number.parseInt(b as string, 10);
-    if (Number.isNaN(ai) && Number.isNaN(bi)) return (a as string).localeCompare(b as string);
-    if (Number.isNaN(ai)) return 1;
-    if (Number.isNaN(bi)) return -1;
-    return ai - bi;
+      
+      // Start new section
+      sectionCounter++;
+      currentSection = sectionData;
+      currentSectionQuestions = [];
+    } else {
+      // Add question to current section
+      currentSectionQuestions.push(question);
+    }
   });
+
+  // Don't forget the last section
+  if (currentSection) {
+    sections.push({
+      sectionData: { ...currentSection, displayIndex: sectionCounter },
+      questions: currentSectionQuestions
+    });
+  }
 
   return (
     <Stack spacing={4}>
-      {/* Non-section questions FIRST, keep original UI (no extra wrapper) */}
-      {groupedQuestions.noSectionQuestions.length > 0 && (
-        // Tighter spacing for questions without section header
-        <Stack spacing={0}>
-          {groupedQuestions.noSectionQuestions.map((question) => (
-            <Box key={question.id}>{renderQuestion(question)}</Box>
-          ))}
-        </Stack>
-      )}
-
-      {/* Sectioned questions */}
-      {sortedSections.map(([sectionKey, { sectionData, questions: sectionQuestions }]) => (
-        <Box key={sectionKey}>
-          <SectionHeader sectionData={sectionData} />
+      {sections.map((section, sectionIndex) => (
+        <Box key={`section-${section.sectionData.section_index}`}>
+          <SectionHeader sectionData={{ ...section.sectionData, section_index: String(section.sectionData.displayIndex) }} />
           <Box
             sx={{
               backgroundColor: 'white',
@@ -116,12 +121,12 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
             }}
           >
             <Stack spacing={0}>
-              {sectionQuestions.map((question, index) => (
+              {section.questions.map((question, questionIndex) => (
                 <Box
                   key={question.id}
                   sx={{
                     backgroundColor: 'white',
-                    ...(index < sectionQuestions.length - 1 && { borderBottom: '1px solid #e0e0e0' })
+                    ...(questionIndex < section.questions.length - 1 && { borderBottom: '1px solid #e0e0e0' })
                   }}
                 >
                   {renderQuestion(question)}

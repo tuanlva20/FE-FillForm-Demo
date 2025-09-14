@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // material-ui
 import Alert from '@mui/material/Alert';
@@ -20,7 +21,7 @@ import { MAINCARD_STYLE } from 'themes/component/style';
 import FormList from './components/tabcreate/FormList';
 
 // api
-import { createForm } from 'api/form';
+import { createForm, FormData } from 'api/form';
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -36,6 +37,7 @@ import { InfoCircle } from 'iconsax-react';
 // ==============================|| DIENFORM - CREATE ||============================== //
 
 export default function TabCreate() {
+  const navigate = useNavigate();
   const [formName, setFormName] = useState('');
   const [formLink, setFormLink] = useState('');
   const [loading, setLoading] = useState(false);
@@ -125,6 +127,20 @@ export default function TabCreate() {
     setChecked(newChecked);
   };
 
+  // Handle navigation to fill by ratio tab
+  const handleFillByRatio = (form: FormData) => {
+    // Store selected form data in sessionStorage for the target tab to use
+    sessionStorage.setItem('selectedFormForRatio', JSON.stringify(form));
+    navigate('/apps/dienform/fill-expected-ratio');
+  };
+
+  // Handle navigation to fill by data tab
+  const handleFillByData = (form: FormData) => {
+    // Store selected form data in sessionStorage for the target tab to use
+    sessionStorage.setItem('selectedFormForData', JSON.stringify(form));
+    navigate('/apps/dienform/fill-in-data');
+  };
+
   return (
     <Grid container spacing={GRID_COMMON_SPACING}>
       <Grid size={12}>
@@ -182,7 +198,11 @@ export default function TabCreate() {
         </MainCard>
       </Grid>
       <Grid size={{ xs: 12, md: 5 }}>
-        <FormList refreshTrigger={refreshList} />
+        <FormList 
+          refreshTrigger={refreshList} 
+          onFillByRatio={handleFillByRatio}
+          onFillByData={handleFillByData}
+        />
       </Grid>
       <Grid size={{ xs: 12, md: 7 }}>
         <MainCard title="Hướng dẫn" sx={MAINCARD_STYLE}>

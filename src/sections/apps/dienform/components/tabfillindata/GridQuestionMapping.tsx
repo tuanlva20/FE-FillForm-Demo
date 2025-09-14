@@ -21,7 +21,10 @@ interface GridQuestionMappingProps {
 
 export default function GridQuestionMapping({ question, sheetColumns, columnMappings, onMappingChange }: GridQuestionMappingProps) {
   const rows = (question.options || [])
-    .filter((opt: any) => opt?.value && String(opt.value).startsWith('row'))
+    .filter((opt: any) => 
+      (opt?.value && opt.value.startsWith('row_')) || 
+      (opt?.text && opt.text.toLowerCase().startsWith('row'))
+    )
     .sort((a: any, b: any) => a.position - b.position);
 
   // Debug logging
