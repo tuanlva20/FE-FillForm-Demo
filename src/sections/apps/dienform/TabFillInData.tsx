@@ -21,7 +21,7 @@ import Typography from '@mui/material/Typography';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
-import { handleDataMappingError, handleFormError } from 'utils/errorHandler';
+import { formatValidationErrorMessage, handleDataMappingError, handleFormError } from 'utils/errorHandler';
 
 // components
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
@@ -227,7 +227,7 @@ export default function TabFillInData() {
     if (data?.errorMessage) {
       return {
         title: 'Lỗi tạo yêu cầu điền form',
-        description: data.errorMessage,
+        description: formatValidationErrorMessage(data.errorMessage),
         showEncryption: true // Show encryption suggestion for validation errors
       };
     }
@@ -638,7 +638,13 @@ export default function TabFillInData() {
           {errorAlert && (
             <Alert color="error" variant="border" icon={<ErrorIcon />} sx={{ mb: 2 }}>
               <AlertTitle>{errorAlert.title}</AlertTitle>
-              <Typography variant="h6" sx={{ mb: (errorAlert.showEncryption || errorAlert.showFormSettingsLink) ? 2 : 0 }}>
+              <Typography 
+                variant="h6" 
+                sx={{ 
+                  mb: (errorAlert.showEncryption || errorAlert.showFormSettingsLink) ? 2 : 0,
+                  whiteSpace: 'pre-line' // Cho phép hiển thị line breaks
+                }}
+              >
                 {errorAlert.description}
               </Typography>
               {errorAlert.showFormSettingsLink && (

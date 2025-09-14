@@ -64,7 +64,9 @@ export default function AlertSnackbarWithProgress({ open, message, onClose, seve
       }}
     >
       <Alert severity={severity} sx={{ width: '100%', alignItems: 'flex-start', px: 2, py: 1.5 }}>
-        {message}
+        <Box sx={{ whiteSpace: 'pre-line' }}>
+          {message}
+        </Box>
         <Box sx={{ width: '100%', mt: 1 }}>
           <LinearProgress
             variant="determinate"

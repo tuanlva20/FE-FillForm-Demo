@@ -232,6 +232,53 @@ export const handleDataMappingError = (err: any, operation: 'check' | 'create' =
 };
 
 /**
+ * Format validation error message để hiển thị dễ đọc hơn
+ * @param errorMessage - Error message từ backend
+ * @returns Formatted error message với line breaks và structure
+ */
+export const formatValidationErrorMessage = (errorMessage: string): string => {
+  if (!errorMessage) return errorMessage;
+
+  // Tách các phần của error message
+  let formatted = errorMessage;
+
+  // Thêm line break sau "Validation failed:"
+  formatted = formatted.replace(/Validation failed:/g, 'Validation failed:\n');
+
+  // Thêm line break sau thông tin dòng/cột
+  formatted = formatted.replace(/(Dòng \d+, cột [^\n]+)/g, '$1\n');
+
+  // Thêm line break trước "Hướng dẫn trả lời:"
+  formatted = formatted.replace(/Hướng dẫn trả lời:/g, '\nHướng dẫn trả lời:');
+
+  // Thêm line break trước "Vui lòng chọn một đáp án phù hợp:"
+  formatted = formatted.replace(/Vui lòng chọn một đáp án phù hợp:/g, '\nVui lòng chọn một đáp án phù hợp:');
+
+  // Thêm line break trước "(Chọn 1 trong 5 mức độ.)"
+  formatted = formatted.replace(/\(Chọn 1 trong 5 mức độ\.\)/g, '\n(Chọn 1 trong 5 mức độ.)');
+
+  // Format thang điểm 1-5 với line breaks
+  formatted = formatted.replace(/(\d+ = [^\n]+)/g, '\n$1');
+
+  // Thêm line break trước "Chỉ chấp nhận số thứ tự"
+  formatted = formatted.replace(/Chỉ chấp nhận số thứ tự/g, '\nChỉ chấp nhận số thứ tự');
+
+  // Thêm line break trước "Danh sách:"
+  formatted = formatted.replace(/Danh sách:/g, '\nDanh sách:');
+
+  // Format danh sách options với line breaks
+  formatted = formatted.replace(/(\d+='[^']+')/g, '\n$1');
+
+  // Clean up multiple line breaks
+  formatted = formatted.replace(/\n{3,}/g, '\n\n');
+
+  // Trim và loại bỏ line breaks ở đầu/cuối
+  formatted = formatted.trim();
+
+  return formatted;
+};
+
+/**
  * Test function để kiểm tra cấu trúc error object
  * @param err - Error object từ axios
  */
