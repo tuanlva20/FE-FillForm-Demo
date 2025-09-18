@@ -9,6 +9,8 @@ export interface AISuggestionRequest {
   formId: string;
   sampleCount: number; // Số mẫu muốn tạo
   requirements: {
+    // Prompt tự do từ người dùng mô tả yêu cầu mong muốn tổng quan
+    desiredPrompt?: string;
     statisticalRequirements?: {
       mean?: number;
       standardDeviation?: number;

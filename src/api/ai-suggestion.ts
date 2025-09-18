@@ -250,3 +250,11 @@ export const getAISuggestionQuota = async (): Promise<{
   const response = await axiosServices.get(`${AI_SUGGESTION_ENDPOINT}/quota`);
   return response.data;
 };
+
+/**
+ * Hủy xử lý AI suggestion theo requestId hiện tại
+ * @param requestId - ID của request từ queue
+ */
+export const cancelAISuggestionRequest = async (requestId: string): Promise<void> => {
+  await axiosServices.delete(`${AI_SUGGESTION_ENDPOINT}/cancel/${requestId}`);
+};

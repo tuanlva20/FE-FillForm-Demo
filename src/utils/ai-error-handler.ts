@@ -138,7 +138,7 @@ export const normalizeAIQueueErrorMessage = (errorMessage: string | undefined | 
     return simplified.slice(0, 237) + '...';
   }
 
-  return 'Đã xảy ra lỗi khi xử lý yêu cầu AI. Vui lòng thử lại.';
+  return 'Hệ thống AI đang quá tải. Vui lòng thử lại sau ít phút.';
 };
 
 /**

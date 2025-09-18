@@ -88,19 +88,24 @@ interface PollingResult {
 }
 
 export const useAISuggestionPolling = () => {
+  // Configurable polling interval and max duration
+  const POLL_INTERVAL_MS = Number(import.meta.env.VITE_APP_AI_POLL_INTERVAL_MS || 5000);
+  const MAX_MINUTES = Number(import.meta.env.VITE_APP_AI_POLL_MAX_MINUTES || 30);
   const [pollingState, setPollingState] = useState<PollingState>({
     isPolling: false,
     status: 'IDLE'
   });
 
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const maxAttemptsRef = useRef<number>(60); // Tối đa 5 phút (60 * 5 giây)
+  const isStoppedRef = useRef<boolean>(false);
+  // Tính số lần thử chủ yếu để ước lượng progress; không còn dùng để auto-timeout
+  const maxAttemptsRef = useRef<number>(Math.max(1, Math.ceil((MAX_MINUTES * 60 * 1000) / POLL_INTERVAL_MS)));
   const attemptsRef = useRef<number>(0);
 
   const startPolling = useCallback(
     async (requestId: string, onComplete?: (result: PollingResult) => void, onError?: (error: string) => void) => {
       if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
+        clearTimeout(pollingIntervalRef.current);
       }
 
       setPollingState({
@@ -110,6 +115,7 @@ export const useAISuggestionPolling = () => {
       });
 
       attemptsRef.current = 0;
+      isStoppedRef.current = false;
 
       const poll = async () => {
         try {
@@ -119,7 +125,19 @@ export const useAISuggestionPolling = () => {
 
           // Xử lý response từ status endpoint
           const queueContent = response.content as any;
-          const queueStatus = queueContent?.status || response.status;
+          // Chuẩn hóa status về dạng chuẩn để so sánh
+          const rawStatus = (queueContent?.status || (response as any).status || '').toString();
+          const normalizedStatus = rawStatus.toUpperCase();
+          const queueStatus: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' =
+            normalizedStatus === 'QUEUED'
+              ? 'QUEUED'
+              : normalizedStatus === 'PROCESSING'
+                ? 'PROCESSING'
+                : normalizedStatus === 'COMPLETED'
+                  ? 'COMPLETED'
+                  : normalizedStatus === 'FAILED'
+                    ? 'FAILED'
+                    : 'PROCESSING'; // Trạng thái lạ => tiếp tục polling
           const errorMessageRaw = queueContent?.errorMessage || response.error;
           const errorMessage = normalizeAIQueueErrorMessage(errorMessageRaw);
 
@@ -138,11 +156,7 @@ export const useAISuggestionPolling = () => {
               status: 'COMPLETED',
               progress: 100
             }));
-
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
+            isStoppedRef.current = true;
 
             // Xử lý cấu trúc response với result nested
             let finalContent = response.content;
@@ -162,18 +176,14 @@ export const useAISuggestionPolling = () => {
               status: 'FAILED',
               error: errorMessage || 'Xử lý thất bại'
             }));
-
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
+            isStoppedRef.current = true;
 
             onError?.(errorMessage || 'Xử lý thất bại');
             return;
           }
 
           // Tính progress dựa trên estimatedWaitTime
-          if (response.estimatedWaitTime) {
+          if (response.estimatedWaitTime != null) {
             const progress = Math.min(95, Math.max(5, (attemptsRef.current / maxAttemptsRef.current) * 100));
             setPollingState((prev) => ({
               ...prev,
@@ -181,59 +191,34 @@ export const useAISuggestionPolling = () => {
             }));
           }
 
-          // Kiểm tra số lần thử tối đa
-          if (attemptsRef.current >= maxAttemptsRef.current) {
-            setPollingState((prev) => ({
-              ...prev,
-              isPolling: false,
-              status: 'FAILED',
-              error: 'Hết thời gian chờ xử lý'
-            }));
-
-            if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
-            }
-
-            onError?.('Hết thời gian chờ xử lý');
-            return;
-          }
+          // Không còn auto-timeout theo thời gian; tiếp tục polling đến khi COMPLETE/FAILED hoặc người dùng đóng popup
         } catch (error: any) {
           console.error('Polling error:', error);
 
-          if (attemptsRef.current >= maxAttemptsRef.current) {
-            setPollingState((prev) => ({
-              ...prev,
-              isPolling: false,
-              status: 'FAILED',
-              error: 'Lỗi kết nối hoặc hết thời gian chờ'
-            }));
-
+          // Lỗi tạm thời: giữ vòng polling tiếp tục, không auto dừng; caller có thể dừng qua stopPolling
+        } finally {
+          // Lên lịch lần poll tiếp theo nếu chưa dừng
+          if (!isStoppedRef.current) {
             if (pollingIntervalRef.current) {
-              clearInterval(pollingIntervalRef.current);
-              pollingIntervalRef.current = null;
+              clearTimeout(pollingIntervalRef.current);
             }
-
-            onError?.('Lỗi kết nối hoặc hết thời gian chờ');
-            return;
+            pollingIntervalRef.current = setTimeout(poll, POLL_INTERVAL_MS);
           }
         }
       };
 
-      // Poll ngay lập tức lần đầu
+      // Poll ngay lập tức lần đầu, vòng sau sẽ được schedule trong finally
       await poll();
-
-      // Sau đó poll mỗi 5 giây
-      pollingIntervalRef.current = setInterval(poll, 5000);
     },
     []
   );
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
+      clearTimeout(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
+    isStoppedRef.current = true;
 
     setPollingState((prev) => ({
       ...prev,

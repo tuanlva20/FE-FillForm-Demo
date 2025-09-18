@@ -14,7 +14,6 @@ import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 // project-imports
@@ -50,6 +49,7 @@ import {
 // assets
 import { ErrorIcon, FormIcon } from 'assets/images/svg/icon';
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
+import LinkInput from 'components/form/LinkInput';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 import { ArrowRight2, Data, InfoCircle, Warning2 } from 'iconsax-react';
 import { fuzzyScore, normalizeForCompare } from 'utils/stringUtils';
@@ -798,13 +798,13 @@ export default function TabFillInData() {
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-form">Link Form</InputLabel>
-                <TextField
-                  fullWidth
+                <LinkInput
                   id="link-form"
-                  placeholder="https://docs.google.com/forms/d/e/1FAlpQLSdUJNsCKqqokI1kMTrfXYWWR5ZqDH4S3-wGkczCAkhzBxzg9A/viewform"
                   value={formLink}
-                  onChange={(e) => setFormLink(e.target.value)}
+                  onChange={setFormLink}
+                  placeholder="https://docs.google.com/forms/d/e/1FAlpQLSdUJNsCKqqokI1kMTrfXYWWR5ZqDH4S3-wGkczCAkhzBxzg9A/viewform"
                   disabled={!selectedFormId}
+                  size="medium"
                 />
               </Stack>
             </Grid>
@@ -812,12 +812,12 @@ export default function TabFillInData() {
             <Grid size={{ xs: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-data-sheet">Link Data Sheet</InputLabel>
-                <TextField
-                  fullWidth
+                <LinkInput
                   id="link-data-sheet"
-                  placeholder="https://docs.google.com/spreadsheets/d/1ABC123.../edit"
                   value={sheetLink}
-                  onChange={(e) => setSheetLink(e.target.value)}
+                  onChange={setSheetLink}
+                  placeholder="https://docs.google.com/spreadsheets/d/1ABC123.../edit"
+                  size="medium"
                 />
               </Stack>
             </Grid>

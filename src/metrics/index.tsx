@@ -12,8 +12,8 @@ const gaId = import.meta.env.VITE_APP_PUBLIC_ANALYTICS_ID || '';
 export default function Metrics() {
   return (
     <>
-      {clarityId && <MicrosoftClarity clarityId={clarityId} />}
-      {notifyId && <Notify notifyId={notifyId} />}
+      {/* {clarityId && <MicrosoftClarity clarityId={clarityId} />}
+      {notifyId && <Notify notifyId={notifyId} />} */}
       {gaId && <GTag gaId={gaId} />}
     </>
   );

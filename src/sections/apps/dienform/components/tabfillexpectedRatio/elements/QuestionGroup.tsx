@@ -71,20 +71,19 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
   const sortedQuestions = [...questions].sort((a, b) => a.position - b.position);
   
   // Group questions by sections
-  const sections: Array<{ sectionData: SectionData | null, questions: Question[] }> = [];
+  const sections: Array<{ sectionData: (SectionData & { displayIndex?: number }) | null, questions: Question[] }> = [];
   let currentSection: SectionData | null = null;
   let currentSectionQuestions: Question[] = [];
-  let sectionCounter = 0;
+  // UI base index for sections starts at 2
+  let sectionCounter = 2;
 
   sortedQuestions.forEach((question) => {
     // Handle section type questions - these become section headers
     if (question.type === 'section') {
       // Save previous section if exists
       if (currentSection || currentSectionQuestions.length > 0) {
-        sections.push({
-          sectionData: currentSection ? { ...currentSection, displayIndex: sectionCounter } : null,
-          questions: currentSectionQuestions
-        });
+        const sd = currentSection ? ({ ...(currentSection as any), displayIndex: sectionCounter } as SectionData & { displayIndex?: number }) : null;
+        sections.push({ sectionData: sd, questions: currentSectionQuestions });
         sectionCounter++;
       }
       
@@ -106,10 +105,8 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
 
   // Don't forget the last section
   if (currentSection || currentSectionQuestions.length > 0) {
-    sections.push({
-      sectionData: currentSection ? { ...currentSection, displayIndex: sectionCounter } : null,
-      questions: currentSectionQuestions
-    });
+    const sd = currentSection ? ({ ...(currentSection as any), displayIndex: sectionCounter } as SectionData & { displayIndex?: number }) : null;
+    sections.push({ sectionData: sd, questions: currentSectionQuestions });
   }
 
   return (
@@ -117,7 +114,7 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
       {sections.map((section, sectionIndex) => (
         <Box key={section.sectionData ? `section-${section.sectionData.section_index}` : `no-section-${sectionIndex}`}>
           {section.sectionData && (
-            <SectionHeader sectionData={{ ...section.sectionData, section_index: String(section.sectionData.displayIndex) }} />
+            <SectionHeader sectionData={{ ...(section.sectionData as any), section_index: String((section.sectionData as any).displayIndex) }} />
           )}
           <Box
             sx={{

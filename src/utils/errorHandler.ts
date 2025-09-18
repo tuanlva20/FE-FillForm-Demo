@@ -104,8 +104,10 @@ export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi x�
   if (typeof responseData === 'string') {
     backendMessage = responseData;
   }
-  // Các trường phổ biến
-  else if (responseData?.message) {
+  // Các trường phổ biến (ưu tiên errorMessage của BE)
+  else if (responseData?.errorMessage) {
+    backendMessage = responseData.errorMessage;
+  } else if (responseData?.message) {
     backendMessage = responseData.message;
   } else if (responseData?.error) {
     backendMessage = responseData.error;

@@ -11,7 +11,6 @@ import Divider from '@mui/material/Divider';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Grid from '@mui/material/Grid';
 import InputLabel from '@mui/material/InputLabel';
-import Link from '@mui/material/Link';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
@@ -26,6 +25,7 @@ import { logger } from '../../../utils/logger';
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
 import DebouncedMultilineTextField from 'components/form/DebouncedMultilineTextField';
+import LinkInput from 'components/form/LinkInput';
 import PercentInput from 'components/form/PercentInput';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
@@ -54,6 +54,7 @@ import {
 } from 'api/form';
 
 // iconsax-react
+import CasinoIcon from '@mui/icons-material/Casino';
 import { AISuggestionIcon, ErrorIcon, FormIcon } from 'assets/images/svg/icon';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
 import { InfoCircle, Refresh } from 'iconsax-react';
@@ -115,6 +116,7 @@ export default function TabFillExpectedRatio() {
   // Snackbar for prominent success/error display
   const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
   const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
+  const [errorSnackSeverity, setErrorSnackSeverity] = useState<'success' | 'error'>('error');
 
   // State to track if edit mode is active
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -135,6 +137,8 @@ export default function TabFillExpectedRatio() {
 
   // Loading state for creating fill request
   const [isCreatingFillRequest, setIsCreatingFillRequest] = useState(false);
+  // Error message shown near the create fill request action buttons
+  const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
 
   // State for testing section feature
   const [showSectionTest, setShowSectionTest] = useState(false);
@@ -828,6 +832,7 @@ export default function TabFillExpectedRatio() {
           setBalanceErrors(new Map()); // Reset balance errors when resetting form
           setIsEditing(false);
           setIsEditingFillRequest(false);
+          setCreateErrorMessage(null);
           validatePercentages(newQuestionOptions);
         } catch (err: any) {
           logger.error('Error resetting form details:', err);
@@ -1027,20 +1032,6 @@ export default function TabFillExpectedRatio() {
               };
               answerDistributions.push(payload);
             });
-          } else {
-            // Default entry with no valueString - only add if no text entries exist for this question
-            const hasTextEntries = answerDistributions.some(
-              (dist) => dist.questionId === question.id && dist.optionId === null && dist.valueString
-            );
-
-            if (!hasTextEntries) {
-              const payload: any = {
-                questionId: question.id,
-                optionId: null,
-                percentage: 0
-              };
-              answerDistributions.push(payload);
-            }
           }
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);
@@ -1070,20 +1061,6 @@ export default function TabFillExpectedRatio() {
               };
               answerDistributions.push(payload);
             });
-          } else {
-            // Default entry with no valueString - only add if no date entries exist for this question
-            const hasDateEntries = answerDistributions.some(
-              (dist) => dist.questionId === question.id && dist.optionId === null && dist.valueString
-            );
-
-            if (!hasDateEntries) {
-              const payload: any = {
-                questionId: question.id,
-                optionId: null,
-                percentage: 0
-              };
-              answerDistributions.push(payload);
-            }
           }
         }
       });
@@ -1099,7 +1076,8 @@ export default function TabFillExpectedRatio() {
       // Other options (like "other" option) are handled by deduplicateAnswerDistributions
       const cleanedAnswerDistributions = validateTextQuestionDistributions(answerDistributions);
       const deduped = deduplicateAnswerDistributions(cleanedAnswerDistributions);
-      const finalAnswerDistributions = normalizeDistributionIntegers(deduped);
+      const normalized = normalizeDistributionIntegers(deduped);
+      const finalAnswerDistributions = normalized.filter((d) => (d.percentage || 0) > 0);
 
       logger.log('🔍 Deduplicate Debug Info:');
       logger.log('Original answerDistributions count:', answerDistributions.length);
@@ -1158,6 +1136,7 @@ export default function TabFillExpectedRatio() {
       // Reset editing state
       setIsEditing(false);
       setIsEditingFillRequest(false);
+      setCreateErrorMessage(null);
 
       // Refresh form details to update the fill requests list
       if (selectedFormId) {
@@ -1174,15 +1153,18 @@ export default function TabFillExpectedRatio() {
       }
 
       // Show success message
+      setErrorSnackSeverity('success');
       setErrorSnackMessage('Tạo yêu cầu điền form thành công!');
       setErrorSnackOpen(true);
     } catch (err: any) {
       logger.error('Error creating fill request:', err);
       testErrorStructure(err);
-      const msg = handleFormError(err, 'create');
+      const msg = err?.response?.data?.errorMessage || err?.data?.errorMessage || handleFormError(err, 'create');
       setAlertPopup({ open: true, message: msg });
+      setErrorSnackSeverity('error');
       setErrorSnackMessage(msg);
       setErrorSnackOpen(true);
+      setCreateErrorMessage(msg);
     } finally {
       setIsCreatingFillRequest(false);
     }
@@ -1219,6 +1201,90 @@ export default function TabFillExpectedRatio() {
     setErrorSnackOpen(false);
 
     setIsAISuggestionModalOpen(true);
+  };
+
+  // Handle simple random suggestion for percentages
+  const handleSimpleSuggest = () => {
+    if (!selectedForm) return;
+
+    setIsEditing(true);
+
+    const newQuestionOptions = new Map(questionOptions);
+    const newGridValues = new Map(gridValues);
+
+    selectedForm.questions.forEach((question) => {
+      // Skip non-percentage questions
+      if (
+        question.type === 'text' ||
+        question.type === 'paragraph' ||
+        question.type === 'date' ||
+        question.type === 'time' ||
+        question.type === 'section' ||
+        question.type === 'description'
+      ) {
+        return;
+      }
+
+      if (question.type === 'multiple_choice_grid') {
+        const options = Array.isArray(question.options) ? question.options : [];
+        if (options.length === 0) return;
+        const rowOptions = options.filter((opt: any) => typeof opt.value === 'string' && opt.value.startsWith('row'));
+        const colOptions = options.filter((opt: any) => !(typeof opt.value === 'string' && opt.value.startsWith('row')));
+        if (rowOptions.length === 0 || colOptions.length === 0) return;
+
+        const gridMap = new Map<string, Map<string, number>>();
+        rowOptions.forEach((rowOpt: any) => {
+          const percentages = randomPercentages(colOptions.length);
+          const colMap = new Map<string, number>();
+          colOptions.forEach((colOpt: any, idx: number) => {
+            // multiple_choice_grid uses value as keys for both row and column in UI state
+            colMap.set(colOpt.value, percentages[idx]);
+          });
+          gridMap.set(rowOpt.value, colMap);
+        });
+
+        newGridValues.set(question.id, gridMap);
+        return;
+      }
+
+      if (question.type === 'checkbox_grid') {
+        const options = Array.isArray(question.options) ? question.options : [];
+        if (options.length === 0) return;
+        const rowOptions = options.filter((opt: any) => typeof opt.value === 'string' && opt.value.startsWith('row'));
+        const colOptions = options.filter((opt: any) => !(typeof opt.value === 'string' && opt.value.startsWith('row')));
+        if (rowOptions.length === 0 || colOptions.length === 0) return;
+
+        const gridMap = new Map<string, Map<string, number>>();
+        rowOptions.forEach((rowOpt: any) => {
+          const percentages = randomPercentages(colOptions.length);
+          const colMap = new Map<string, number>();
+          colOptions.forEach((colOpt: any, idx: number) => {
+            // checkbox_grid uses id as keys for both row and column in UI state
+            colMap.set(colOpt.id, percentages[idx]);
+          });
+          gridMap.set(rowOpt.id, colMap);
+        });
+
+        newGridValues.set(question.id, gridMap);
+        return;
+      }
+
+      // Regular non-grid choice questions
+      const options = Array.isArray(question.options) ? question.options : [];
+      if (options.length === 0) return;
+
+      const randoms = randomPercentages(options.length);
+      const optionMap = new Map<string, number>();
+      options.forEach((opt: any, idx: number) => {
+        optionMap.set(opt.id, randoms[idx]);
+      });
+
+      newQuestionOptions.set(question.id, optionMap);
+    });
+
+    setQuestionOptions(newQuestionOptions);
+    setGridValues(newGridValues);
+    validatePercentages(newQuestionOptions);
   };
 
   // Handle AI suggestion result
@@ -1328,33 +1394,58 @@ export default function TabFillExpectedRatio() {
 
           newGridValues.set(questionId, questionGridMap);
         } else if (questionType === 'checkbox_grid') {
-          // Handle checkbox grid questions
-          // CheckboxGridPercentInput uses row.id and col.id as keys
-          // 🚀 Early return with optional chaining
+          // Handle checkbox grid questions (BE ids may not match FE option ids)
+          // CheckboxGridPercentInput expects row.id and col.id as keys
           if (!gridRowDistributions?.length) return;
 
           const questionGridMap = new Map<string, Map<string, number>>();
+          const optionLookup = optionLookupByQuestion.get(questionId)!; // id -> option
+
+          // Build helper maps for fallback matching
+          const rowOptions = selectedForm.questions
+            .find((q) => q.id === questionId)!
+            .options.filter((opt) => typeof opt.value === 'string' && opt.value.startsWith('row'));
+          const rowIdByText = new Map<string, string>(rowOptions.map((o) => [String(o.text).trim(), o.id]));
+
+          const colOptions = selectedForm.questions
+            .find((q) => q.id === questionId)!
+            .options.filter((opt) => !(typeof opt.value === 'string' && opt.value.startsWith('row')));
+          const colIdByText = new Map<string, string>(colOptions.map((o) => [String(o.text).trim(), o.id]));
+          const colIdByValue = new Map<string, string>(colOptions.map((o) => [String(o.value).trim(), o.id]));
 
           gridRowDistributions.forEach((rowDist: any) => {
-            const { rowId, columnDistributions } = rowDist;
+            const { rowId, rowLabel, columnDistributions } = rowDist;
             const rowMap = new Map<string, number>();
 
-            // CheckboxGridPercentInput uses row.id as key directly
-            const rowKey = rowId;
+            // Try match row by id first
+            let rowKey: string | undefined = optionLookup.get?.(rowId)?.id;
+            // Fallback by label text
+            if (!rowKey && rowLabel) {
+              rowKey = rowIdByText.get(String(rowLabel).trim());
+            }
+            if (!rowKey) return; // cannot match this row
 
             columnDistributions.forEach((colDist: any) => {
-              const { optionId, percentage } = colDist;
+              const { optionId, optionText, optionValue, percentage } = colDist;
 
-              // CheckboxGridPercentInput uses col.id as key directly
-              const colKey = optionId;
+              // Try match column by id
+              let colKey: string | undefined = optionLookup.get?.(optionId)?.id;
+              // Fallback by text then by value
+              if (!colKey && optionText) colKey = colIdByText.get(String(optionText).trim());
+              if (!colKey && optionValue) colKey = colIdByValue.get(String(optionValue).trim());
+              if (!colKey) return;
 
               rowMap.set(colKey, percentage);
             });
 
-            questionGridMap.set(rowKey, rowMap);
+            if (rowMap.size > 0) {
+              questionGridMap.set(rowKey, rowMap);
+            }
           });
 
-          newGridValues.set(questionId, questionGridMap);
+          if (questionGridMap.size > 0) {
+            newGridValues.set(questionId, questionGridMap);
+          }
         } else {
           // Handle radio, checkbox, select questions
           // 🚀 Early return with optional chaining
@@ -1415,6 +1506,9 @@ export default function TabFillExpectedRatio() {
           setIsAiDataFillingLoading(false);
           setErrorSnackMessage(`AI tạo dữ liệu mẫu và điền câu trả lời lên form thành công!`);
           setErrorSnackOpen(true);
+          setErrorSnackSeverity('success');
+          // Clear any existing error messages when AI completes successfully
+          setCreateErrorMessage(null);
         }, remainingTime);
       });
     } catch (error) {
@@ -1425,6 +1519,7 @@ export default function TabFillExpectedRatio() {
       setIsAiDataFillingLoading(false);
       setErrorSnackMessage(errorMessage);
       setErrorSnackOpen(true);
+      setErrorSnackSeverity('error');
     } finally {
       setIsAiLoading(false);
       setIsAISuggestionModalOpen(false);
@@ -1471,6 +1566,11 @@ export default function TabFillExpectedRatio() {
             <>
               <Typography variant="h6" sx={{ mb: 2, fontWeight: 600, color: 'text.primary' }}>
                 {question.title}
+                {question.required && (
+                  <Typography component="span" sx={{ color: 'error.main', ml: 0.5 }}>
+                    *
+                  </Typography>
+                )}
               </Typography>
               {question.type === 'text' || question.type === 'paragraph' ? (
             <>
@@ -1771,7 +1871,7 @@ export default function TabFillExpectedRatio() {
         open={errorSnackOpen}
         message={errorSnackMessage}
         onClose={() => setErrorSnackOpen(false)}
-        severity={errorSnackMessage.toLowerCase().includes('thành công') ? 'success' : 'error'}
+        severity={errorSnackSeverity}
       />
       <Grid container spacing={GRID_COMMON_SPACING}>
         <Grid item xs={12}>
@@ -1806,18 +1906,17 @@ export default function TabFillExpectedRatio() {
                     </Select>
                   </Stack>
                 </Grid>
-                <Grid item xs={12}>
-                  <Stack direction="row" sx={{ gap: 1 }}>
+                <Grid item xs={12} sm={6}>
+                  <Stack direction="column" sx={{ gap: 1 }}>
                     <InputLabel htmlFor="form-link">Link Form</InputLabel>
-                    {formLink ? (
-                      <Link href={formLink} id="form-link" target="_blank" rel="noopener noreferrer">
-                        {formLink}
-                      </Link>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Chọn form để xem link
-                      </Typography>
-                    )}
+                    <LinkInput
+                      id="form-link"
+                      value={formLink}
+                      onChange={setFormLink}
+                      placeholder="https://docs.google.com/forms/.../viewform"
+                      disabled={!selectedFormId}
+                      size="medium"
+                    />
                   </Stack>
                 </Grid>
               </Grid>
@@ -1846,6 +1945,12 @@ export default function TabFillExpectedRatio() {
 
                   <QuestionGroup questions={selectedForm.questions} renderQuestion={renderQuestion} />
 
+                  {createErrorMessage && (
+                    <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 2 , mt: 2}}>
+                      {createErrorMessage}
+                    </Alert>
+                  )}
+
                   <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
                     <Button
                       variant="outlined"
@@ -1866,6 +1971,16 @@ export default function TabFillExpectedRatio() {
                       sx={{ minWidth: 160, fontWeight: 600 }}
                     >
                       {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<CasinoIcon />}
+                      onClick={handleSimpleSuggest}
+                      disabled={isAiLoading || formDetailLoading || !selectedForm}
+                      sx={{ minWidth: 200, fontWeight: 600 }}
+                    >
+                      Gợi ý tỉ lệ đơn giản
                     </Button>
                     <Button
                       variant="contained"

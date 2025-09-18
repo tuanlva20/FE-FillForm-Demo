@@ -3,18 +3,21 @@ import { useNavigate } from 'react-router-dom';
 
 // material-ui
 import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid2';
 import InputLabel from '@mui/material/InputLabel';
+import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 // project-imports
+import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
@@ -22,6 +25,8 @@ import FormList from './components/tabcreate/FormList';
 
 // api
 import { createForm, FormData } from 'api/form';
+import LinkInput from 'components/form/LinkInput';
+import { handleFormError } from 'utils/errorHandler';
 
 // styles & constant
 const ITEM_HEIGHT = 48;
@@ -44,6 +49,9 @@ export default function TabCreate() {
   const [refreshList, setRefreshList] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [errorAlert, setErrorAlert] = useState<{ title: string; description: React.ReactNode; showFormSettingsLink?: boolean } | null>(null);
+  const [successSnackOpen, setSuccessSnackOpen] = useState(false);
+  const [successSnackMessage, setSuccessSnackMessage] = useState('');
 
   // Validate Google Form edit link
   const validateGoogleFormLink = (link: string): boolean => {
@@ -62,14 +70,9 @@ export default function TabCreate() {
     }
   };
 
-  const handleFormLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleFormLinkChange = (value: string) => {
     setFormLink(value);
-
-    // Clear previous errors
     setError(null);
-
-    // Validate edit link format
     if (value.trim() && !validateGoogleFormLink(value)) {
       setLinkError('Link không hợp lệ. Vui lòng sử dụng link Edit của Google Form (dạng /edit)');
     } else {
@@ -90,6 +93,7 @@ export default function TabCreate() {
 
     setLoading(true);
     setError(null);
+    setErrorAlert(null);
 
     try {
       await createForm({
@@ -104,8 +108,47 @@ export default function TabCreate() {
 
       // Trigger refresh for form list
       setRefreshList((prev) => !prev);
+
+      // Show success snackbar
+      setSuccessSnackMessage('Tạo form thành công!');
+      setSuccessSnackOpen(true);
     } catch (err) {
-      setError('Đã có lỗi xảy ra khi tạo form. Vui lòng thử lại sau.');
+      // Special handling: SIGN_IN_REQUIRED -> show titled alert consistent with other tabs
+      const data: any = (err as any)?.response?.data ?? err;
+      const content = Array.isArray(data?.content) ? data.content : [];
+      const hasSignInRequired =
+        data?.status === 'SIGN_IN_REQUIRED' ||
+        data?.statusOverride === 'SIGN_IN_REQUIRED' ||
+        content.some((item: any) => item?.code === 'SIGN_IN_REQUIRED' || item?.status === 'SIGN_IN_REQUIRED');
+
+      if (hasSignInRequired) {
+        setErrorAlert({
+          title: 'Lỗi cài đặt form',
+          description: (
+            <>
+              Vui lòng tắt <strong>Giới hạn 1 phản hồi/Limit to 1 response</strong>.<br />
+              Tắt <strong>Đã xác minh/Verified</strong> trong <strong>Thu thập địa chỉ email/Collect email addresses</strong>.
+            </>
+          ),
+        });
+      } else {
+        // Handle BAD_REQUEST with structured content (title: message, description: suggestion)
+        if (data?.status === 'BAD_REQUEST' && Array.isArray(content) && content.length > 0) {
+          const item = content[0];
+          const title = item?.message || 'Lỗi tạo form';
+          const description = item?.suggestion || data?.errorMessage || 'Vui lòng kiểm tra lại cài đặt form.';
+          setErrorAlert({ title, description });
+        } else {
+          // Prefer backend's errorMessage if provided
+          const backendMessage: string | undefined = data?.errorMessage;
+          if (backendMessage) {
+            setErrorAlert({ title: 'Lỗi tạo form', description: backendMessage });
+          } else {
+            const msg = handleFormError(err, 'createForm');
+            setErrorAlert({ title: 'Lỗi tạo form', description: msg });
+          }
+        }
+      }
       console.error('Form creation error:', err);
     } finally {
       setLoading(false);
@@ -142,9 +185,51 @@ export default function TabCreate() {
   };
 
   return (
-    <Grid container spacing={GRID_COMMON_SPACING}>
-      <Grid size={12}>
-        <MainCard title="Tạo Form" sx={MAINCARD_STYLE}>
+    <>
+      <Grid container spacing={GRID_COMMON_SPACING}>
+        <Grid size={12}>
+          <MainCard title="Tạo Form" sx={MAINCARD_STYLE}>
+          {errorAlert && (
+            <Alert color="error" variant="border" icon={<ErrorIcon />} sx={{ mb: 2 }}>
+              <AlertTitle>{errorAlert.title}</AlertTitle>
+              <Typography variant="h6" sx={{ mb: errorAlert.showFormSettingsLink ? 2 : 0, whiteSpace: 'pre-line' }}>
+                {errorAlert.description}
+              </Typography>
+              {errorAlert.showFormSettingsLink && (
+                <Box
+                  sx={{
+                    mt: 1,
+                    p: 2,
+                    backgroundColor: 'rgba(25, 118, 210, 0.04)',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'primary.light'
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography variant="body2" color="primary.main" fontWeight="600">
+                      💡 Gợi ý:
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Xem hướng dẫn:
+                    </Typography>
+                    <Link
+                      href="/apps/dienform/create"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{
+                        fontWeight: 600,
+                        textDecoration: 'none',
+                        '&:hover': { textDecoration: 'underline' }
+                      }}
+                    >
+                      Tại đây
+                    </Link>
+                  </Stack>
+                </Box>
+              )}
+            </Alert>
+          )}
           <Grid container spacing={3}>
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack sx={{ gap: 1 }}>
@@ -163,18 +248,22 @@ export default function TabCreate() {
             <Grid size={{ xs: 24, sm: 12 }}>
               <Stack sx={{ gap: 1 }}>
                 <InputLabel htmlFor="link-edit-form">Link Edit của form</InputLabel>
-                <TextField
-                  fullWidth
+                <LinkInput
                   id="link-edit-form"
                   placeholder="Điền link Edit của form (dạng /edit, hướng dẫn bên dưới)..."
                   value={formLink}
                   onChange={handleFormLinkChange}
-                  error={!!linkError || (!!error && !formLink)}
-                  helperText={linkError}
+                  size="medium"
+                  fullWidth
                 />
+                {linkError && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    {linkError}
+                  </Typography>
+                )}
               </Stack>
             </Grid>
-            {error && !linkError && (
+            {error && !linkError && !errorAlert && (
               <Grid size={{ xs: 24, sm: 24 }}>
                 <Alert color="error" icon={<ErrorIcon />} sx={{ mb: 1 }}>
                   {error}
@@ -337,6 +426,15 @@ export default function TabCreate() {
           </Grid>
         </MainCard>
       </Grid>
-    </Grid>
+      </Grid>
+
+      {/* Success snackbar */}
+      <AlertSnackbarWithProgress
+        open={successSnackOpen}
+        message={successSnackMessage}
+        onClose={() => setSuccessSnackOpen(false)}
+        severity="success"
+      />
+    </>
   );
 }
