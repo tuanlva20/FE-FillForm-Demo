@@ -105,6 +105,43 @@ export const handleAISuggestionError = (error: any): string => {
 };
 
 /**
+ * Chuẩn hóa error message trả về trong content.errorMessage của queue status API
+ * Nhận vào một chuỗi dài (thường bao gồm stack chuỗi gọi dịch vụ AI) và rút gọn, dịch thân thiện.
+ */
+export const normalizeAIQueueErrorMessage = (errorMessage: string | undefined | null): string => {
+  if (!errorMessage || typeof errorMessage !== 'string') return 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+
+  const msg = errorMessage.replace(/\s+/g, ' ').trim();
+
+  // Model overload patterns
+  if (/overloaded/i.test(msg) || /UNAVAILABLE/i.test(msg) || /\b503\b/.test(msg)) {
+    return 'Hệ thống AI đang quá tải. Vui lòng thử lại sau ít phút.';
+  }
+
+  // Token/quota/limit style
+  if (/quota|limit|rate limit|exceeded/i.test(msg)) {
+    return 'Bạn đã đạt giới hạn sử dụng AI. Vui lòng chờ hoặc giảm yêu cầu và thử lại.';
+  }
+
+  // Trích thông điệp ngắn gọn nhất bên trong JSON nếu có
+  const jsonMessageMatch = msg.match(/\"message\"\s*:\s*\"([^\"]+)\"/);
+  if (jsonMessageMatch && jsonMessageMatch[1]) {
+    return jsonMessageMatch[1];
+  }
+
+  // Loại bỏ tiền tố rườm rà "Failed to generate ...: Failed to ...:"
+  const simplified = msg.replace(/^(Failed to [^:]+:\s*)+/i, '').trim();
+  if (simplified.length > 0 && simplified.length < 240) return simplified;
+
+  // Rút gọn nếu quá dài
+  if (simplified.length > 240) {
+    return simplified.slice(0, 237) + '...';
+  }
+
+  return 'Đã xảy ra lỗi khi xử lý yêu cầu AI. Vui lòng thử lại.';
+};
+
+/**
  * Validate input trước khi gửi AI suggestion request
  * @param sampleCount - Số lượng mẫu
  * @param formQuestions - Danh sách câu hỏi trong form

@@ -157,6 +157,18 @@ export interface DataFillRequestDTO {
   endDate?: string;
 }
 
+// Validate payload for fill-in-data before creating request
+export interface ValidateFillInDataRequest {
+  formId: string;
+  sheetLink: string;
+  mappings: ColumnMapping[];
+}
+
+export interface ValidateFillInDataResponse {
+  valid: boolean;
+  errors?: string[];
+}
+
 // Form Report Types
 export interface FormReportItem {
   id: string;
@@ -215,13 +227,26 @@ export const API_ENDPOINTS = {
   FORM: '/api/form',
   FORM_USER_ALL: '/api/form/user/all',
   DATA_MAPPING: '/api/data-mapping',
-  DATA_FILL_REQUEST: '/api/fill-request/fill-in-data'
+  DATA_FILL_REQUEST: '/api/fill-request/fill-in-data',
+  FILL_IN_DATA_VALIDATE: '/api/fill-in-data/validate'
 };
 
 // Existing API Functions
 export const createForm = async (data: FormCreateData) => {
   const response = await axiosServices.post(API_ENDPOINTS.FORM, data);
-  return response.data;
+  const payload = response.data as any;
+  // Safeguard: some BE endpoints may return 200 with error envelope
+  // Accept common non-error statuses like OK/SUCCESS/CREATED/UPDATED/DELETED
+  const status: string | undefined = typeof payload?.status === 'string' ? String(payload.status).toUpperCase() : undefined;
+  const nonErrorStatuses = new Set(['OK', 'SUCCESS', 'CREATED', 'UPDATED', 'DELETED']);
+
+  if (payload?.errorMessage) {
+    throw payload;
+  }
+  if (status && !nonErrorStatuses.has(status)) {
+    throw payload;
+  }
+  return payload;
 };
 
 export const getFormList = async (page: number | null = null, size: number | null = null) => {
@@ -265,6 +290,39 @@ export const checkDataMapping = async (data: DataMappingRequest): Promise<DataMa
 export const createDataFillRequest = async (data: DataFillRequestDTO) => {
   const response = await axiosServices.post(API_ENDPOINTS.DATA_FILL_REQUEST, data);
   return response.data;
+};
+
+// Validate questions against data sheet before opening modal
+export const validateFillInData = async (data: ValidateFillInDataRequest): Promise<ValidateFillInDataResponse> => {
+  const response = await axiosServices.post(API_ENDPOINTS.FILL_IN_DATA_VALIDATE, data);
+  const payload: any = response.data;
+
+  // Normalize various BE response shapes to a consistent result
+  if (payload?.valid === true) {
+    return { valid: true };
+  }
+
+  if (typeof payload?.status === 'string') {
+    const statusUpper = String(payload.status).toUpperCase();
+    const contentUpper = typeof payload?.content === 'string' ? String(payload.content).toUpperCase() : undefined;
+
+    // Case: { status: 'OK', content: 'VALID' }
+    if (statusUpper === 'OK' && (contentUpper === 'VALID' || payload?.content === true)) {
+      return { valid: true };
+    }
+
+    // Case: error envelope with message
+    if (payload?.errorMessage) {
+      return { valid: false, errors: [payload.errorMessage] };
+    }
+  }
+
+  if (Array.isArray(payload?.errors)) {
+    return { valid: false, errors: payload.errors };
+  }
+
+  // Fallback: attempt to cast
+  return payload as ValidateFillInDataResponse;
 };
 
 export const getFormReports = async (params: FormReportParams = {}): Promise<FormReportResponse> => {

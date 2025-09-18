@@ -31,7 +31,7 @@ import { TablePagination as ReactTablePagination } from 'components/third-party/
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
 import { handleFormError, testErrorStructure } from 'utils/errorHandler';
-import { deduplicateAnswerDistributions, validateTextQuestionDistributions } from 'utils/formUtils';
+import { deduplicateAnswerDistributions, normalizeDistributionIntegers, validateTextQuestionDistributions } from 'utils/formUtils';
 import AILoadingDialog from './components/AILoadingDialog';
 import AISuggestionModal from './components/AISuggestionModal';
 import AutoFillFormModal from './components/AutoFillFormModal';
@@ -133,6 +133,9 @@ export default function TabFillExpectedRatio() {
   // State for AI data filling loading dialog
   const [isAiDataFillingLoading, setIsAiDataFillingLoading] = useState(false);
 
+  // Loading state for creating fill request
+  const [isCreatingFillRequest, setIsCreatingFillRequest] = useState(false);
+
   // State for testing section feature
   const [showSectionTest, setShowSectionTest] = useState(false);
   const [showSimpleTest, setShowSimpleTest] = useState(false);
@@ -174,10 +177,19 @@ export default function TabFillExpectedRatio() {
       }
 
       const grid = gridValues.get(question.id);
-      if (!grid) return false;
+      if (!grid || grid.size === 0) {
+        // No data entered for this grid question, so no error
+        return false;
+      }
 
-      // Check if any row has total != 100%
+      // Check if any row has total != 100% (only for rows that have been filled)
       return Array.from(grid.values()).some((colMap) => {
+        // Only validate if this row has any data entered
+        const hasData = Array.from(colMap.values()).some(percent => percent > 0);
+        if (!hasData) {
+          return false; // No data in this row, so no validation error
+        }
+        
         const total = Array.from(colMap.values()).reduce((sum, percent) => sum + (percent || 0), 0);
         return total !== 100;
       });
@@ -813,6 +825,7 @@ export default function TabFillExpectedRatio() {
           setDateInputs(newDateInputs);
           setGridValues(newGridValues);
           setOtherOptionInputs(new Map());
+          setBalanceErrors(new Map()); // Reset balance errors when resetting form
           setIsEditing(false);
           setIsEditingFillRequest(false);
           validatePercentages(newQuestionOptions);
@@ -1085,7 +1098,8 @@ export default function TabFillExpectedRatio() {
       // Note: validateTextQuestionDistributions only affects text questions (optionId === null)
       // Other options (like "other" option) are handled by deduplicateAnswerDistributions
       const cleanedAnswerDistributions = validateTextQuestionDistributions(answerDistributions);
-      const finalAnswerDistributions = deduplicateAnswerDistributions(cleanedAnswerDistributions);
+      const deduped = deduplicateAnswerDistributions(cleanedAnswerDistributions);
+      const finalAnswerDistributions = normalizeDistributionIntegers(deduped);
 
       logger.log('🔍 Deduplicate Debug Info:');
       logger.log('Original answerDistributions count:', answerDistributions.length);
@@ -1137,6 +1151,7 @@ export default function TabFillExpectedRatio() {
       };
 
       // Call API to save fill request
+      setIsCreatingFillRequest(true);
       await createFillRequest(selectedFormId, fillRequest);
       setIsAutoFillModalOpen(false);
 
@@ -1168,6 +1183,8 @@ export default function TabFillExpectedRatio() {
       setAlertPopup({ open: true, message: msg });
       setErrorSnackMessage(msg);
       setErrorSnackOpen(true);
+    } finally {
+      setIsCreatingFillRequest(false);
     }
   };
 
@@ -1269,7 +1286,7 @@ export default function TabFillExpectedRatio() {
         const question = questionLookup.get(questionId);
         if (!question) return;
 
-        if (questionType === 'text') {
+        if (questionType === 'text' || questionType === 'paragraph') {
           // Handle text questions - update custom data with sample answers
           // 🚀 Early return with optional chaining for better performance
           if (!sampleAnswers?.length) return;
@@ -1423,32 +1440,28 @@ export default function TabFillExpectedRatio() {
             // Section type is handled by QuestionGroup's SectionHeader, so render nothing here to avoid duplication
             null
           ) : question.type === 'description' ? (
-            // Description type - show as a clean white component like the image
+            // Description type - show as a subsection header
             <Box sx={{ 
-              mb: 2, 
+              mb: 3, 
               p: 2, 
-              bgcolor: 'background.paper', 
+              bgcolor: 'grey.50', 
               borderRadius: 1,
               border: '1px solid',
-              borderColor: 'divider'
+              borderColor: 'grey.200'
             }}>
               <Typography variant="h6" sx={{ 
                 color: 'text.primary',
                 fontWeight: 600,
-                textAlign: 'center',
-                borderTop: '1px solid',
-                borderBottom: '1px solid',
-                borderColor: 'divider',
-                py: 1,
-                mb: 2
+                textAlign: 'left',
+                mb: question.description ? 1 : 0
               }}>
                 {question.title}
               </Typography>
               {question.description && (
-                <Typography variant="body1" sx={{
+                <Typography variant="body2" sx={{
                   color: 'text.secondary',
-                  textAlign: 'center',
-                  lineHeight: 1.6
+                  textAlign: 'left',
+                  lineHeight: 1.5
                 }}>
                   {question.description}
                 </Typography>
@@ -1701,7 +1714,6 @@ export default function TabFillExpectedRatio() {
                 {balanceErrors.get(question.id)}
               </Alert>
             )}
-              <Divider sx={{ my: 2, borderColor: 'divider' }} />
             </>
           )}
         </Box>
@@ -1725,6 +1737,26 @@ export default function TabFillExpectedRatio() {
 
   // Check if there are any balance errors
   const hasBalanceErrors = balanceErrors.size > 0;
+
+  // Enable Reset when there is any user/AI populated data to clear
+  const hasAnyChanges = useMemo(() => {
+    // Any non-zero percentage in choice questions
+    const anyChoiceChange = Array.from(questionOptions.values()).some((optMap) =>
+      Array.from(optMap.values()).some((v) => (v || 0) > 0)
+    );
+
+    // Any grid entries with non-zero
+    const anyGridChange = Array.from(gridValues.values()).some((rowMap) =>
+      Array.from(rowMap.values()).some((colMap) => Array.from(colMap.values()).some((v) => (v || 0) > 0))
+    );
+
+    // Any custom text/date or other option inputs
+    const anyCustomText = Array.from(customData.values()).some((v) => v.useCustomData || (v.data?.trim()?.length || 0) > 0);
+    const anyDateInputs = Array.from(dateInputs.values()).some((v) => v.useCustomData || (v.data?.trim()?.length || 0) > 0);
+    const anyOtherInputs = Array.from(otherOptionInputs.values()).some((v) => (v?.trim()?.length || 0) > 0);
+
+    return anyChoiceChange || anyGridChange || anyCustomText || anyDateInputs || anyOtherInputs || isEditing || isEditingFillRequest;
+  }, [questionOptions, gridValues, customData, dateInputs, otherOptionInputs, isEditing, isEditingFillRequest]);
 
   return (
     <>
@@ -1820,7 +1852,7 @@ export default function TabFillExpectedRatio() {
                       color="secondary"
                       startIcon={<Refresh size={20} />}
                       onClick={handleCancel}
-                      disabled={!isEditing || isAiLoading}
+                      disabled={!hasAnyChanges || isAiLoading}
                       sx={{ minWidth: 140, fontWeight: 600 }}
                     >
                       Reset Form
@@ -1838,12 +1870,12 @@ export default function TabFillExpectedRatio() {
                     <Button
                       variant="contained"
                       color="primary"
-                      startIcon={<FormIcon />}
+                      startIcon={isCreatingFillRequest ? <CircularProgress size={20} color="inherit" /> : <FormIcon />}
                       onClick={handleOpenAutoFillModal}
-                      disabled={loading || selectedForm == null || balanceErrors.size > 0 || hasGridErrors || isAiLoading}
+                      disabled={loading || selectedForm == null || isAiLoading || isCreatingFillRequest}
                       sx={{ minWidth: 200, fontWeight: 600 }}
                     >
-                      Tạo yêu cầu điền Form
+                      {isCreatingFillRequest ? 'Đang tạo yêu cầu...' : 'Tạo yêu cầu điền Form'}
                     </Button>
                   </Stack>
                 </>

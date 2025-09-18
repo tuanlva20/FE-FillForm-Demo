@@ -27,11 +27,11 @@ const CheckboxGridPercentInput: React.FC<Props> = React.memo(({ question, onChan
     // Filter rows based on value pattern "row_X" or text pattern "Row X"
     const rows = (question.options || []).filter((opt) => 
       (opt.value && opt.value.startsWith('row_')) || 
-      (opt.text && opt.text.toLowerCase().startsWith('row'))
+      (opt.title && opt.title.toLowerCase().startsWith('row'))
     );
     const seen = new Set();
     const columns = (question.options || []).filter(
-      (opt) => !opt.value?.startsWith('row_') && !opt.text?.toLowerCase().startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
+      (opt) => !opt.value?.startsWith('row_') && !opt.title?.toLowerCase().startsWith('row') && !seen.has(opt.value) && seen.add(opt.value)
     );
     return { rows, columns };
   }, [question.options]);

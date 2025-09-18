@@ -1,5 +1,6 @@
 import { pollAISuggestionStatus } from 'api/ai-suggestion';
 import { useCallback, useRef, useState } from 'react';
+import { normalizeAIQueueErrorMessage } from 'utils/ai-error-handler';
 
 interface PollingState {
   isPolling: boolean;
@@ -119,7 +120,8 @@ export const useAISuggestionPolling = () => {
           // Xử lý response từ status endpoint
           const queueContent = response.content as any;
           const queueStatus = queueContent?.status || response.status;
-          const errorMessage = queueContent?.errorMessage || response.error;
+          const errorMessageRaw = queueContent?.errorMessage || response.error;
+          const errorMessage = normalizeAIQueueErrorMessage(errorMessageRaw);
 
           setPollingState((prev) => ({
             ...prev,
@@ -153,7 +155,7 @@ export const useAISuggestionPolling = () => {
             return;
           }
 
-          if (queueStatus === 'FAILED' || errorMessage) {
+          if (queueStatus === 'FAILED' || errorMessageRaw) {
             setPollingState((prev) => ({
               ...prev,
               isPolling: false,

@@ -9,8 +9,7 @@ interface QuestionGroupProps {
 }
 
 interface GroupedQuestions {
-  sections: Map<string, { sectionData: SectionData; questions: Question[] }>;
-  noSectionQuestions: Question[];
+  sections: Array<{ sectionData: SectionData | null; questions: Question[] }>;
 }
 
 function normalizeSectionData(rawAdditionalData: unknown, question?: any): SectionData | undefined {
@@ -72,37 +71,43 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
   const sortedQuestions = [...questions].sort((a, b) => a.position - b.position);
   
   // Group questions by sections
-  const sections: Array<{ sectionData: any, questions: any[] }> = [];
-  let currentSection: any = null;
-  let currentSectionQuestions: any[] = [];
+  const sections: Array<{ sectionData: SectionData | null, questions: Question[] }> = [];
+  let currentSection: SectionData | null = null;
+  let currentSectionQuestions: Question[] = [];
   let sectionCounter = 0;
 
   sortedQuestions.forEach((question) => {
-    const sectionData = normalizeSectionData((question as any).additionalData, question);
-    
-    if (sectionData) {
+    // Handle section type questions - these become section headers
+    if (question.type === 'section') {
       // Save previous section if exists
-      if (currentSection) {
+      if (currentSection || currentSectionQuestions.length > 0) {
         sections.push({
-          sectionData: { ...currentSection, displayIndex: sectionCounter },
+          sectionData: currentSection ? { ...currentSection, displayIndex: sectionCounter } : null,
           questions: currentSectionQuestions
         });
+        sectionCounter++;
       }
       
-      // Start new section
-      sectionCounter++;
-      currentSection = sectionData;
+      // Create new section from the section question
+      currentSection = {
+        liIndex: question.additionalData?.itemId || '',
+        section_index: String(question.position || 0),
+        section_title: question.title || '',
+        containerXPath: '',
+        headingNormalized: question.title || '',
+        section_description: question.description || ''
+      };
       currentSectionQuestions = [];
     } else {
-      // Add question to current section
+      // Add question to current section (or to no-section group)
       currentSectionQuestions.push(question);
     }
   });
 
   // Don't forget the last section
-  if (currentSection) {
+  if (currentSection || currentSectionQuestions.length > 0) {
     sections.push({
-      sectionData: { ...currentSection, displayIndex: sectionCounter },
+      sectionData: currentSection ? { ...currentSection, displayIndex: sectionCounter } : null,
       questions: currentSectionQuestions
     });
   }
@@ -110,8 +115,10 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
   return (
     <Stack spacing={4}>
       {sections.map((section, sectionIndex) => (
-        <Box key={`section-${section.sectionData.section_index}`}>
-          <SectionHeader sectionData={{ ...section.sectionData, section_index: String(section.sectionData.displayIndex) }} />
+        <Box key={section.sectionData ? `section-${section.sectionData.section_index}` : `no-section-${sectionIndex}`}>
+          {section.sectionData && (
+            <SectionHeader sectionData={{ ...section.sectionData, section_index: String(section.sectionData.displayIndex) }} />
+          )}
           <Box
             sx={{
               backgroundColor: 'white',

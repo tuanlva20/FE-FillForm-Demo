@@ -167,7 +167,6 @@ const DienFormCreate = Loadable(lazy(() => import('sections/apps/dienform/TabCre
 const DienFormFillExpectedRatio = Loadable(lazy(() => import('sections/apps/dienform/TabFillExpectedRatio')));
 const DienFormFillInData = Loadable(lazy(() => import('sections/apps/dienform/TabFillInData')));
 const DienFormLichSu = Loadable(lazy(() => import('sections/apps/dienform/TabHistory')));
-const TestNewFormFormat = Loadable(lazy(() => import('pages/test-new-form-format')));
 
 const MaHoaDataPage = Loadable(lazy(() => import('sections/ma-hoa-data')));
 
@@ -359,10 +358,6 @@ const MainRoutes = {
                   path: 'history',
                   element: <DienFormLichSu />
                 },
-                {
-                  path: 'test-new-format',
-                  element: <TestNewFormFormat />
-                }
               ]
             },
             {

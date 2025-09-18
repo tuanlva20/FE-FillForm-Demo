@@ -21,7 +21,7 @@ export function getSocket(): any {
     path: '/socket.io',
     withCredentials: true,
     transports: ['polling', 'websocket'], // v2.x supports both
-    autoConnect: false, // Don't auto-connect
+    autoConnect: true,
     forceNew: true,
     timeout: 10000, // Reduced timeout
     // v2.x specific settings
@@ -29,10 +29,10 @@ export function getSocket(): any {
     rememberUpgrade: false,
     // Reconnection settings
     reconnection: true,
-    reconnectionAttempts: 3, // Reduced attempts
+    reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
     reconnectionDelayMax: 5000,
-    maxReconnectionAttempts: 3,
+    maxReconnectionAttempts: Infinity,
     // v2.x protocol settings
     secure: window.location.protocol === 'https:',
     rejectUnauthorized: false
@@ -62,6 +62,27 @@ export function getSocket(): any {
   socketInstance.on('reconnect_failed', () => {
     logger.warn('❌ Socket reconnection failed after all attempts');
   });
+
+  // Proactively attempt reconnect when app becomes visible/online/focused
+  const tryReconnect = () => {
+    try {
+      if (!socketInstance) return;
+      // Only attempt if not connected and reconnection is enabled
+      const shouldReconnect = (socketInstance as any)?.disconnected && (socketInstance as any)?.io?.reconnection();
+      if (shouldReconnect) {
+        logger.log('🔁 Attempting socket reconnect due to visibility/online/focus change');
+        (socketInstance as any).connect();
+      }
+    } catch (e) {
+      logger.warn('⚠️ Error while attempting proactive reconnect', e);
+    }
+  };
+
+  window.addEventListener('visibilitychange', () => {
+    if (!document.hidden) tryReconnect();
+  });
+  window.addEventListener('focus', tryReconnect);
+  window.addEventListener('online', tryReconnect);
 
   return socketInstance;
 }

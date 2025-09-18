@@ -35,15 +35,16 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail,
+  validateFillInData
 } from 'api/form';
 
 // assets
@@ -560,9 +561,9 @@ export default function TabFillInData() {
     setIsPaymentModalOpen(true);
   };
 
-  // Open auto fill modal
-  const handleOpenAutoFillModal = () => {
-    if (!dataChecked || !mappingData) {
+  // Validate with backend, then open auto fill modal
+  const handleOpenAutoFillModal = async () => {
+    if (!dataChecked || !mappingData || !selectedFormId) {
       const msg = 'Vui lòng kiểm tra dữ liệu trước khi tạo yêu cầu điền form.';
       setError(msg);
       setErrorAlert({ title: 'Thiếu thông tin', description: msg });
@@ -571,7 +572,52 @@ export default function TabFillInData() {
       setTimeout(() => scrollToTop(), 100);
       return;
     }
-    setIsAutoFillModalOpen(true);
+
+    try {
+      setLoading(true);
+      const mappingArray = Array.from(columnMappings.entries()).map(([questionId, columnName]) => ({
+        questionId,
+        columnName: columnName || null
+      }));
+
+      // Call validate API
+      const result = await validateFillInData({
+        formId: selectedFormId,
+        sheetLink,
+        mappings: mappingArray
+      });
+
+      // Some BE might return 200 with error envelope
+      if (result?.valid) {
+        // Clear all error alerts/snackbars when validation passes
+        setError(null);
+        setErrorAlert(null);
+        setErrorSnackMessage('');
+        setErrorSnackOpen(false);
+        setIsAutoFillModalOpen(true);
+      } else {
+        const description = (result as any)?.errorMessage
+          ? formatValidationErrorMessage((result as any).errorMessage)
+          : (result?.errors || ['Dữ liệu không hợp lệ']).join('\n');
+        setError(description);
+        setErrorAlert({ title: 'Lỗi xác thực dữ liệu', description });
+        setErrorSnackMessage(description);
+        setErrorSnackOpen(true);
+        setTimeout(() => scrollToTop(), 100);
+      }
+    } catch (err: any) {
+      const data = err?.response?.data ?? err;
+      const message = data?.errorMessage
+        ? formatValidationErrorMessage(data.errorMessage)
+        : handleDataMappingError(err, 'check');
+      setError(message);
+      setErrorAlert({ title: 'Lỗi xác thực dữ liệu', description: message });
+      setErrorSnackMessage(message);
+      setErrorSnackOpen(true);
+      setTimeout(() => scrollToTop(), 100);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Handle page change
@@ -782,9 +828,9 @@ export default function TabFillInData() {
                 color="primary"
                 onClick={handleCheckData}
                 disabled={isCheckingData || !selectedFormId || !sheetLink}
-                startIcon={!isCheckingData ? <Data size={20} color="currentColor" /> : null}
+                startIcon={isCheckingData ? <CircularProgress size={20} color="inherit" /> : <Data size={20} color="currentColor" />}
               >
-                {isCheckingData ? <CircularProgress size={24} color="inherit" /> : 'Kiểm Tra Dữ Liệu'}
+                {isCheckingData ? 'Đang mapping dữ liệu...' : 'Kiểm Tra Dữ Liệu'}
               </Button>
             </Grid>
           </Grid>
@@ -913,14 +959,18 @@ export default function TabFillInData() {
                   variant="contained"
                   color="primary"
                   startIcon={
-                    <Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <FormIcon />
-                    </Box>
+                    loading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <Box sx={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <FormIcon />
+                      </Box>
+                    )
                   }
                   onClick={handleOpenAutoFillModal}
                   disabled={loading}
                 >
-                  {loading ? <CircularProgress size={24} color="inherit" /> : 'Tạo Yêu Cầu Điền Form'}
+                  {loading ? 'Đang kiểm tra data...' : 'Tạo Yêu Cầu Điền Form'}
                 </Button>
               </Box>
             </>

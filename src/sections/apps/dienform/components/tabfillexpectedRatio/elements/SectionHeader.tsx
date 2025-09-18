@@ -12,7 +12,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
   console.log('SectionHeader - sectionData:', sectionData);
 
   // Handle new format where section data is directly in the question object
-  const isNewFormat = sectionData.title && sectionData.description !== undefined;
+  const isNewFormat = sectionData.title !== undefined;
   
   const sectionTitle = isNewFormat ? sectionData.title : sectionData.section_title;
   const sectionDescription = isNewFormat ? sectionData.description : sectionData.section_description;

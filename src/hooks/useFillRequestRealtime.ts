@@ -214,13 +214,21 @@ export default function useFillRequestRealtime(
       });
     };
 
-    // Clean up previous listeners
-    socket.off('fill_request_update');
-    socket.off('fill_request_bulk_state');
-    socket.off('request_update');
-    socket.off('bulk_state');
-    socket.off('update');
-    socket.off('state');
+    // Re-join current room automatically after reconnect
+    const rejoinIfNeeded = () => {
+      if (currentFormRef.current && user?.id) {
+        console.log('🔁 Re-joining room after reconnect:', currentFormRef.current);
+        socket.emit('join_form_room', { formId: currentFormRef.current, userId: user.id });
+      }
+    };
+
+    // Ensure we don't duplicate the same listener; remove only our own handler before re-adding
+    socket.off('connect', rejoinIfNeeded);
+    socket.off('reconnect', rejoinIfNeeded);
+    socket.on('connect', rejoinIfNeeded);
+    socket.on('reconnect', rejoinIfNeeded);
+
+    // Do not remove global listeners blindly; only (re)bind our own handlers below
 
     // Leave previous room if needed
     if (currentFormRef.current && currentFormRef.current !== selectedFormId) {
@@ -239,38 +247,48 @@ export default function useFillRequestRealtime(
       console.log('🚪 Joining room:', selectedFormId);
 
       // Register listeners BEFORE emitting join to avoid missing the first snapshot
+      socket.off('fill_request_update', handleUpdate);
       socket.on('fill_request_update', handleUpdate);
+      socket.off('fill_request_bulk_state', handleBulk);
       socket.on('fill_request_bulk_state', handleBulk);
 
       // Also listen to alternative event names that might be used by BE
-      socket.on('request_update', (data: any) => {
+      const handleAltRequestUpdate = (data: any) => {
         console.log('🔄 Alternative request_update received:', data);
         if (data && typeof data === 'object') {
           handleUpdate(data as UpdatePayload);
         }
-      });
+      };
+      socket.off('request_update', handleAltRequestUpdate);
+      socket.on('request_update', handleAltRequestUpdate);
 
-      socket.on('bulk_state', (data: any) => {
+      const handleAltBulkState = (data: any) => {
         console.log('📦 Alternative bulk_state received:', data);
         if (data && typeof data === 'object') {
           handleBulk(data as BulkStatePayload);
         }
-      });
+      };
+      socket.off('bulk_state', handleAltBulkState);
+      socket.on('bulk_state', handleAltBulkState);
 
       // Listen to generic events in case BE uses different naming
-      socket.on('update', (data: any) => {
+      const handleGenericUpdate = (data: any) => {
         console.log('🔄 Generic update event received:', data);
         if (data && typeof data === 'object' && data.formId && data.requestId) {
           handleUpdate(data as UpdatePayload);
         }
-      });
+      };
+      socket.off('update', handleGenericUpdate);
+      socket.on('update', handleGenericUpdate);
 
-      socket.on('state', (data: any) => {
+      const handleGenericState = (data: any) => {
         console.log('📦 Generic state event received:', data);
         if (data && typeof data === 'object' && data.formId && Array.isArray(data.requests)) {
           handleBulk(data as BulkStatePayload);
         }
-      });
+      };
+      socket.off('state', handleGenericState);
+      socket.on('state', handleGenericState);
 
       // Emit join after setting up listeners
       socket.emit('join_form_room', { formId: selectedFormId, userId: user.id });
@@ -290,8 +308,12 @@ export default function useFillRequestRealtime(
       if (debounceTimerRef.current) window.clearTimeout(debounceTimerRef.current);
 
       // Remove all listeners
-      socket.off('fill_request_update');
-      socket.off('fill_request_bulk_state');
+      socket.off('connect', rejoinIfNeeded);
+      socket.off('reconnect', rejoinIfNeeded);
+      // Remove only the handlers we registered to avoid affecting other hooks/components
+      socket.off('fill_request_update', handleUpdate);
+      socket.off('fill_request_bulk_state', handleBulk);
+      // The alternative/generic handlers are recreated each effect run; remove them safely if present
       socket.off('request_update');
       socket.off('bulk_state');
       socket.off('update');

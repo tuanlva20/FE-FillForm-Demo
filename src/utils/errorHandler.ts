@@ -164,12 +164,13 @@ export const handleApiError = (err: any, defaultMessage: string = 'Có lỗi x�
  * @param operation - Tên operation (create, update, delete, fetch)
  * @returns Error message đã được xử lý
  */
-export const handleFormError = (err: any, operation: 'create' | 'update' | 'delete' | 'fetch' = 'fetch'): string => {
+export const handleFormError = (err: any, operation: 'create' | 'createForm' | 'update' | 'delete' | 'fetch' = 'fetch'): string => {
   const operationMessages = {
     create: 'Có lỗi xảy ra khi tạo yêu cầu điền form. Vui lòng thử lại.',
     update: 'Có lỗi xảy ra khi cập nhật yêu cầu điền form. Vui lòng thử lại.',
     delete: 'Có lỗi xảy ra khi xóa yêu cầu điền form. Vui lòng thử lại.',
-    fetch: 'Có lỗi xảy ra khi tải thông tin form. Vui lòng thử lại.'
+    fetch: 'Có lỗi xảy ra khi tải thông tin form. Vui lòng thử lại.',
+    createForm: 'Có lỗi xảy ra khi tạo form. Vui lòng thử lại.'
   };
 
   // Check for specific SIGN_IN_REQUIRED error
