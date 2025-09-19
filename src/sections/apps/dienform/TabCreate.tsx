@@ -36,6 +36,7 @@ const MenuProps = { PaperProps: { style: { maxHeight: ITEM_HEIGHT * 4.5 + ITEM_P
 // icons & assets
 import capQuyenFormImg from 'assets/images/dienformtudong/cap-quyen-google-form.png';
 import huongDanCaiDatImg from 'assets/images/dienformtudong/huong-dan-cai-dat.png';
+import editLinkImg from 'assets/images/dienformtudong/editlink.png';
 import { ErrorIcon } from 'assets/images/svg/icon';
 import { InfoCircle } from 'iconsax-react';
 
@@ -297,43 +298,6 @@ export default function TabCreate() {
         <MainCard title="Hướng dẫn" sx={MAINCARD_STYLE}>
           <Grid container>
             <Stack sx={{ width: '100%', gap: 2 }}>
-            <Stack sx={{ gap: 1.25 }}>
-                <Chip
-                  variant="outlined"
-                  color="warning"
-                  icon={<InfoCircle size={16} />}
-                  label={
-                    <Typography component="span" sx={{ fontWeight: 700 }}>
-                      ⚠️ Lưu ý quan trọng cho Form có câu hỏi điều hướng
-                    </Typography>
-                  }
-                  sx={(theme) => ({
-                    px: 1,
-                    color: theme.palette.warning.main,
-                    bgcolor: theme.palette.mode === 'dark' ? alpha(theme.palette.warning.main, 0.12) : alpha(theme.palette.warning.main, 0.08),
-                    borderColor: alpha(theme.palette.warning.main, 0.35),
-                    '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.5 }
-                  })}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  Để chương trình có thể quét được <strong>toàn bộ câu hỏi</strong> trong form, bạn cần:
-                </Typography>
-                <Box component="ul" sx={{ pl: 3, m: 0, color: 'text.secondary' }}>
-                  <Box component="li">
-                    <Typography variant="body2">
-                      <strong>Đối với câu hỏi điều hướng tới phần:</strong> Tắt "Chuyển tới phần dựa trên câu trả lời"
-                    </Typography>
-                  </Box>
-                  <Box component="li">
-                    <Typography variant="body2">
-                      <strong>Chuyển nút Gửi:</strong> Đặt nút gửi ở câu hỏi cuối cùng thay vì mỗi trang
-                    </Typography>
-                  </Box>
-                </Box>
-                <Typography variant="body2" color="text.secondary">
-                  Thiết lập này đảm bảo hệ thống có thể truy cập và xử lý tất cả câu hỏi trong form một cách chính xác.
-                </Typography>
-              </Stack>
               <Stack sx={{ gap: 1.25 }}>
                 <Chip
                   variant="outlined"
@@ -341,7 +305,7 @@ export default function TabCreate() {
                   icon={<InfoCircle size={16} />}
                   label={
                     <Typography component="span" sx={{ fontWeight: 700 }}>
-                      Lưu ý: Mở quyền cho người trả lời
+                      Lưu ý: Mở quyền cho người trả lời & Sao chép "Link Edit form"
                     </Typography>
                   }
                   sx={(theme) => ({
@@ -352,11 +316,11 @@ export default function TabCreate() {
                     '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.5 }
                   })}
                 />
-                <Typography variant="body2" color="text.secondary">
-                  Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
-                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời</strong>
+                <Typography variant="body1" color="text.secondary">
+                  - Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
+1                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời( Responder) và Người chỉnh sửa( Editor)</strong>
                   <br />
-                  Sau đó nhấn <strong>Sao chép đường liên kết chỉnh sửa</strong> và dán vào <strong>"Link Edit của form"</strong>
+                  - Sau đó nhấn <strong>Sao chép đường link Edit form</strong> và dán vào <strong>"Link Edit của form"</strong>
                   . Thiết lập này giúp hệ thống truy cập được (tránh lỗi không thể truy cập/accessible).
                 </Typography>
                 <Box
@@ -366,6 +330,19 @@ export default function TabCreate() {
                   sx={{
                     width: '100%',
                     maxWidth: 480,
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    alignSelf: 'center',
+                    boxShadow: 0
+                  }}
+                />
+                <Box
+                  component="img"
+                  src={editLinkImg}
+                  alt="Cấp quyền hiển thị cho người trả lời trong Google Form"
+                  sx={{
+                    width: '100%',
                     borderRadius: 1,
                     border: '1px solid',
                     borderColor: 'divider',
@@ -393,18 +370,18 @@ export default function TabCreate() {
                     '& .MuiChip-label': { display: 'flex', alignItems: 'center', gap: 0.5 }
                   })}
                 />
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body1" color="text.secondary">
                   Mở tab <strong>Cài đặt</strong> của Google Form và thiết lập như ảnh bên dưới để hệ thống có thể tự động gửi trả lời:
                 </Typography>
                 <Box component="ul" sx={{ pl: 3, m: 0, color: 'text.secondary' }}>
                   <Box component="li">
-                    <Typography variant="body2">
+                    <Typography variant="body1">
                       Trong <strong>Thu thập địa chỉ email</strong> chọn <strong>Không thu thập</strong> hoặc{' '}
                       <strong>Thông tin về người trả lời</strong>
                     </Typography>
                   </Box>
                   <Box component="li">
-                    <Typography variant="body2">Tắt giới hạn 1 lần trả lời</Typography>
+                    <Typography variant="body1">Tắt giới hạn 1 lần trả lời</Typography>
                   </Box>
                 </Box>
                 <Box
