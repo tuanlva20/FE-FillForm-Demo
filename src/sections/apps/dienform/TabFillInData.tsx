@@ -308,53 +308,23 @@ export default function TabFillInData() {
             
             // Process each mapping for this grid question
             mappings.forEach((mapping) => {
-              console.log('Processing mapping for grid:', mapping.questionTitle);
-              
-              // Try to find matching row using multiple strategies
-              let matchingRow = null;
-              
-              // Strategy 1: Exact match
-              matchingRow = rows.find(row => row.text === mapping.questionTitle);
-              
-              // Strategy 2: Contains match
-              if (!matchingRow) {
-                matchingRow = rows.find(row => 
-                  row.text.includes(mapping.questionTitle) || 
-                  mapping.questionTitle.includes(row.text)
-                );
-              }
-              
-              // Strategy 3: Key-based match (GN1, CN1, etc.)
-              if (!matchingRow) {
-                const keyMatch = mapping.questionTitle.match(/(GN\d+|CN\d+|CTO\d+|YT\d+|HS\d+)/);
-                if (keyMatch) {
-                  const key = keyMatch[1];
-                  console.log('Trying to match by key:', key);
-                  matchingRow = rows.find(row => row.text.includes(key));
-                }
-              }
-              
-              // Strategy 4: Semantic match based on content
-              if (!matchingRow) {
-                const questionTitleLower = mapping.questionTitle.toLowerCase();
-                matchingRow = rows.find(row => {
-                  const rowTextLower = row.text.toLowerCase();
-                  return (
-                    (questionTitleLower.includes('gợi nhớ') && rowTextLower.includes('gợi nhớ')) ||
-                    (questionTitleLower.includes('cập nhật') && rowTextLower.includes('cập nhật')) ||
-                    (questionTitleLower.includes('chương trình') && rowTextLower.includes('chương trình')) ||
-                    (questionTitleLower.includes('mục đích') && rowTextLower.includes('mục đích'))
-                  );
-                });
+              const optionTitle: string | undefined = mapping.optionTitle || undefined;
+              console.log('Processing mapping for grid (strict by optionTitle):', optionTitle);
+
+              // Strict normalized equality by optionTitle
+              let matchingRow = null as any;
+              if (optionTitle) {
+                const targetNorm = normalizeForCompare(optionTitle);
+                matchingRow = rows.find((row: any) => normalizeForCompare(row.text) === targetNorm);
               }
 
               if (matchingRow) {
                 const key = `${question.id}:${matchingRow.text}`;
                 initialMappings.set(key, mapping.columnName);
-                console.log('Successfully mapped grid row:', key, '->', mapping.columnName);
+                console.log('Mapped grid row (strict):', key, '->', mapping.columnName);
               } else {
-                console.log('No matching row found for:', mapping.questionTitle);
-                // Don't create fallback mapping here to avoid conflicts
+                console.log('No strict match for optionTitle; skip automap. optionTitle =', optionTitle);
+                // Do not attempt heuristic mapping for grid to avoid wrong pairing
               }
             });
           } else {
