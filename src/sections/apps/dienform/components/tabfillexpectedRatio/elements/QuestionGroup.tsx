@@ -74,8 +74,8 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
   const sections: Array<{ sectionData: (SectionData & { displayIndex?: number }) | null, questions: Question[] }> = [];
   let currentSection: SectionData | null = null;
   let currentSectionQuestions: Question[] = [];
-  // UI base index for sections starts at 2
-  let sectionCounter = 2;
+  // UI base index for sections starts at 1
+  let sectionCounter = 1;
 
   sortedQuestions.forEach((question) => {
     // Handle section type questions - these become section headers

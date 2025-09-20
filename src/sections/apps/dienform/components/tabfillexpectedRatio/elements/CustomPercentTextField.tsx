@@ -39,6 +39,7 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
 
       let val = Number(inputValue);
       if (isNaN(val) || val < 0) val = 0;
+      if (val > 100) val = 100; // Limit to 100%
 
       // Clear existing timeout
       if (timeoutRef.current) {
@@ -73,6 +74,10 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
       setLocalValue('0');
       lastValueRef.current = 0;
       onChange(0);
+    } else if (finalValue > 100) {
+      setLocalValue('100');
+      lastValueRef.current = 100;
+      onChange(100);
     } else if (lastValueRef.current !== finalValue) {
       lastValueRef.current = finalValue;
       onChange(finalValue);
@@ -110,12 +115,28 @@ const CustomPercentTextField: React.FC<CustomPercentTextFieldProps> = React.memo
       onBlur={handleBlur}
       onFocus={handleFocus}
       InputProps={{
-        inputProps: { min: 0 },
+        inputProps: { 
+          min: 0,
+          max: 100,
+          step: 1,
+          style: { textAlign: 'center' }
+        },
         endAdornment: <InputAdornment position="end">%</InputAdornment>
       }}
       error={error}
-      sx={sx}
       disabled={disabled}
+      sx={{
+        minWidth: 110,
+        '& .MuiInputBase-input': {
+          textAlign: 'center',
+          fontSize: '14px',
+          fontWeight: 500,
+          padding: '8px 12px',
+          minWidth: '70px',
+          width: '70px'
+        },
+        ...sx
+      }}
     />
   );
 });

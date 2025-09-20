@@ -44,13 +44,13 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-  AnswerDistribution,
-  createFillRequest,
-  FillRequestDTO,
-  FormData,
-  FormDetailResponse,
-  getAllUserForms,
-  getFormDetail
+    AnswerDistribution,
+    createFillRequest,
+    FillRequestDTO,
+    FormData,
+    FormDetailResponse,
+    getAllUserForms,
+    getFormDetail
 } from 'api/form';
 
 // iconsax-react
@@ -1980,7 +1980,7 @@ export default function TabFillExpectedRatio() {
                       disabled={isAiLoading || formDetailLoading || !selectedForm}
                       sx={{ minWidth: 200, fontWeight: 600 }}
                     >
-                      Gợi ý tỉ lệ đơn giản
+                      Gợi ý tỉ lệ nhanh
                     </Button>
                     <Button
                       variant="contained"

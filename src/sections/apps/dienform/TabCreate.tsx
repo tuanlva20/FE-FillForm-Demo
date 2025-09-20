@@ -318,10 +318,7 @@ export default function TabCreate() {
                 />
                 <Typography variant="body1" color="text.secondary">
                   - Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
-1                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời( Responder) và Người chỉnh sửa( Editor)</strong>
-                  <br />
-                  - Sau đó nhấn <strong>Sao chép đường link Edit form</strong> và dán vào <strong>"Link Edit của form"</strong>
-                  . Thiết lập này giúp hệ thống truy cập được (tránh lỗi không thể truy cập/accessible).
+                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời( Responder) và Người chỉnh sửa( Editor).</strong>
                 </Typography>
                 <Box
                   component="img"
@@ -337,6 +334,10 @@ export default function TabCreate() {
                     boxShadow: 0
                   }}
                 />
+                <Typography variant="body1" color="text.secondary">
+                - Sau đó nhấn <strong>Sao chép đường link Edit form</strong> và dán vào <strong>"Link Edit của form"</strong>
+                .
+                </Typography>
                 <Box
                   component="img"
                   src={editLinkImg}
@@ -349,7 +350,7 @@ export default function TabCreate() {
                     alignSelf: 'center',
                     boxShadow: 0
                   }}
-                />
+                />      
               </Stack>
 
               <Stack sx={{ gap: 1.25 }}>

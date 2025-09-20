@@ -133,14 +133,91 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
 
   return (
     <Box>
-      <TableContainer component={Paper}>
-        <Table size="small">
+      <TableContainer 
+        component={Paper}
+        sx={{
+          maxHeight: 600,
+          overflowX: 'auto',
+          overflowY: 'auto',
+          position: 'relative',
+          // Ensure proper stacking context for sticky elements
+          isolation: 'isolate',
+          '&::-webkit-scrollbar': {
+            height: 8,
+            width: 8
+          },
+          '&::-webkit-scrollbar-track': {
+            backgroundColor: 'rgba(0,0,0,0.1)',
+            borderRadius: 4
+          },
+          '&::-webkit-scrollbar-thumb': {
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            borderRadius: 4,
+            '&:hover': {
+              backgroundColor: 'rgba(0,0,0,0.5)'
+            }
+          }
+        }}
+      >
+        <Table size="small" sx={{ 
+          minWidth: Math.max(800, columns.length * 120 + 400),
+          '& .MuiTableCell-root': {
+            borderRight: '1px solid',
+            borderColor: 'divider',
+            '&:last-child': {
+              borderRight: 'none'
+            }
+          }
+        }}>
           <TableHead>
             <TableRow>
-              <TableCell />
+              <TableCell 
+                sx={{ 
+                  minWidth: 150, 
+                  maxWidth: 500,
+                  // position: 'sticky',
+                  left: 0,
+                  backgroundColor: 'background.paper',
+                  zIndex: 11,
+                  borderRight: '2px solid',
+                  borderColor: 'divider',
+                  boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                  // Ensure proper sticky behavior
+                  willChange: 'transform',
+                  // Force hardware acceleration for better performance
+                  transform: 'translateZ(0)',
+                  // Ensure background is opaque
+                  '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'background.paper',
+                    zIndex: -1
+                  }
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight={600}>
+                  Câu hỏi
+                </Typography>
+              </TableCell>
               {columns.map((col) => (
-                <TableCell key={col.value} align="center">
-                  {col.text}
+                <TableCell 
+                  key={col.value} 
+                  align="center"
+                  sx={{ 
+                    minWidth: 120,
+                    maxWidth: 140,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }}
+                >
+                  <Typography variant="subtitle2" fontWeight={600} noWrap>
+                    {col.text}
+                  </Typography>
                 </TableCell>
               ))}
             </TableRow>
@@ -151,21 +228,62 @@ const MultipleChoiceGridPercentInput: React.FC<Props> = React.memo(({ question, 
               const hasError = rowErrors[row.value];
 
               return (
-                <TableRow key={row.value}>
-                  <TableCell>
-                    {row.text}
+                <TableRow key={row.value} hover>
+                  <TableCell 
+                    sx={{ 
+                      minWidth: 350, 
+                      maxWidth: 500,
+                      // position: 'sticky',
+                      left: 0,
+                      backgroundColor: 'background.paper',
+                      zIndex: 11,
+                      borderRight: '2px solid',
+                      borderColor: 'divider',
+                      boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                      // Ensure proper sticky behavior
+                      willChange: 'transform',
+                      // Force hardware acceleration for better performance
+                      transform: 'translateZ(0)',
+                      // Ensure background is opaque
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        backgroundColor: 'background.paper',
+                        zIndex: -1
+                      }
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight={500} sx={{ lineHeight: 1.4 }}>
+                      {row.text}
+                    </Typography>
                     {hasError && (
-                      <Typography color="error" variant="caption" display="block">
+                      <Typography color="error" variant="caption" display="block" sx={{ mt: 0.5 }}>
                         Tổng hiện tại: {total}%
                       </Typography>
                     )}
                   </TableCell>
                   {columns.map((col) => (
-                    <TableCell key={col.value} align="center">
+                    <TableCell 
+                      key={col.value} 
+                      align="center"
+                      sx={{ 
+                        minWidth: 120,
+                        maxWidth: 140,
+                        padding: '8px'
+                      }}
+                    >
                       <CustomPercentTextField
                         value={values[row.value]?.[col.value] ?? ''}
                         onChange={(val) => handleInput(row.value, col.value, val)}
                         error={hasError}
+                        sx={{
+                          width: '100%',
+                          maxWidth: '120px'
+                        }}
                       />
                     </TableCell>
                   ))}
