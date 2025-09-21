@@ -41,7 +41,7 @@ export default function HuongDanMaHoa() {
             </li>
             <li>
               <Typography variant="body2">
-                <strong>Câu hỏi văn bản/số/ngày giờ</strong>: nhập bình thường (không cần mã hóa mã đáp án).
+                <strong>Câu hỏi ngày/giờ</strong>: Chưa hỗ trợ.
               </Typography>
             </li>
           </ul>
