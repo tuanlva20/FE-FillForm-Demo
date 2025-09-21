@@ -318,7 +318,7 @@ export default function TabCreate() {
                 />
                 <Typography variant="body1" color="text.secondary">
                   - Trong cửa sổ chia sẻ (như hình), tại mục <strong>Quyền truy cập chung</strong> hãy chọn
-                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>Chế độ xem cho Người trả lời( Responder) và Người chỉnh sửa( Editor).</strong>
+                  <strong> Bất kỳ ai có đường liên kết</strong> ở phần <strong>"Chế độ xem cho Người trả lời( Responder)" và "Người chỉnh sửa( Editor)".</strong>
                 </Typography>
                 <Box
                   component="img"
@@ -335,7 +335,7 @@ export default function TabCreate() {
                   }}
                 />
                 <Typography variant="body1" color="text.secondary">
-                - Sau đó nhấn <strong>Sao chép đường link Edit form</strong> và dán vào <strong>"Link Edit của form"</strong>
+                - Sau đó <strong>"Sao chép đường link Edit form"</strong> và dán vào ô <strong>"Link Edit của form"</strong>
                 .
                 </Typography>
                 <Box
