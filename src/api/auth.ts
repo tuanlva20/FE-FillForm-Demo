@@ -17,6 +17,15 @@ export interface RegisterRequest {
   confirmPassword: string;
 }
 
+export interface SignupCodeRequest {
+  email: string;
+}
+
+export interface ValidateCodeRequest {
+  email: string;
+  code: string;
+}
+
 export interface UserProfileResponseData {
   id: string;
   email: string;
@@ -77,6 +86,16 @@ export const authAPI = {
 
   resetPassword: async (token: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
     const response = await axios.post('/api/auth/reset-password', { token, newPassword });
+    return response.data;
+  },
+
+  sendSignupCode: async (data: SignupCodeRequest): Promise<{ success: boolean; message: string }> => {
+    const response = await axios.post('/api/signup/code', data);
+    return response.data;
+  },
+
+  validateSignupCode: async (data: ValidateCodeRequest): Promise<AuthResponse> => {
+    const response = await axios.post('/api/signup/validate', data);
     return response.data;
   }
 };

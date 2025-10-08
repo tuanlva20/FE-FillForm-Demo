@@ -5,6 +5,8 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Loader from 'components/Loader';
 import useAuth from 'hooks/useAuth';
 
+// utils
+
 // types
 import { GuardProps } from 'types/auth';
 
@@ -59,13 +61,40 @@ export default function AuthGuard({ children }: GuardProps) {
     }
   }, [isPublicRoute, isInitialized, rehydrate]);
 
+  // If auth is not initialized, check if we have any auth data first
   if (!isInitialized) {
-    // Show loader only before we kick off rehydrate; after attempting, allow UI to render
-    if (!attemptedRef.current) return <Loader />;
-    return children;
+    // Check if we have any auth-related data in localStorage or cookies
+    const hasAuthData = () => {
+      try {
+        // Check for common auth storage keys
+        const authKeys = ['auth', 'token', 'user', 'session'];
+        const hasLocalStorage = authKeys.some(key => 
+          localStorage.getItem(key) || localStorage.getItem(`auth:${key}`)
+        );
+        
+        // Check for auth cookies
+        const hasCookies = document.cookie.includes('auth') || 
+                          document.cookie.includes('token') || 
+                          document.cookie.includes('session');
+        
+        return hasLocalStorage || hasCookies;
+      } catch {
+        return false;
+      }
+    };
+    
+    // If no auth data exists, redirect to login immediately without loading
+    if (!hasAuthData()) {
+      const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
+      const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;
+      return <Navigate to={loginUrl} state={{ from: pathname }} replace />;
+    }
+    
+    // If we have auth data but auth is not initialized, show loading
+    return <Loader />;
   }
 
-  // On protected routes: if not logged in after initialization, redirect to login
+  // On protected routes: if not logged in after initialization, redirect to login immediately
   if (!isLoggedIn) {
     const redirectPath = pathname !== '/' ? pathname : '/dashboard/default';
     const loginUrl = `/login?redirect=${encodeURIComponent(redirectPath)}`;

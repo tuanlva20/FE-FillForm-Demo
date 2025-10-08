@@ -17,6 +17,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 // project-imports
+import CancelConfirmDialog from 'components/CancelConfirmDialog';
 import MainCard from 'components/MainCard';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
@@ -29,11 +30,13 @@ import DepositDialog from 'sections/nap-tien/DepositDialog';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import PaymentModal from './components/PaymentModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
+import SurveyDetailsModal from './components/SurveyDetailsModal';
 import FillRequestList from './components/tabfillindata/FillRequestList';
 import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping';
 
 // API
 import {
+    cancelFillRequest,
     checkDataMapping,
     createDataFillRequest,
     DataFillRequestDTO,
@@ -93,6 +96,15 @@ export default function TabFillInData() {
   // Snackbar for prominent error display
   const [errorSnackOpen, setErrorSnackOpen] = useState<boolean>(false);
   const [errorSnackMessage, setErrorSnackMessage] = useState<string>('');
+
+  // Survey Details Modal states
+  const [surveyModalOpen, setSurveyModalOpen] = useState<boolean>(false);
+  const [selectedFillRequestId, setSelectedFillRequestId] = useState<string>('');
+  const [selectedFormNameForSurvey, setSelectedFormNameForSurvey] = useState<string>('');
+
+  // Cancel confirmation dialog states
+  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
+  const [selectedCancelRequestId, setSelectedCancelRequestId] = useState<string>('');
 
   // Helpers: ensure start/end date payloads are local day markers (match ExpectedRatio behavior)
   const toLocalDateStringAtStartOfDay = (date?: Date | null): string | undefined => {
@@ -646,6 +658,51 @@ export default function TabFillInData() {
     setErrorAlert(null);
   };
 
+  // Handle view survey details
+  const handleViewSurveyDetails = (fillRequestId: string) => {
+    setSelectedFillRequestId(fillRequestId);
+    setSelectedFormNameForSurvey(selectedForm?.name || 'Form điền từ data');
+    setSurveyModalOpen(true);
+  };
+
+  // Close survey modal
+  const handleCloseSurveyModal = () => {
+    setSurveyModalOpen(false);
+    setSelectedFillRequestId('');
+    setSelectedFormNameForSurvey('');
+  };
+
+  // Handle cancel fill request
+  const handleCancelRequest = (requestId: string) => {
+    setSelectedCancelRequestId(requestId);
+    setCancelDialogOpen(true);
+  };
+
+  // Confirm cancel fill request
+  const handleConfirmCancel = async () => {
+    try {
+      await cancelFillRequest(selectedCancelRequestId);
+      // Refresh form details to update the fill requests list
+      if (selectedFormId) {
+        const formDetails = await getFormDetail(selectedFormId);
+        setSelectedForm(formDetails);
+      }
+      setErrorSnackMessage('Hủy yêu cầu điền form thành công!');
+      setErrorSnackOpen(true);
+    } catch (error) {
+      console.error('Error cancelling fill request:', error);
+      const msg = handleFormError(error, 'delete');
+      setErrorSnackMessage(msg);
+      setErrorSnackOpen(true);
+    }
+  };
+
+  // Close cancel dialog
+  const handleCloseCancelDialog = () => {
+    setCancelDialogOpen(false);
+    setSelectedCancelRequestId('');
+  };
+
   return (
     <Grid container spacing={GRID_COMMON_SPACING} ref={topRef}>
       {/* Form and Sheet Link Inputs */}
@@ -963,6 +1020,8 @@ export default function TabFillInData() {
             onPageChange={handlePageChange}
             onRowsPerPageChange={handleRowsPerPageChange}
             onSchedule={handleOpenScheduleModal}
+            onViewDetails={handleViewSurveyDetails}
+            onCancel={handleCancelRequest}
           />
 
           <Divider />
@@ -995,6 +1054,23 @@ export default function TabFillInData() {
       />
 
       <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />
+
+      {/* Survey Details Modal */}
+      <SurveyDetailsModal
+        open={surveyModalOpen}
+        onClose={handleCloseSurveyModal}
+        fillRequestId={selectedFillRequestId}
+        formName={selectedFormNameForSurvey}
+      />
+
+      {/* Cancel Confirmation Dialog */}
+      <CancelConfirmDialog
+        open={cancelDialogOpen}
+        onClose={handleCloseCancelDialog}
+        onConfirm={handleConfirmCancel}
+        title="Bạn chắc chắn muốn hủy yêu cầu điền form này?"
+        message="Hành động này không thể hoàn tác và sẽ dừng tất cả các form đang thực hiện."
+      />
 
       {/* Prominent error snackbar */}
       <AlertSnackbarWithProgress

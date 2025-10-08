@@ -6,11 +6,13 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
 import Grid from '@mui/material/Grid2';
+import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -19,18 +21,21 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
 // project-imports
-import { FormReportItem, getFormReports } from 'api/form';
+import { cancelFillRequest, FormReportItem, getFormReports } from 'api/form';
+import CancelConfirmDialog from 'components/CancelConfirmDialog';
 import MainCard from 'components/MainCard';
 import StatusChip from 'components/StatusChip';
 import { TablePagination as ReactTablePagination } from 'components/third-party/react-table';
 import { GRID_COMMON_SPACING } from 'config';
 import { MAINCARD_STYLE } from 'themes/component/style';
+import SurveyDetailsModal from './components/SurveyDetailsModal';
 
 // assets
-import { SearchNormal1 } from 'iconsax-react';
+import { Calendar, CloseCircle, SearchNormal1 } from 'iconsax-react';
 
 // types
 type ColumnKey = 'formName' | 'type' | 'createdAt' | 'status' | 'completedSurvey' | 'totalCost' | 'estimatedCompletionDate';
@@ -57,6 +62,15 @@ export default function TabHistory() {
   // Sorting states
   const [orderBy, setOrderBy] = useState<ColumnKey>('createdAt');
   const [order, setOrder] = useState<Order>('desc');
+
+  // Modal states
+  const [surveyModalOpen, setSurveyModalOpen] = useState<boolean>(false);
+  const [selectedFillRequestId, setSelectedFillRequestId] = useState<string>('');
+  const [selectedFormName, setSelectedFormName] = useState<string>('');
+
+  // Cancel confirmation dialog states
+  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
+  const [selectedCancelRequestId, setSelectedCancelRequestId] = useState<string>('');
 
   // Handle search input change
   const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -158,9 +172,42 @@ export default function TabHistory() {
 
 
 
-  // View form details function
-  const handleViewDetails = (id: string) => {
-    console.log('Viewing details for form ID:', id);
+  // View survey details function
+  const handleViewSurveyDetails = (fillRequestId: string, formName: string) => {
+    setSelectedFillRequestId(fillRequestId);
+    setSelectedFormName(formName);
+    setSurveyModalOpen(true);
+  };
+
+  // Close survey modal
+  const handleCloseSurveyModal = () => {
+    setSurveyModalOpen(false);
+    setSelectedFillRequestId('');
+    setSelectedFormName('');
+  };
+
+  // Handle cancel fill request
+  const handleCancelRequest = (requestId: string) => {
+    setSelectedCancelRequestId(requestId);
+    setCancelDialogOpen(true);
+  };
+
+  // Confirm cancel fill request
+  const handleConfirmCancel = async () => {
+    try {
+      await cancelFillRequest(selectedCancelRequestId);
+      // Refresh the data after successful cancellation
+      await fetchFormReports();
+    } catch (error) {
+      console.error('Error cancelling fill request:', error);
+      // You can add error handling here (e.g., show snackbar)
+    }
+  };
+
+  // Close cancel dialog
+  const handleCloseCancelDialog = () => {
+    setCancelDialogOpen(false);
+    setSelectedCancelRequestId('');
   };
 
 
@@ -337,7 +384,7 @@ export default function TabHistory() {
                           Ngày dự kiến
                         </TableSortLabel>
                       </TableCell>
-                      {/* <TableCell align="center">Thao tác</TableCell> */}
+                      <TableCell align="center">Thao tác</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -353,11 +400,30 @@ export default function TabHistory() {
                         <TableCell>{item.completedSurvey}/{item.surveyCount}</TableCell>
                         <TableCell>{new Intl.NumberFormat('vi-VN').format(item.totalCost)}</TableCell>
                         <TableCell>{formatDate(item.estimatedCompletionDate)}</TableCell>
-                        {/* <TableCell align="center">
-                          <IconButton color="primary" size="small" onClick={() => handleViewDetails(item.id)}>
-                            <Eye />
-                          </IconButton>
-                        </TableCell> */}
+                        <TableCell align="center">
+                          <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                            <Tooltip title="Xem chi tiết survey">
+                              <IconButton 
+                                color="primary" 
+                                size="small" 
+                                onClick={() => handleViewSurveyDetails(item.id, item.formName)}
+                              >
+                                <Calendar />
+                              </IconButton>
+                            </Tooltip>
+                            {(item.status === 'IN_PROCESS' || item.status === 'QUEUED') && (
+                              <Tooltip title="Hủy yêu cầu điền form">
+                                <IconButton 
+                                  color="error" 
+                                  size="small" 
+                                  onClick={() => handleCancelRequest(item.id)}
+                                >
+                                  <CloseCircle />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Stack>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -377,6 +443,23 @@ export default function TabHistory() {
           )}
         </MainCard>
       </Grid>
+
+      {/* Survey Details Modal */}
+      <SurveyDetailsModal
+        open={surveyModalOpen}
+        onClose={handleCloseSurveyModal}
+        fillRequestId={selectedFillRequestId}
+        formName={selectedFormName}
+      />
+
+      {/* Cancel Confirmation Dialog */}
+      <CancelConfirmDialog
+        open={cancelDialogOpen}
+        onClose={handleCloseCancelDialog}
+        onConfirm={handleConfirmCancel}
+        title="Bạn có chắc chắn muốn hủy yêu cầu điền form này?"
+        message="Hành động này không thể hoàn tác và sẽ dừng tất cả các form đang thực hiện."
+      />
     </Grid>
   );
 }

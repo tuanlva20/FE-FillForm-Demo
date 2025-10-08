@@ -81,6 +81,8 @@ export type JWTContextType = {
   resetPassword: (email: string) => Promise<void>;
   rehydrate?: () => Promise<boolean>;
   updateProfile: VoidFunction;
+  validateSignupCode: (email: string, code: string) => Promise<any>;
+  resendSignupCode: (email: string) => Promise<void>;
 };
 
 export type Auth0ContextType = {

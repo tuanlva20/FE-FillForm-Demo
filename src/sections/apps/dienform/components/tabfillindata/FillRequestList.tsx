@@ -20,7 +20,7 @@ import MainCard from 'components/MainCard';
 
 // assets
 import StatusChip from 'components/StatusChip';
-import { Clock, SearchNormal1 } from 'iconsax-react';
+import { Calendar, Clock, CloseCircle, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
@@ -38,6 +38,7 @@ interface FillRequestListProps {
   onSchedule?: (requestId: string) => void;
   onViewDetails?: (requestId: string) => void;
   onEdit?: (requestId: string) => void;
+  onCancel?: (requestId: string) => void;
 }
 
 export default function FillRequestList({
@@ -51,7 +52,8 @@ export default function FillRequestList({
   onRowsPerPageChange,
   onSchedule,
   onViewDetails,
-  onEdit
+  onEdit,
+  onCancel
 }: FillRequestListProps) {
   // Filter fill requests based on search text
   const filteredRequests =
@@ -116,6 +118,13 @@ export default function FillRequestList({
     }
   };
 
+  // Handle cancel
+  const handleCancel = (id: string) => {
+    if (onCancel) {
+      onCancel(id);
+    }
+  };
+
   return (
     <MainCard title="Danh sách yêu cầu điền form" sx={MAINCARD_STYLE}>
       <Box sx={{ mb: 2 }}>
@@ -148,13 +157,13 @@ export default function FillRequestList({
               <TableCell align="center">Ngày dự kiến hoàn thành</TableCell>
               <TableCell align="center">Số lượng</TableCell>
               <TableCell align="center">Trạng thái</TableCell>
-              {/* <TableCell align="center">Hành động</TableCell> */}
+              <TableCell align="center">Hành động</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={10} align="center">
                   <Typography variant="body1" color="textSecondary">
                     Đang tải...
                   </Typography>
@@ -181,24 +190,34 @@ export default function FillRequestList({
                   <TableCell align="center">{formatDateTime((request as any).estimatedCompletionDate || '')}</TableCell>
                   <TableCell align="center">{getProgressText(request)}</TableCell>
                   <TableCell align="center">{getStatusChip(request)}</TableCell>
-                  {/* <TableCell align="center">
-                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                      <Tooltip title="Xem chi tiết">
+                  <TableCell align="center">
+                    <Tooltip title="Xem lịch điền">
+                      <IconButton 
+                        color="primary" 
+                        size="small"
+                        onClick={() => handleViewDetails(request.id || '')}
+                        sx={{ mr: 1 }}
+                      >
+                        <Calendar size={18} />
+                      </IconButton>
+                    </Tooltip>
+                    {(request.status === 'IN_PROCESS' || request.status === 'QUEUED') && (
+                      <Tooltip title="Hủy yêu cầu điền form">
                         <IconButton 
-                          color="info" 
+                          color="error" 
                           size="small"
-                          onClick={() => handleViewDetails(request.id || '')}
+                          onClick={() => handleCancel(request.id || '')}
                         >
-                          <Eye size={18} />
+                          <CloseCircle size={18} />
                         </IconButton>
                       </Tooltip>
-                    </Stack>
-                  </TableCell> */}
+                    )}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} align="center">
+                <TableCell colSpan={10} align="center">
                   <Typography variant="body1" color="textSecondary">
                     {searchQuery ? 'Không tìm thấy yêu cầu nào phù hợp' : 'Chưa có yêu cầu điền form nào'}
                   </Typography>

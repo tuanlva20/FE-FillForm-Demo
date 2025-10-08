@@ -1,6 +1,6 @@
 import { useSnackbar } from 'notistack';
 import { SyntheticEvent, useState } from 'react';
-import {} from 'react-router-dom';
+import { } from 'react-router-dom';
 
 // material-ui
 import Button from '@mui/material/Button';

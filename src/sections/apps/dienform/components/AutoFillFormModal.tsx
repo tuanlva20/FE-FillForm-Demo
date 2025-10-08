@@ -4,6 +4,7 @@ import { ChangeEvent, useEffect, useState } from 'react';
 import { logger } from 'utils/logger';
 
 // material-ui
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -343,6 +344,27 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                     +100đ
                   </Typography>
                 </Stack>
+
+                {/* Alert when spacing is disabled */}
+                {!formValues.isHumanLike && (
+                  <Alert 
+                    severity="warning" 
+                    sx={{ 
+                      mt: 1,
+                      bgcolor: '#fff3cd',
+                      border: '1px solid #ffc107',
+                      color: '#856404',
+                      '& .MuiAlert-icon': {
+                        color: '#ff9800'
+                      },
+                      '& .MuiAlert-message': {
+                        fontWeight: 500
+                      }
+                    }}
+                  >
+                    Mỗi form sẽ giãn cách từ 5s-60s.
+                  </Alert>
+                )}
 
                 <Divider />
 

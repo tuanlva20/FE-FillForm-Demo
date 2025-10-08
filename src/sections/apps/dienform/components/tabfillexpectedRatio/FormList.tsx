@@ -23,7 +23,7 @@ import MainCard from 'components/MainCard';
 
 // assets
 import StatusChip from 'components/StatusChip';
-import { Clock, Eye, SearchNormal1 } from 'iconsax-react';
+import { Calendar, Clock, CloseCircle, Eye, SearchNormal1 } from 'iconsax-react';
 import { MAINCARD_STYLE } from 'themes/component/style';
 
 // types
@@ -33,6 +33,7 @@ interface ExpectedRatioFormListProps {
   onSchedule: (formId: string) => void; // Changed from number to string
   onViewDetails: (formId: string) => void; // Changed from number to string
   onEdit: (formId: string) => void; // Changed from number to string
+  onCancel?: (formId: string) => void;
   fillRequests?: FillRequestDTO[];
   formName?: string;
   formLink?: string;
@@ -44,6 +45,7 @@ export default function ExpectedRatioFormList({
   onSchedule,
   onViewDetails,
   onEdit,
+  onCancel,
   fillRequests = [],
   formName = '',
   formLink = '',
@@ -200,11 +202,23 @@ export default function ExpectedRatioFormList({
                   <TableCell align="center">{getStatusChip(request.status || '')}</TableCell>
                   <TableCell align="center">
                     <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
+                      <Tooltip title="Xem lịch điền">
+                        <IconButton color="primary" size="small" onClick={() => onSchedule(request.id || '')}>
+                          <Calendar size={18} />
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Xem chi tiết">
                         <IconButton color="info" size="small" onClick={() => handleViewDetails(request.id)}>
                           <Eye size={18} />
                         </IconButton>
                       </Tooltip>
+                      {(request.status === 'IN_PROCESS' || request.status === 'QUEUED') && onCancel && (
+                        <Tooltip title="Hủy yêu cầu điền form">
+                          <IconButton color="error" size="small" onClick={() => onCancel(request.id || '')}>
+                            <CloseCircle size={18} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Stack>
                   </TableCell>
                 </TableRow>

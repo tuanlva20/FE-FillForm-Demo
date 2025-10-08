@@ -1,39 +1,109 @@
 // material-ui
-import { useTheme } from '@mui/material/styles';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormHelperText from '@mui/material/FormHelperText';
 import Grid from '@mui/material/Grid2';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 
 // third-party
 import { Formik } from 'formik';
 import OtpInput from 'react-otp-input';
+import { useNavigate } from 'react-router-dom';
 import * as Yup from 'yup';
 
 // project-imports
+import { openSnackbar } from 'api/snackbar';
 import AnimateButton from 'components/@extended/AnimateButton';
+import useAuth from 'hooks/useAuth';
+import useScriptRef from 'hooks/useScriptRef';
+import { SnackbarProps } from 'types/snackbar';
+import { combineFormikErrors, parseApiError, severityFromParsedError } from 'utils/errorHandler';
 
 // ============================|| STATIC - CODE VERIFICATION ||============================ //
 
 export default function AuthCodeVerification() {
   const theme = useTheme();
+  const navigate = useNavigate();
+  const scriptedRef = useScriptRef();
+  const { validateSignupCode, resendSignupCode } = useAuth();
+
+  // Get email from localStorage
+  const email = localStorage.getItem('pendingVerificationEmail');
+
+  const handleResendCode = async () => {
+    if (!email) return;
+    
+    try {
+      await resendSignupCode(email);
+      openSnackbar({
+        open: true,
+        message: 'Mã xác thực đã được gửi lại đến email của bạn.',
+        variant: 'alert',
+        alert: {
+          color: 'success'
+        }
+      } as SnackbarProps);
+    } catch (err: any) {
+      const parsed = parseApiError(err);
+      openSnackbar({
+        open: true,
+        message: parsed.message,
+        variant: 'alert',
+        alert: { color: severityFromParsedError(parsed) }
+      } as SnackbarProps);
+    }
+  };
 
   return (
     <Formik
       initialValues={{ otp: '' }}
       validationSchema={Yup.object({
-        otp: Yup.string().length(4, 'OTP must be exactly 4 digits').required('OTP is required')
+        otp: Yup.string().length(6, 'Mã xác thực phải có đúng 6 ký tự').required('Mã xác thực là bắt buộc')
       })}
-      onSubmit={(values, { resetForm }) => {
-        resetForm();
-        // reset focus after submission
-        const activeElement = document.activeElement as HTMLElement | null;
-        if (activeElement) activeElement.blur();
+      onSubmit={async (values, { setErrors, setStatus, setSubmitting }) => {
+        if (!email) {
+          setErrors({ otp: 'Không tìm thấy email để xác thực' });
+          return;
+        }
+
+        try {
+          await validateSignupCode(email, values.otp);
+          if (scriptedRef.current) {
+            setStatus({ success: true });
+            setSubmitting(false);
+            openSnackbar({
+              open: true,
+              message: 'Xác thực email thành công!',
+              variant: 'alert',
+              alert: {
+                color: 'success'
+              }
+            } as SnackbarProps);
+
+            setTimeout(() => {
+              navigate('/dashboard/default', { replace: true });
+            }, 1500);
+          }
+        } catch (err: any) {
+          const parsed = parseApiError(err);
+          setErrors(combineFormikErrors(parsed));
+          openSnackbar({
+            open: true,
+            message: parsed.message,
+            variant: 'alert',
+            alert: { color: severityFromParsedError(parsed) }
+          } as SnackbarProps);
+          if (scriptedRef.current) {
+            setStatus({ success: false });
+            setSubmitting(false);
+          }
+        }
       }}
     >
-      {({ errors, handleSubmit, touched, values, setFieldValue }) => (
+      {({ errors, handleSubmit, touched, values, setFieldValue, isSubmitting }) => (
         <form onSubmit={handleSubmit}>
           <Grid container spacing={3}>
             <Grid size={12}>
@@ -52,7 +122,7 @@ export default function AuthCodeVerification() {
                   inputType="tel"
                   shouldAutoFocus
                   renderInput={(props) => <input {...props} />}
-                  numInputs={4}
+                  numInputs={6}
                   containerStyle={{ justifyContent: 'space-between', margin: -8 }}
                   inputStyle={{
                     width: '100%',
@@ -73,16 +143,29 @@ export default function AuthCodeVerification() {
             </Grid>
             <Grid size={12}>
               <AnimateButton>
-                <Button disableElevation fullWidth size="large" type="submit" variant="contained">
-                  Continue
+                <Button 
+                  disableElevation 
+                  fullWidth 
+                  size="large" 
+                  type="submit" 
+                  variant="contained"
+                  disabled={isSubmitting}
+                  startIcon={isSubmitting ? <CircularProgress size={20} /> : null}
+                >
+                  {isSubmitting ? 'Đang xác thực...' : 'Xác thực'}
                 </Button>
               </AnimateButton>
             </Grid>
             <Grid size={12}>
               <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
-                <Typography>Did not receive the email? Check your spam filter, or</Typography>
-                <Typography variant="body1" sx={{ minWidth: 87, textDecoration: 'none', cursor: 'pointer' }} color="primary">
-                  Resend code
+                <Typography>Không nhận được email? Kiểm tra thư mục spam, hoặc</Typography>
+                <Typography 
+                  variant="body1" 
+                  sx={{ minWidth: 87, textDecoration: 'none', cursor: 'pointer' }} 
+                  color="primary"
+                  onClick={handleResendCode}
+                >
+                  Gửi lại mã
                 </Typography>
               </Stack>
             </Grid>

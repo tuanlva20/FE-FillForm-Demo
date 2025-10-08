@@ -110,7 +110,7 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
   }
 
   return (
-    <Stack spacing={4}>
+    <Stack spacing={2}>
       {sections.map((section, sectionIndex) => (
         <Box key={section.sectionData ? `section-${section.sectionData.section_index}` : `no-section-${sectionIndex}`}>
           {section.sectionData && (
@@ -118,10 +118,10 @@ export default function QuestionGroup({ questions, renderQuestion }: QuestionGro
           )}
           <Box
             sx={{
-              backgroundColor: 'white',
-              borderRadius: 2,
-              border: '1px solid #e0e0e0',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.06)'
+              backgroundColor: 'transparent',
+              borderRadius: 0,
+              border: 'none',
+              boxShadow: 'none'
             }}
           >
             <Stack spacing={0}>

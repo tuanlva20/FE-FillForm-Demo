@@ -222,6 +222,74 @@ export interface FormReportParams {
   sortDirection?: 'asc' | 'desc';
 }
 
+// Survey Details Types
+export interface AppliedAnswer {
+  questionId: string;
+  questionTitle: string;
+  type: 'RADIO' | 'CHECKBOX' | 'TEXT' | 'SCALE' | 'GRID';
+  optionId?: string | null;
+  optionText?: string | null;
+  optionIds?: string[] | null;
+  optionTexts?: string[] | null;
+  value?: string | null;
+  rowText?: string | null;
+  columnText?: string | null;
+}
+
+export interface AnswersAppliedData {
+  fillRequestId: string;
+  executionTime: string;
+  answersApplied: AppliedAnswer[];
+  rowIndex: number;
+  version: number;
+  taskId: string;
+}
+
+export interface SurveyDetail {
+  taskId: string;
+  rowIndex: number;
+  executionTime: string;
+  actualExecutionTime: string | null;
+  completionTime: string | null;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+  answersApplied: AppliedAnswer[] | null; // Direct array of AppliedAnswer
+  errorMessage: string | null;
+  retryCount: number;
+  isActualFailure: boolean;
+  executionDurationMs: number | null;
+  priority: number;
+}
+
+export interface SurveyStatistics {
+  totalSurveys: number;
+  completedCount: number;
+  failedCount: number;
+  pendingCount: number;
+  inProgressCount: number;
+  cancelledCount: number;
+  averageExecutionTime: number;
+  successRate: number;
+}
+
+export interface SurveyDetailsResponse {
+  surveys: SurveyDetail[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  pageSize: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+  statistics: SurveyStatistics;
+}
+
+export interface SurveyDetailsParams {
+  page?: number;
+  size?: number;
+  sortBy?: string;
+  sortDir?: 'asc' | 'desc';
+  status?: string;
+}
+
 // API endpoints
 export const API_ENDPOINTS = {
   FORM: '/api/form',
@@ -341,4 +409,36 @@ export const getFormReports = async (params: FormReportParams = {}): Promise<For
 
   const response = await axiosServices.get(`/api/v1/form-reports?${queryParams.toString()}`);
   return response.data.content;
+};
+
+// Survey Details API Functions
+export const getSurveyDetails = async (fillRequestId: string, params: SurveyDetailsParams = {}): Promise<SurveyDetailsResponse> => {
+  const queryParams = new URLSearchParams();
+  
+  if (params.page !== undefined) queryParams.append('page', params.page.toString());
+  if (params.size !== undefined) queryParams.append('size', params.size.toString());
+  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if (params.sortDir) queryParams.append('sortDir', params.sortDir);
+  if (params.status) queryParams.append('status', params.status);
+
+  const response = await axiosServices.get(`/api/v1/fill-requests/${fillRequestId}/surveys?${queryParams.toString()}`);
+  return response.data.content;
+};
+
+// Cancel Fill Request API Function
+export const cancelFillRequest = async (requestId: string) => {
+  const response = await axiosServices.put(`/api/fill-request/${requestId}/cancel`);
+  const payload = response.data as any;
+  
+  // Safeguard: some BE endpoints may return 200 with error envelope
+  const status: string | undefined = typeof payload?.status === 'string' ? String(payload.status).toUpperCase() : undefined;
+  const nonErrorStatuses = new Set(['OK', 'SUCCESS', 'CREATED', 'UPDATED', 'DELETED']);
+
+  if (payload?.errorMessage) {
+    throw payload;
+  }
+  if (status && !nonErrorStatuses.has(status)) {
+    throw payload;
+  }
+  return payload;
 };

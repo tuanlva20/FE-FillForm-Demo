@@ -24,7 +24,9 @@ export default function useAuth() {
       resetPassword: () => {},
       updateProfile: () => {},
       changePassword: () => {},
-      rehydrate: async () => false
+      rehydrate: async () => false,
+      validateSignupCode: async () => {},
+      resendSignupCode: async () => {}
     };
   }
 

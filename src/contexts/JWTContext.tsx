@@ -63,6 +63,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         if (isPublic) {
           // Do not initialize on public routes; defer to guard-driven rehydrate when navigating to protected
           logger.log('🔐 JWTContext: Skipping auth init on public route');
+          dispatch({ type: LOGOUT });
+          hasInitializedAuth.current = true;
           return;
         }
       } catch {}
@@ -152,19 +154,10 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
       // Treat provided name as full name
       const fullName = [firstNameOrName].filter(Boolean).join(' ').trim();
       await authAPI.register({ email, password, confirmPassword: confirmPassword || password, name: fullName });
-      const me = await authAPI.getCurrentUser();
-      if (me?.success) {
-        if (typeof me.exp === 'number') setAccessExpiry(me.exp);
-        dispatch({
-          type: LOGIN,
-          payload: {
-            isLoggedIn: true,
-            user: me.data
-          }
-        });
-      } else {
-        throw new Error('Register failed');
-      }
+      // Send verification code instead of logging in immediately
+      await authAPI.sendSignupCode({ email });
+      // Store email for verification page
+      localStorage.setItem('pendingVerificationEmail', email);
     } catch (error: any) {
       // Re-throw original error so form can parse structured error response
       throw error;
@@ -187,6 +180,37 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
   };
 
   const updateProfile = () => {};
+
+  const validateSignupCode = async (email: string, code: string) => {
+    try {
+      const response = await authAPI.validateSignupCode({ email, code });
+      if (response?.success) {
+        if (typeof response.exp === 'number') setAccessExpiry(response.exp);
+        dispatch({
+          type: LOGIN,
+          payload: {
+            isLoggedIn: true,
+            user: response.data
+          }
+        });
+        // Clear pending verification email
+        localStorage.removeItem('pendingVerificationEmail');
+        return response;
+      } else {
+        throw new Error('Code validation failed');
+      }
+    } catch (error: any) {
+      throw error;
+    }
+  };
+
+  const resendSignupCode = async (email: string) => {
+    try {
+      await authAPI.sendSignupCode({ email });
+    } catch (error: any) {
+      throw error;
+    }
+  };
 
   return (
     <JWTContext.Provider
@@ -231,7 +255,9 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
             return false;
           }
         },
-        updateProfile
+        updateProfile,
+        validateSignupCode,
+        resendSignupCode
       }}
     >
       {children}

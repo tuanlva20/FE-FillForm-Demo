@@ -23,6 +23,7 @@ import { logger } from '../../../utils/logger';
 
 // project-imports
 import AlertSnackbarWithProgress from 'components/@extended/AlertSnackbarWithProgress';
+import CancelConfirmDialog from 'components/CancelConfirmDialog';
 import MainCard from 'components/MainCard';
 import DebouncedMultilineTextField from 'components/form/DebouncedMultilineTextField';
 import LinkInput from 'components/form/LinkInput';
@@ -37,6 +38,7 @@ import AISuggestionModal from './components/AISuggestionModal';
 import AutoFillFormModal from './components/AutoFillFormModal';
 import FormDetailModal from './components/FormDetailModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
+import SurveyDetailsModal from './components/SurveyDetailsModal';
 import ExpectedRatioFormList from './components/tabfillexpectedRatio/FormList';
 import CheckboxGridPercentInput from './components/tabfillexpectedRatio/elements/CheckboxGridPercentInput';
 import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/elements/MultipleChoiceGridPercentInput';
@@ -44,13 +46,14 @@ import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGr
 
 // API
 import {
-    AnswerDistribution,
-    createFillRequest,
-    FillRequestDTO,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail
+  AnswerDistribution,
+  cancelFillRequest,
+  createFillRequest,
+  FillRequestDTO,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail
 } from 'api/form';
 
 // iconsax-react
@@ -139,6 +142,15 @@ export default function TabFillExpectedRatio() {
   const [isCreatingFillRequest, setIsCreatingFillRequest] = useState(false);
   // Error message shown near the create fill request action buttons
   const [createErrorMessage, setCreateErrorMessage] = useState<string | null>(null);
+
+  // Survey Details Modal states
+  const [surveyModalOpen, setSurveyModalOpen] = useState<boolean>(false);
+  const [selectedFillRequestId, setSelectedFillRequestId] = useState<string>('');
+  const [selectedFormNameForSurvey, setSelectedFormNameForSurvey] = useState<string>('');
+
+  // Cancel confirmation dialog states
+  const [cancelDialogOpen, setCancelDialogOpen] = useState<boolean>(false);
+  const [selectedCancelRequestId, setSelectedCancelRequestId] = useState<string>('');
 
   // State for testing section feature
   const [showSectionTest, setShowSectionTest] = useState(false);
@@ -454,6 +466,55 @@ export default function TabFillExpectedRatio() {
       setSelectedFillRequest(fillRequest);
       setIsDetailModalOpen(true);
     }
+  };
+
+  // Handle view survey details
+  const handleViewSurveyDetails = (fillRequestId: string) => {
+    setSelectedFillRequestId(fillRequestId);
+    setSelectedFormNameForSurvey(selectedForm?.name || '');
+    setSurveyModalOpen(true);
+  };
+
+  // Close survey modal
+  const handleCloseSurveyModal = () => {
+    setSurveyModalOpen(false);
+    setSelectedFillRequestId('');
+    setSelectedFormNameForSurvey('');
+  };
+
+  // Handle cancel fill request
+  const handleCancelRequest = (requestId: string) => {
+    setSelectedCancelRequestId(requestId);
+    setCancelDialogOpen(true);
+  };
+
+  // Confirm cancel fill request
+  const handleConfirmCancel = async () => {
+    try {
+      await cancelFillRequest(selectedCancelRequestId);
+      // Refresh form details to update the fill requests list
+      if (selectedFormId) {
+        setFormDetailLoading(true);
+        const formDetails = await getFormDetail(selectedFormId);
+        setSelectedForm(formDetails);
+        setFormDetailLoading(false);
+      }
+      setErrorSnackSeverity('success');
+      setErrorSnackMessage('Hủy yêu cầu điền form thành công!');
+      setErrorSnackOpen(true);
+    } catch (error) {
+      console.error('Error cancelling fill request:', error);
+      const msg = handleFormError(error, 'delete');
+      setErrorSnackSeverity('error');
+      setErrorSnackMessage(msg);
+      setErrorSnackOpen(true);
+    }
+  };
+
+  // Close cancel dialog
+  const handleCloseCancelDialog = () => {
+    setCancelDialogOpen(false);
+    setSelectedCancelRequestId('');
   };
 
   // Handle edit fill request - loads answer distributions back into the form
@@ -1530,7 +1591,7 @@ export default function TabFillExpectedRatio() {
   const renderQuestion = useCallback(
     (question: any) => {
       return (
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ px: 2, py: 3 }}>
           {question.type === 'section' ? (
             // Section type is handled by QuestionGroup's SectionHeader, so render nothing here to avoid duplication
             null
@@ -1951,14 +2012,31 @@ export default function TabFillExpectedRatio() {
                     </Alert>
                   )}
 
-                  <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ mt: 3 }}>
+                  <Stack 
+                    direction={{ xs: 'column', sm: 'row' }} 
+                    justifyContent="flex-end" 
+                    spacing={{ xs: 0, sm: 2 }} 
+                    sx={{ 
+                      mt: 3,
+                      '& .MuiButton-root': {
+                        fontSize: { xs: '0.875rem', sm: '0.875rem' },
+                        minHeight: { xs: 44, sm: 36 },
+                        px: { xs: 2, sm: 2 },
+                        mb: { xs: 2, sm: 0 }
+                      }
+                    }}
+                  >
                     <Button
                       variant="outlined"
                       color="secondary"
                       startIcon={<Refresh size={20} />}
                       onClick={handleCancel}
                       disabled={!hasAnyChanges || isAiLoading}
-                      sx={{ minWidth: 140, fontWeight: 600 }}
+                      sx={{ 
+                        minWidth: { xs: '100%', sm: 140 }, 
+                        fontWeight: 600,
+                        order: { xs: 4, sm: 1 }
+                      }}
                     >
                       Reset Form
                     </Button>
@@ -1968,7 +2046,11 @@ export default function TabFillExpectedRatio() {
                       startIcon={isAiLoading ? <CircularProgress size={20} color="inherit" /> : <AISuggestionIcon />}
                       onClick={handleAiSuggest}
                       disabled={isAiLoading}
-                      sx={{ minWidth: 160, fontWeight: 600 }}
+                      sx={{ 
+                        minWidth: { xs: '100%', sm: 160 }, 
+                        fontWeight: 600,
+                        order: { xs: 2, sm: 2 }
+                      }}
                     >
                       {isAiLoading ? 'AI đang gợi ý...' : 'AI gợi ý'}
                     </Button>
@@ -1978,7 +2060,11 @@ export default function TabFillExpectedRatio() {
                       startIcon={<CasinoIcon />}
                       onClick={handleSimpleSuggest}
                       disabled={isAiLoading || formDetailLoading || !selectedForm}
-                      sx={{ minWidth: 200, fontWeight: 600 }}
+                      sx={{ 
+                        minWidth: { xs: '100%', sm: 200 }, 
+                        fontWeight: 600,
+                        order: { xs: 3, sm: 3 }
+                      }}
                     >
                       Gợi ý tỉ lệ nhanh
                     </Button>
@@ -1988,7 +2074,11 @@ export default function TabFillExpectedRatio() {
                       startIcon={isCreatingFillRequest ? <CircularProgress size={20} color="inherit" /> : <FormIcon />}
                       onClick={handleOpenAutoFillModal}
                       disabled={loading || selectedForm == null || isAiLoading || isCreatingFillRequest}
-                      sx={{ minWidth: 200, fontWeight: 600 }}
+                      sx={{ 
+                        minWidth: { xs: '100%', sm: 200 }, 
+                        fontWeight: 600,
+                        order: { xs: 1, sm: 4 }
+                      }}
                     >
                       {isCreatingFillRequest ? 'Đang tạo yêu cầu...' : 'Tạo yêu cầu điền Form'}
                     </Button>
@@ -2006,9 +2096,10 @@ export default function TabFillExpectedRatio() {
         {selectedFormId && selectedForm && (
           <Grid item xs={12}>
             <ExpectedRatioFormList
-              onSchedule={handleOpenScheduleModal}
+              onSchedule={handleViewSurveyDetails}
               onViewDetails={handleOpenDetailModal}
               onEdit={handleEditFillRequest}
+              onCancel={handleCancelRequest}
               fillRequests={(selectedForm?.fillRequests || []).filter((req) => (req.answerDistributions?.length || 0) > 0)}
               formName={selectedForm?.name || ''}
               formLink={formLink}
@@ -2051,6 +2142,23 @@ export default function TabFillExpectedRatio() {
           onClose={() => setIsDetailModalOpen(false)}
           fillRequest={selectedFillRequest}
           formName={selectedForm?.name || ''}
+        />
+
+        {/* Survey Details Modal */}
+        <SurveyDetailsModal
+          open={surveyModalOpen}
+          onClose={handleCloseSurveyModal}
+          fillRequestId={selectedFillRequestId}
+          formName={selectedFormNameForSurvey}
+        />
+
+        {/* Cancel Confirmation Dialog */}
+        <CancelConfirmDialog
+          open={cancelDialogOpen}
+          onClose={handleCloseCancelDialog}
+          onConfirm={handleConfirmCancel}
+          title="Bạn chắc chắn muốn hủy yêu cầu điền form này?"
+          message="Hành động này không thể hoàn tác và sẽ dừng tất cả các form đang thực hiện."
         />
 
         {selectedForm && (

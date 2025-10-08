@@ -1,3 +1,4 @@
+
 import { Link as RouterLink } from 'react-router-dom';
 
 // material-ui
@@ -377,8 +378,7 @@ export default function HeroPage() {
                         <AnimateButton>
                           <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
                             <Button
-                              component={RouterLink}
-                              to="/dashboard/default"
+                              href="/dashboard/default"
                               size="large"
                               variant="contained"
                               sx={{

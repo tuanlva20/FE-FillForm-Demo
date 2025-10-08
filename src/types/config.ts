@@ -1,12 +1,7 @@
-import { MenuOrientation, ThemeMode, ThemeDirection } from 'config';
+import { MenuOrientation, ThemeDirection, ThemeMode } from 'config';
 
-export type FontFamily =
-  | `Inter var`
-  | `'Inter', sans-serif`
-  | `'Poppins', sans-serif`
-  | `'Roboto', sans-serif`
-  | `'Public Sans', sans-serif`;
-export type PresetColor = 'default' | 'khaosat' | 'theme1' | 'theme2' | 'theme3' | 'theme4' | 'theme5' | 'theme6' | 'theme7' | 'theme8';
+export type FontFamily = `'Inter', sans-serif`;
+export type PresetColor = 'theme2';
 export type I18n = 'en' | 'fr' | 'ro' | 'zh'; // 'en' - English, 'fr' - French, 'ro' - Romanian, 'zh' - Chinese
 
 // ==============================|| TYPES - CONFIG ||============================== //

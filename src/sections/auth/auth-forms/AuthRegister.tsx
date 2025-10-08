@@ -100,7 +100,7 @@ export default function AuthRegister() {
               setSubmitting(false);
               openSnackbar({
                 open: true,
-                message: 'Đăng ký thành công.',
+                message: 'Đăng ký thành công. Vui lòng kiểm tra email để xác thực tài khoản.',
                 variant: 'alert',
                 alert: {
                   color: 'success'
@@ -108,7 +108,7 @@ export default function AuthRegister() {
               } as SnackbarProps);
 
               setTimeout(() => {
-                navigate('/login', { replace: true });
+                navigate('/code-verification', { replace: true });
               }, 1500);
             }
           } catch (err: any) {

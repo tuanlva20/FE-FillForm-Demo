@@ -40,9 +40,11 @@ export default function GuestGuard({ children }: GuardProps) {
         }
       })();
     }
+  }, [isInitialized, isLoggedIn, rehydrate, navigate]);
 
-    // Nếu đã đăng nhập, redirect về trang mặc định hoặc trang được chỉ định
-    if (isLoggedIn) {
+  // Nếu đã đăng nhập, redirect về trang mặc định hoặc trang được chỉ định
+  useEffect(() => {
+    if (isLoggedIn && isInitialized) {
       logger.log('🔐 GuestGuard: User is logged in, redirecting...');
       const urlParams = new URLSearchParams(window.location.search);
       const redirectPath = urlParams.get('redirect');
