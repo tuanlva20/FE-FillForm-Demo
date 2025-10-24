@@ -970,7 +970,6 @@ export default function TabFillExpectedRatio() {
                 const raw = otherOptionInputs.get(questionId) || '';
                 const lines = raw
                   .split('\n')
-                  .map((l) => l.trim())
                   .filter((l) => l.length > 0);
 
                 // Remove duplicates from lines to prevent duplicate entries
@@ -1065,34 +1064,35 @@ export default function TabFillExpectedRatio() {
           }
         } else if (question.type === 'text' || question.type === 'paragraph') {
           const customDataEntry = customData.get(question.id);
-          if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data.trim()) {
+          if (customDataEntry && customDataEntry.useCustomData && customDataEntry.data) {
             const lines = customDataEntry.data
               .split('\n')
-              .map((line) => line.trim())
               .filter((line) => line.length > 0);
 
             // Remove duplicates from lines to prevent duplicate entries
             const uniqueLines = Array.from(new Set(lines));
 
-            // For email fields, validate each line is a valid email
-            if (question.title.toLowerCase().includes('email')) {
-              const invalidEmails = uniqueLines.filter((line) => !emailRegex.test(line));
-              if (invalidEmails.length > 0) {
-                validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
+            if (uniqueLines.length > 0) {
+              // For email fields, validate each line is a valid email
+              if (question.title.toLowerCase().includes('email')) {
+                const invalidEmails = uniqueLines.filter((line) => !emailRegex.test(line));
+                if (invalidEmails.length > 0) {
+                  validationErrors.push(`Câu hỏi "${question.title}" có ${invalidEmails.length} email không hợp lệ`);
+                }
               }
-            }
 
-            // Create a separate entry for each unique line with proper positionIndex
-            uniqueLines.forEach((line, index) => {
-              const payload: any = {
-                questionId: question.id,
-                optionId: null,
-                percentage: 100 / uniqueLines.length,
-                valueString: line,
-                positionIndex: index
-              };
-              answerDistributions.push(payload);
-            });
+              // Create a separate entry for each unique line with proper positionIndex
+              uniqueLines.forEach((line, index) => {
+                const payload: any = {
+                  questionId: question.id,
+                  optionId: null,
+                  percentage: 100 / uniqueLines.length,
+                  valueString: line,
+                  positionIndex: index
+                };
+                answerDistributions.push(payload);
+              });
+            }
           }
         } else if (question.type === 'date') {
           const dateInputEntry = dateInputs.get(question.id);

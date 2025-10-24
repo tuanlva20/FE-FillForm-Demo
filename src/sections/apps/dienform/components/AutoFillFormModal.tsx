@@ -7,6 +7,7 @@ import { logger } from 'utils/logger';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -66,12 +67,15 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     startDate?: string;
   }>({});
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const { balance, isLoading: isBalanceLoading, forceRefresh } = useBalance();
 
-  // Force refresh balance when modal opens
+  // Force refresh balance when modal opens and reset submitting state
   useEffect(() => {
     if (open) {
       forceRefresh();
+      setIsSubmitting(false);
     }
   }, [open, forceRefresh]);
 
@@ -223,59 +227,74 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
 
   // Close with confirmation message
   const handleSubmit = () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
     // Validate form before submitting
     if (formValues.submissionCount <= 0) {
       setErrors({ ...errors, submissionCount: 'Số lượng phải lớn hơn 0' });
       return;
     }
 
-    // If onSubmit callback is provided, call it with form values
-    if (onSubmit) {
-      // Set time to beginning of day for start date (00:00:00)
-      let startDate = formValues.startDate;
-      if (startDate) {
-        startDate = new Date(startDate);
-        startDate.setHours(0, 0, 0, 0);
+    // Set submitting state to prevent multiple clicks
+    setIsSubmitting(true);
+
+    try {
+      // If onSubmit callback is provided, call it with form values
+      if (onSubmit) {
+        // Set time to beginning of day for start date (00:00:00)
+        let startDate = formValues.startDate;
+        if (startDate) {
+          startDate = new Date(startDate);
+          startDate.setHours(0, 0, 0, 0);
+        }
+
+        // Set time to end of day for end date (23:59:59)
+        let endDate = formValues.endDate;
+        logger.log('handleSubmit - formValues.endDate:', formValues.endDate);
+        if (endDate) {
+          endDate = new Date(endDate);
+          endDate.setHours(23, 59, 59, 999);
+          logger.log('handleSubmit - processed endDate:', endDate);
+        } else {
+          logger.log('handleSubmit - endDate is null/undefined');
+        }
+
+        // Ensure endDate is always provided if startDate exists
+        const finalEndDate = endDate || startDate;
+
+        // Debug logging
+        logger.log('AutoFillFormModal - Submitting with values:', {
+          submissionCount: formValues.submissionCount,
+          pricePerSurvey: formValues.pricePerSurvey,
+          isHumanLike: formValues.isHumanLike,
+          startDate: startDate,
+          endDate: endDate,
+          finalEndDate: finalEndDate,
+          startDateISO: startDate?.toISOString(),
+          endDateISO: endDate?.toISOString(),
+          finalEndDateISO: finalEndDate?.toISOString()
+        });
+
+        onSubmit({
+          submissionCount: formValues.submissionCount,
+          pricePerSurvey: formValues.pricePerSurvey,
+          isHumanLike: formValues.isHumanLike,
+          startDate: startDate || undefined,
+          endDate: finalEndDate || undefined
+        });
       }
 
-      // Set time to end of day for end date (23:59:59)
-      let endDate = formValues.endDate;
-      logger.log('handleSubmit - formValues.endDate:', formValues.endDate);
-      if (endDate) {
-        endDate = new Date(endDate);
-        endDate.setHours(23, 59, 59, 999);
-        logger.log('handleSubmit - processed endDate:', endDate);
-      } else {
-        logger.log('handleSubmit - endDate is null/undefined');
-      }
-
-      // Ensure endDate is always provided if startDate exists
-      const finalEndDate = endDate || startDate;
-
-      // Debug logging
-      logger.log('AutoFillFormModal - Submitting with values:', {
-        submissionCount: formValues.submissionCount,
-        pricePerSurvey: formValues.pricePerSurvey,
-        isHumanLike: formValues.isHumanLike,
-        startDate: startDate,
-        endDate: endDate,
-        finalEndDate: finalEndDate,
-        startDateISO: startDate?.toISOString(),
-        endDateISO: endDate?.toISOString(),
-        finalEndDateISO: finalEndDate?.toISOString()
-      });
-
-      onSubmit({
-        submissionCount: formValues.submissionCount,
-        pricePerSurvey: formValues.pricePerSurvey,
-        isHumanLike: formValues.isHumanLike,
-        startDate: startDate || undefined,
-        endDate: finalEndDate || undefined
-      });
+      // Close the modal
+      onClose();
+    } finally {
+      // Reset submitting state after a short delay to prevent rapid re-opening
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 500);
     }
-
-    // Close the modal
-    onClose();
   };
 
   // Calculate total cost
@@ -493,18 +512,25 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         </Box>
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3, pb: 3 }}>
-        <Button variant="outlined" color="error" onClick={onClose} startIcon={<CloseCircle />} sx={{ borderRadius: '100px' }}>
+        <Button 
+          variant="outlined" 
+          color="error" 
+          onClick={onClose} 
+          startIcon={<CloseCircle />} 
+          sx={{ borderRadius: '100px' }}
+          disabled={isSubmitting}
+        >
           Đóng
         </Button>
         <Button
           variant="contained"
           color="primary"
           onClick={handleSubmit}
-          endIcon={<Send2 />}
+          endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 />}
           sx={{ borderRadius: '100px' }}
-          disabled={formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
+          disabled={isSubmitting || formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
         >
-          Bắt Đầu Điền Form
+          {isSubmitting ? 'Đang xử lý...' : 'Bắt Đầu Điền Form'}
         </Button>
       </DialogActions>
     </Dialog>

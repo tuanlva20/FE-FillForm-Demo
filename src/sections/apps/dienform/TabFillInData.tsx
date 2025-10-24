@@ -857,7 +857,7 @@ export default function TabFillInData() {
                 disabled={isCheckingData || !selectedFormId || !sheetLink}
                 startIcon={isCheckingData ? <CircularProgress size={20} color="inherit" /> : <Data size={20} color="currentColor" />}
               >
-                {isCheckingData ? 'Đang mapping dữ liệu...' : 'Kiểm Tra Dữ Liệu'}
+                {isCheckingData ? 'Đang mapping dữ liệu...' : 'Mapping dữ liệu'}
               </Button>
             </Grid>
           </Grid>

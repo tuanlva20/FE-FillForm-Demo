@@ -1,15 +1,14 @@
-import { Link } from 'react-router-dom';
 import { To } from 'history';
+import { Link } from 'react-router-dom';
 
 // material-ui
 import ButtonBase from '@mui/material/ButtonBase';
 import { SxProps } from '@mui/system';
 
 // project-imports
-import Logo from './LogoMain';
-import LogoIcon from './LogoIcon';
-import { APP_DEFAULT_PATH } from 'config';
 import useAuth from 'hooks/useAuth';
+import LogoIcon from './LogoIcon';
+import Logo from './LogoMain';
 
 interface Props {
   isIcon?: boolean;
@@ -23,7 +22,7 @@ export default function LogoSection({ isIcon, sx, to }: Props) {
   const { isLoggedIn } = useAuth();
 
   return (
-    <ButtonBase disableRipple {...(isLoggedIn && { component: Link, to: !to ? 'APP_DEFAULT_PATH' : to, sx })}>
+    <ButtonBase disableRipple {...(isLoggedIn && { component: Link, to: !to ? '/' : to, sx })}>
       {isIcon ? <LogoIcon /> : <Logo />}
     </ButtonBase>
   );

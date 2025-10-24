@@ -23,11 +23,13 @@ export function loadGTag(gaId: string): void {
   // Initialize Google Analytics
   script.onload = () => {
     (window as any).dataLayer = (window as any).dataLayer || [];
-    function gtag(...args: any[]) {
-      (window as any).dataLayer.push(args);
-    }
-    gtag('js', new Date());
-    gtag('config', gaId);
+    
+    // FIX: Match Google's exact implementation
+    function gtag(){(window as any).dataLayer.push(arguments);}
+    (window as any).gtag = gtag;
+
+    (gtag as any)('js', new Date());
+    (gtag as any)('config', gaId);
   };
 }
 
