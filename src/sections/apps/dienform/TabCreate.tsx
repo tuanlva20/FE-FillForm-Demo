@@ -35,8 +35,8 @@ const MenuProps = { PaperProps: { style: { maxHeight: ITEM_HEIGHT * 4.5 + ITEM_P
 
 // icons & assets
 import capQuyenFormImg from 'assets/images/dienformtudong/cap-quyen-google-form.png';
-import huongDanCaiDatImg from 'assets/images/dienformtudong/huong-dan-cai-dat.png';
 import editLinkImg from 'assets/images/dienformtudong/editlink.png';
+import huongDanCaiDatImg from 'assets/images/dienformtudong/huong-dan-cai-dat.png';
 import { ErrorIcon } from 'assets/images/svg/icon';
 import { InfoCircle } from 'iconsax-react';
 
@@ -117,36 +117,47 @@ export default function TabCreate() {
       // Special handling: SIGN_IN_REQUIRED -> show titled alert consistent with other tabs
       const data: any = (err as any)?.response?.data ?? err;
       const content = Array.isArray(data?.content) ? data.content : [];
-      const hasSignInRequired =
-        data?.status === 'SIGN_IN_REQUIRED' ||
-        data?.statusOverride === 'SIGN_IN_REQUIRED' ||
-        content.some((item: any) => item?.code === 'SIGN_IN_REQUIRED' || item?.status === 'SIGN_IN_REQUIRED');
-
-      if (hasSignInRequired) {
+      
+      // Check for FORM_NOT_PUBLIC error first
+      const hasFormNotPublic = content.some((item: any) => item?.code === 'FORM_NOT_PUBLIC');
+      
+      if (hasFormNotPublic) {
         setErrorAlert({
           title: 'Lỗi cài đặt form',
-          description: (
-            <>
-              Vui lòng tắt <strong>Giới hạn 1 phản hồi/Limit to 1 response</strong>.<br />
-              Tắt <strong>Đã xác minh/Verified</strong> trong <strong>Thu thập địa chỉ email/Collect email addresses</strong>.
-            </>
-          ),
+          description: 'Form chưa được Publish. Vui lòng Publish form!',
         });
       } else {
-        // Handle BAD_REQUEST with structured content (title: message, description: suggestion)
-        if (data?.status === 'BAD_REQUEST' && Array.isArray(content) && content.length > 0) {
-          const item = content[0];
-          const title = item?.message || 'Lỗi tạo form';
-          const description = item?.suggestion || data?.errorMessage || 'Vui lòng kiểm tra lại cài đặt form.';
-          setErrorAlert({ title, description });
+        const hasSignInRequired =
+          data?.status === 'SIGN_IN_REQUIRED' ||
+          data?.statusOverride === 'SIGN_IN_REQUIRED' ||
+          content.some((item: any) => item?.code === 'SIGN_IN_REQUIRED' || item?.status === 'SIGN_IN_REQUIRED');
+
+        if (hasSignInRequired) {
+          setErrorAlert({
+            title: 'Lỗi cài đặt form',
+            description: (
+              <>
+                Vui lòng tắt <strong>Giới hạn 1 phản hồi/Limit to 1 response</strong>.<br />
+                Tắt <strong>Đã xác minh/Verified</strong> trong <strong>Thu thập địa chỉ email/Collect email addresses</strong>.
+              </>
+            ),
+          });
         } else {
-          // Prefer backend's errorMessage if provided
-          const backendMessage: string | undefined = data?.errorMessage;
-          if (backendMessage) {
-            setErrorAlert({ title: 'Lỗi tạo form', description: backendMessage });
+          // Handle BAD_REQUEST with structured content (title: message, description: suggestion)
+          if (data?.status === 'BAD_REQUEST' && Array.isArray(content) && content.length > 0) {
+            const item = content[0];
+            const title = item?.message || 'Lỗi tạo form';
+            const description = item?.suggestion || data?.errorMessage || 'Vui lòng kiểm tra lại cài đặt form.';
+            setErrorAlert({ title, description });
           } else {
-            const msg = handleFormError(err, 'createForm');
-            setErrorAlert({ title: 'Lỗi tạo form', description: msg });
+            // Prefer backend's errorMessage if provided
+            const backendMessage: string | undefined = data?.errorMessage;
+            if (backendMessage) {
+              setErrorAlert({ title: 'Lỗi tạo form', description: backendMessage });
+            } else {
+              const msg = handleFormError(err, 'createForm');
+              setErrorAlert({ title: 'Lỗi tạo form', description: msg });
+            }
           }
         }
       }
