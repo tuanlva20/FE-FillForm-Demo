@@ -64,8 +64,23 @@ export const getFinancialStats = async () => {
 };
 
 // New Financial Report API
-export const getFinancialReport = async () => {
-  const response = await axios.get('/api/v1/payment-orders/financial-report');
+export const getFinancialReport = async (params?: {
+  fromDate?: string;
+  toDate?: string;
+  excludeUserIds?: string;
+}) => {
+  const queryParams = new URLSearchParams();
+  
+  if (params?.fromDate) queryParams.append('fromDate', params.fromDate);
+  if (params?.toDate) queryParams.append('toDate', params.toDate);
+  if (params?.excludeUserIds) queryParams.append('excludeUserIds', params.excludeUserIds);
+
+  const queryString = queryParams.toString();
+  const url = queryString 
+    ? `/api/v1/payment-orders/financial-report?${queryString}`
+    : '/api/v1/payment-orders/financial-report';
+    
+  const response = await axios.get(url);
   return response.data;
 };
 

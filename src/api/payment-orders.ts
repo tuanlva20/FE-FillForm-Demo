@@ -53,6 +53,9 @@ export const getPaymentOrders = async (params: {
   userEmail?: string;
   isPromotional?: boolean;
   isReported?: boolean;
+  fromDate?: string;
+  toDate?: string;
+  excludeUserIds?: string;
 } = {}): Promise<PaymentOrderResponse> => {
   const {
     page = 0,
@@ -62,7 +65,10 @@ export const getPaymentOrders = async (params: {
     userName,
     userEmail,
     isPromotional,
-    isReported
+    isReported,
+    fromDate,
+    toDate,
+    excludeUserIds
   } = params;
 
   const queryParams = new URLSearchParams({
@@ -76,6 +82,9 @@ export const getPaymentOrders = async (params: {
   if (userEmail) queryParams.append('userEmail', userEmail);
   if (isPromotional !== undefined) queryParams.append('isPromotional', isPromotional.toString());
   if (isReported !== undefined) queryParams.append('isReported', isReported.toString());
+  if (fromDate) queryParams.append('fromDate', fromDate);
+  if (toDate) queryParams.append('toDate', toDate);
+  if (excludeUserIds) queryParams.append('excludeUserIds', excludeUserIds);
 
   const response = await axios.get(`/api/v1/payment-orders?${queryParams.toString()}`);
   

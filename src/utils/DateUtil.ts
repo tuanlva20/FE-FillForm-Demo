@@ -74,3 +74,34 @@ export const formatDateTime = (dateString: string | null | undefined, defaultVal
 export const formatFullDateTime = (dateString: string | null | undefined, defaultValue: string = 'N/A'): string => {
   return formatDate(dateString, DateConstant.FULL_DATETIME, defaultValue);
 };
+
+/**
+ * Format a Date object to API date format (yyyy-MM-dd HH:mm:ss)
+ * Used for sending date filters to the backend API
+ *
+ * @param date - The Date object to format
+ * @returns Formatted date string in 'yyyy-MM-dd HH:mm:ss' format
+ */
+export const formatDateForAPI = (date: Date): string => {
+  return format(date, 'yyyy-MM-dd HH:mm:ss');
+};
+
+/**
+ * Get the first day of current month at 00:00:00
+ *
+ * @returns Date object representing the first day of current month
+ */
+export const getStartOfMonth = (): Date => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+};
+
+/**
+ * Get the last day of current month at 23:59:59
+ *
+ * @returns Date object representing the last day of current month
+ */
+export const getEndOfMonth = (): Date => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+};

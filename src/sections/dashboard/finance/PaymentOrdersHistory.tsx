@@ -41,9 +41,19 @@ import { formatFullDateTime } from 'utils/DateUtil';
 import { handleApiError } from 'utils/errorHandler';
 import { formatAmount } from 'utils/paymentUtils';
 
+// Props
+interface PaymentOrdersHistoryCardProps {
+  filters?: {
+    fromDate?: string;
+    toDate?: string;
+    excludeUserIds?: string;
+  };
+  applyVersion?: number; // increases when user clicks Apply
+}
+
 // ==========================|| FINANCE - PAYMENT ORDERS HISTORY ||========================== //
 
-export default function PaymentOrdersHistoryCard() {
+export default function PaymentOrdersHistoryCard({ filters: externalFilters, applyVersion = 0 }: PaymentOrdersHistoryCardProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -92,6 +102,19 @@ export default function PaymentOrdersHistoryCard() {
         params.status = statusFilter;
       }
 
+      // Apply external filters from parent component
+      if (externalFilters?.fromDate) {
+        params.fromDate = externalFilters.fromDate;
+      }
+      
+      if (externalFilters?.toDate) {
+        params.toDate = externalFilters.toDate;
+      }
+      
+      if (externalFilters?.excludeUserIds) {
+        params.excludeUserIds = externalFilters.excludeUserIds;
+      }
+
       const response = await getPaymentOrders(params);
       
       if (response.status === 'OK' && response.content) {
@@ -120,12 +143,28 @@ export default function PaymentOrdersHistoryCard() {
 
   useEffect(() => {
     fetchPaymentOrders();
-  }, [debouncedSearchQuery, statusFilter, pageIndex, pageSize]);
+  }, [
+    debouncedSearchQuery,
+    statusFilter,
+    pageIndex,
+    pageSize,
+    externalFilters?.fromDate,
+    externalFilters?.toDate,
+    externalFilters?.excludeUserIds,
+    applyVersion
+  ]);
 
   // Reset page when search or filter changes
   useEffect(() => {
     setPageIndex(0);
   }, [debouncedSearchQuery, statusFilter]);
+
+  // Reset to first page when applyVersion changes (user clicked "Áp dụng")
+  useEffect(() => {
+    if (applyVersion > 0) {
+      setPageIndex(0);
+    }
+  }, [applyVersion]);
 
   // Save pageSize to localStorage when it changes
   useEffect(() => {
