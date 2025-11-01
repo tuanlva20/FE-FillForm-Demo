@@ -14,9 +14,10 @@ import PaymentSuccessModal from './PaymentSuccessModal';
 
 interface SEPAYTabProps {
   resetKey?: number;
+  initialAmount?: number;
 }
 
-export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
+export default function SEPAYTab({ resetKey = 0, initialAmount }: SEPAYTabProps) {
   const [amount, setAmount] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
@@ -52,32 +53,29 @@ export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
     setSuccessData(null);
     setIsConfirmingPayment(false);
     
-    // Auto-generate QR code with default amount after reset
+    // Auto-fill amount but do NOT auto-generate QR code
     setTimeout(() => {
-      setAmount('50.000'); // Default amount with format
-      // Note: handleCreateQR will be called when amount changes
+      // Use initialAmount if provided, format it to VND like user input; otherwise default to 50.000
+      const defaultAmount = initialAmount ? formatAmount(initialAmount) : '50.000';
+      setAmount(defaultAmount);
+      // User needs to click "Tạo Mã QR" button manually
     }, 100);
-  }, [resetKey]);
+  }, [resetKey, initialAmount]);
 
   // Debug: Log balance changes
   useEffect(() => {
   }, [balance]);
 
-  // Set default amount when component mounts
+  // Set default amount when component mounts (only if completely empty)
   useEffect(() => {
-    if (!amount && !orderId && !qrCodeUrl) {
+    if (!amount && !orderId && !qrCodeUrl && resetKey === 0) {
       console.log('🔄 Setting default amount on component mount');
       setAmount('50.000');
     }
-  }, [amount, orderId, qrCodeUrl]);
-
-  // Auto-create QR code when amount is set after reset
-  useEffect(() => {
-    if (amount && amount !== '' && !orderId && !qrCodeUrl && resetKey > 0) {
-      console.log('🔄 Auto-creating QR code for amount:', amount);
-      handleCreateQR();
-    }
   }, [amount, orderId, qrCodeUrl, resetKey]);
+
+  // Removed: Auto-create QR code when amount is set after reset
+  // User must manually click "Tạo Mã QR" button
 
   // Auto-start payment confirmation when QR code is generated
   useEffect(() => {
@@ -212,10 +210,10 @@ export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
           setShowSuccessModal(true);
           resetForm();
         } else if (data.status === 'failed') {
-          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 1000 });
+          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 2000 });
           setIsConfirmingPayment(false);
         } else if (data.status === 'expired') {
-          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 1000 });
+          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 2000 });
           setIsConfirmingPayment(false);
         }
       }
@@ -248,10 +246,10 @@ export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
           setShowSuccessModal(true);
           resetForm();
         } else if (status.status === 'failed') {
-          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 1000 });
+          enqueueSnackbar('Thanh toán thất bại. Vui lòng thử lại.', { variant: 'error', autoHideDuration: 2000 });
           setIsConfirmingPayment(false);
         } else if (status.status === 'expired') {
-          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 1000 });
+          enqueueSnackbar('Mã QR đã hết hạn. Vui lòng tạo mã mới.', { variant: 'warning', autoHideDuration: 2000 });
           setIsConfirmingPayment(false);
         }
       } catch (error) {
@@ -293,14 +291,14 @@ export default function SEPAYTab({ resetKey = 0 }: SEPAYTabProps) {
     // Check balance every 0.6 seconds while confirming payment
     const interval = setInterval(checkBalanceUpdate, 600);
 
-    // Timeout after 5 minutes (300 seconds) of confirmation
+    // Timeout after 15 minutes (900 seconds) of confirmation
     const timeout = setTimeout(() => {
       if (isConfirmingPayment) {
-        enqueueSnackbar('Hết thời gian xác nhận thanh toán. Vui lòng thử lại.', { variant: 'warning', autoHideDuration: 1000 });
+        enqueueSnackbar('Hết thời gian xác nhận thanh toán. Vui lòng thử lại.', { variant: 'warning', autoHideDuration: 2000 });
         setIsConfirmingPayment(false);
         resetForm();
       }
-    }, 300000); // 5 minutes
+    }, 900000); // 15 minutes
 
     return () => {
       clearInterval(interval);

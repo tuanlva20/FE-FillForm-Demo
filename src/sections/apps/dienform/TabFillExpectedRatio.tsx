@@ -108,6 +108,7 @@ export default function TabFillExpectedRatio() {
   const [selectedFillRequest, setSelectedFillRequest] = useState<FillRequestDTO | null>(null);
   const { balance } = useBalance();
   const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
+  const [depositAmount, setDepositAmount] = useState<number | undefined>(undefined);
 
   // State for loading
   const [loading, setLoading] = useState<boolean>(false);
@@ -2130,10 +2131,21 @@ export default function TabFillExpectedRatio() {
           onClose={() => setIsAutoFillModalOpen(false)}
           formName={selectedForm?.name || ''}
           onSubmit={handleCreateFillRequest}
+          onInsufficientBalance={(requiredAmount, currentBalance) => {
+            setDepositAmount(requiredAmount);
+            setIsDepositOpen(true);
+          }}
         />
 
         {/* Deposit Dialog for insufficient balance */}
-        <DepositDialog open={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
+        <DepositDialog 
+          open={isDepositOpen} 
+          onClose={() => {
+            setIsDepositOpen(false);
+            setDepositAmount(undefined);
+          }} 
+          initialAmount={depositAmount}
+        />
 
         <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />
 
