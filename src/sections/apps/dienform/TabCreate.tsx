@@ -42,6 +42,73 @@ import { InfoCircle } from 'iconsax-react';
 
 // ==============================|| DIENFORM - CREATE ||============================== //
 
+// ===== Helper to parse BE error for untitled questions and build friendly message ===== //
+type UntitledQuestion = { position: number; type: string };
+
+const viTypeMap: Record<string, string> = {
+  text: 'Text',
+  paragraph: 'Paragraph',
+  radio: 'Radio',
+  checkbox: 'Checkbox',
+  select: 'Dropdown',
+  dropdown: 'Dropdown',
+  date: 'Date',
+  time: 'Time',
+  number: 'Number',
+  file: 'File',
+  rating: 'Rating'
+};
+
+function capitalize(s: string) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function buildFriendlyUntitledQuestionsMessage(items: UntitledQuestion[]) {
+  const n = items.length;
+  const header =
+    n === 1
+      ? 'Form có 1 câu hỏi không có tiêu đề. Vui lòng điền Tiêu đề cho câu hỏi sau'
+      : `Form có ${n} câu hỏi không có tiêu đề. Vui lòng điền Tiêu đề cho các câu hỏi sau`;
+
+  const lines = items
+    .sort((a, b) => a.position - b.position)
+    .map(({ position, type }) => {
+      const label = viTypeMap[type] ?? capitalize(type);
+      return `Câu hỏi "${label}" vị trí ${position}`;
+    });
+
+  return `${header}\n${lines.join('\n')}`;
+}
+
+function parseUntitledQuestionsError(errorMessage?: string) {
+  if (!errorMessage) return null;
+
+  // Prefer the section after "Details:" if present
+  const detailsIndex = errorMessage.indexOf('Details:');
+  const source = detailsIndex >= 0 ? errorMessage.slice(detailsIndex + 'Details:'.length) : errorMessage;
+
+  // Match patterns like: Position 2: Untitled Item (Type: text)
+  const regex = /Position\s+(\d+):[^()]*\(Type:\s*([^\)]+)\)/gi;
+  const items: UntitledQuestion[] = [];
+  let m: RegExpExecArray | null;
+
+  while ((m = regex.exec(source)) !== null) {
+    const position = Number(m[1]);
+    const type = (m[2] || '').trim().toLowerCase();
+    if (!Number.isNaN(position)) {
+      items.push({ position, type });
+    }
+  }
+
+  if (!items.length) return null;
+
+  return {
+    items,
+    friendly: buildFriendlyUntitledQuestionsMessage(items)
+  } as const;
+}
+
 export default function TabCreate() {
   const navigate = useNavigate();
   const [formName, setFormName] = useState('');
@@ -143,6 +210,11 @@ export default function TabCreate() {
             ),
           });
         } else {
+          // Try parse specific BAD_REQUEST message for untitled questions and show a friendly VN message
+          const parsedUntitled = parseUntitledQuestionsError(data?.errorMessage);
+          if (parsedUntitled) {
+            setErrorAlert({ title: 'Lỗi tạo form', description: parsedUntitled.friendly });
+          } else 
           // Handle BAD_REQUEST with structured content (title: message, description: suggestion)
           if (data?.status === 'BAD_REQUEST' && Array.isArray(content) && content.length > 0) {
             const item = content[0];

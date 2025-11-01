@@ -7,7 +7,11 @@ import { useWebSocket } from '../../hooks/useWebSocket';
 import PaymentTabs from './components/PaymentTabs';
 import SpecialNoticeBox from './components/SpecialNoticeBox';
 
-export default function PaymentStepper() {
+interface PaymentStepperProps {
+  initialAmount?: number;
+}
+
+export default function PaymentStepper({ initialAmount }: PaymentStepperProps = {}) {
   const [activeStep, setActiveStep] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -117,7 +121,7 @@ export default function PaymentStepper() {
           <>
             <SpecialNoticeBox />
             <Box mt={2}>
-              <PaymentTabs key={formKey} resetKey={formKey} />
+              <PaymentTabs key={formKey} resetKey={formKey} initialAmount={initialAmount} />
             </Box>
             {autoPaymentSuccess && (
               <Box mt={2}>

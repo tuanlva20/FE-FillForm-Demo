@@ -75,6 +75,7 @@ export default function TabFillInData() {
   const [selectedDetailFormId, setSelectedDetailFormId] = useState<number | null>(null);
   const { balance } = useBalance();
   const [isDepositOpen, setIsDepositOpen] = useState<boolean>(false);
+  const [depositAmount, setDepositAmount] = useState<number | undefined>(undefined);
 
   // State for form inputs
   const [formLink, setFormLink] = useState<string>('');
@@ -985,13 +986,24 @@ export default function TabFillInData() {
 
       {/* Modals */}
       <PaymentModal open={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
-      <DepositDialog open={isDepositOpen} onClose={() => setIsDepositOpen(false)} />
+      <DepositDialog 
+        open={isDepositOpen} 
+        onClose={() => {
+          setIsDepositOpen(false);
+          setDepositAmount(undefined);
+        }} 
+        initialAmount={depositAmount}
+      />
 
       <AutoFillFormModal
         open={isAutoFillModalOpen}
         onClose={() => setIsAutoFillModalOpen(false)}
         formName={selectedForm?.name || 'Form điền từ data'}
         onSubmit={handleCreateFillRequest}
+        onInsufficientBalance={(requiredAmount, currentBalance) => {
+          setDepositAmount(requiredAmount);
+          setIsDepositOpen(true);
+        }}
       />
 
       <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />

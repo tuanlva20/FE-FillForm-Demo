@@ -3,9 +3,10 @@ import SEPAYTab from './SEPAYTab';
 
 interface PaymentTabsProps {
   resetKey?: number;
+  initialAmount?: number;
 }
 
-export default function PaymentTabs({ resetKey = 0 }: PaymentTabsProps) {
+export default function PaymentTabs({ resetKey = 0, initialAmount }: PaymentTabsProps) {
   return (
     <Box>
       {/* <Tabs
@@ -25,7 +26,7 @@ export default function PaymentTabs({ resetKey = 0 }: PaymentTabsProps) {
         <Tab label="VNPAY" /> */}
       {/* <Tab label="Chuyển khoản QR" /> */}
       {/* </Tabs> */}
-      <SEPAYTab resetKey={resetKey} />
+      <SEPAYTab resetKey={resetKey} initialAmount={initialAmount} />
 
       {/* {activeTab === 0 && <BankTransferTab />}
       {activeTab === 1 && <VNPayTab />} */}

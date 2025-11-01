@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box } from '@mui/material';
 import PaymentStepper from 'sections/nap-tien/PaymentStepper';
 
 export default function MoneyPage() {

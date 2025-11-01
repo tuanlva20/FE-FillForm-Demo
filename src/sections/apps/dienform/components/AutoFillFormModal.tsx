@@ -20,6 +20,9 @@ import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+// Payment component
+import DepositDialog from 'sections/nap-tien/DepositDialog';
+
 // date picker
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -28,6 +31,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 // assets
 import { AddIcon } from 'assets/images/svg/icon';
 import { Calendar, CloseCircle, DocumentText, Money, Send2, Timer1 } from 'iconsax-react';
+import Alert from '@mui/material/Alert';
 
 // Interface
 interface AutoFillFormModalProps {
@@ -41,9 +45,10 @@ interface AutoFillFormModalProps {
     startDate?: Date;
     endDate?: Date;
   }) => void;
+  onInsufficientBalance?: (requiredAmount: number, currentBalance: number) => void;
 }
 
-export default function AutoFillFormModal({ open, onClose, formName, onSubmit }: AutoFillFormModalProps) {
+export default function AutoFillFormModal({ open, onClose, formName, onSubmit, onInsufficientBalance }: AutoFillFormModalProps) {
   // Normalize date by removing time parts for reliable same-day comparisons
   const normalizeToStartOfDay = (date: Date | null | undefined): Date | null => {
     if (!date) return null;
@@ -66,7 +71,12 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     startDate?: string;
   }>({});
 
+  const [balanceError, setBalanceError] = useState<string | null>(null);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [showDepositDialog, setShowDepositDialog] = useState(false);
+  const [balanceBeforeDeposit, setBalanceBeforeDeposit] = useState<number>(0);
 
   const { balance, isLoading: isBalanceLoading, forceRefresh } = useBalance();
 
@@ -77,6 +87,25 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       setIsSubmitting(false);
     }
   }, [open, forceRefresh]);
+
+  // Check balance whenever balance, submissionCount, or pricePerSurvey changes
+  useEffect(() => {
+    if (open && !isBalanceLoading) {
+      checkAndUpdateBalanceError(formValues.submissionCount, formValues.pricePerSurvey);
+    }
+  }, [balance, formValues.submissionCount, formValues.pricePerSurvey, open, isBalanceLoading]);
+
+  // Auto-close deposit dialog when balance increases (payment successful)
+  useEffect(() => {
+    if (showDepositDialog && balance > balanceBeforeDeposit) {      
+      // Close deposit dialog after a short delay to let user see success message
+      setTimeout(() => {
+        setShowDepositDialog(false);
+        // Refresh balance to ensure latest data
+        forceRefresh();
+      }, 1500); // 1.5 seconds delay
+    }
+  }, [balance, balanceBeforeDeposit, showDepositDialog, forceRefresh]);
 
   // Ensure endDate is always set when component mounts or startDate changes
   useEffect(() => {
@@ -109,6 +138,20 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     });
   }, [formValues.startDate, formValues.endDate]);
 
+  // Check balance and update error message
+  const checkAndUpdateBalanceError = (count: number, price: number) => {
+    const totalCost = count * price;
+    const currentBalance = balance || 0;
+    const shortfall = Math.max(0, totalCost - currentBalance);
+
+    if (shortfall > 0) {
+      const requiredAmount = Math.max(10000, shortfall);
+      setBalanceError(`Số dư không đủ. Cần nạp thêm ${requiredAmount.toLocaleString('vi-VN')}đ để thực hiện yêu cầu này.`);
+    } else {
+      setBalanceError(null);
+    }
+  };
+
   // Handle submission count change directly through input field
   const handleSubmissionCountChange = (event: ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(event.target.value) || 0;
@@ -123,6 +166,9 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       ...formValues,
       submissionCount: value
     });
+
+    // Check balance immediately when count changes
+    checkAndUpdateBalanceError(value, formValues.pricePerSurvey);
   };
 
   // Handle switch change
@@ -130,15 +176,19 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     if (event.target.name === 'isHumanLike') {
       const isChecked = event.target.checked;
       const now = new Date();
+      const newPrice = isChecked ? 350 + 100 : 350;
       
       setFormValues((prev) => ({
         ...prev,
         isHumanLike: isChecked,
-        pricePerSurvey: isChecked ? 350 + 100 : 350,
+        pricePerSurvey: newPrice,
         // Reset both date fields to current date when toggle is turned off
         startDate: isChecked ? prev.startDate : now,
         endDate: isChecked ? prev.endDate : now
       }));
+
+      // Check balance immediately when price changes
+      checkAndUpdateBalanceError(formValues.submissionCount, newPrice);
     } else {
       setFormValues({
         ...formValues,
@@ -224,6 +274,23 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     });
   };
 
+  // Calculate total cost
+  const calculateTotalCost = () => {
+    return formValues.submissionCount * formValues.pricePerSurvey;
+  };
+
+  // Check if balance is sufficient
+  const checkBalanceSufficiency = () => {
+    const totalCost = calculateTotalCost();
+    const currentBalance = balance || 0;
+    return {
+      isSufficient: currentBalance >= totalCost,
+      totalCost,
+      currentBalance,
+      shortfall: Math.max(0, totalCost - currentBalance)
+    };
+  };
+
   // Close with confirmation message
   const handleSubmit = () => {
     // Prevent double submission
@@ -236,6 +303,16 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
       setErrors({ ...errors, submissionCount: 'Số lượng phải lớn hơn 0' });
       return;
     }
+
+    // Check balance sufficiency
+    const balanceCheck = checkBalanceSufficiency();
+    if (!balanceCheck.isSufficient) {
+      // This should not happen as button is disabled, but kept for safety
+      return;
+    }
+
+    // Clear balance error if balance is sufficient
+    setBalanceError(null);
 
     // Set submitting state to prevent multiple clicks
     setIsSubmitting(true);
@@ -296,12 +373,37 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
     }
   };
 
-  // Calculate total cost
-  const calculateTotalCost = () => {
+  // Handle navigate to payment page with required amount
+  const handleOpenDepositDialog = () => {
+    const balanceCheck = checkBalanceSufficiency();
+    if (!balanceCheck.isSufficient) {
+      // Save current balance before opening dialog
+      setBalanceBeforeDeposit(balance || 0);
+      // Open deposit dialog
+      setShowDepositDialog(true);
+    }
+  };
+
+  // Handle close deposit dialog
+  const handleCloseDepositDialog = () => {
+    setShowDepositDialog(false);
+    // Refresh balance after closing deposit dialog
+    forceRefresh();
+  };
+
+  // Calculate required amount for payment
+  const getRequiredAmount = () => {
+    const balanceCheck = checkBalanceSufficiency();
+    return Math.max(10000, balanceCheck.shortfall);
+  };
+
+  // Calculate total cost for display
+  const calculateTotalCostDisplay = () => {
     return (formValues.submissionCount * formValues.pricePerSurvey).toLocaleString('vi-VN');
   };
 
   return (
+    <>
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Stack direction="row" alignItems="center" spacing={1} justifyContent="center">
@@ -464,6 +566,29 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
               </Grid>
             </Grid>
 
+            {/* Balance error message */}
+            {balanceError && (
+              <Grid size={12}>
+                <Alert 
+                  severity="error" 
+                  sx={{ 
+                    mt: 1,
+                    bgcolor: '#ffebee',
+                    border: '1px solid #f44336',
+                    color: '#c62828',
+                    '& .MuiAlert-icon': {
+                      color: '#d32f2f'
+                    },
+                    '& .MuiAlert-message': {
+                      fontWeight: 500
+                    }
+                  }}
+                >
+                  {balanceError}
+                </Alert>
+              </Grid>
+            )}
+
             {/* Total cost */}
             <Grid size={12}>
               <Stack
@@ -471,7 +596,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                 justifyContent="space-between"
                 alignItems="center"
                 sx={{
-                  bgcolor: 'success.lighter',
+                  bgcolor: balanceError ? 'error.lighter' : 'success.lighter',
                   p: 2,
                   borderRadius: 2,
                   mt: 1
@@ -481,8 +606,8 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
                   <Money size={24} variant="Bulk" />
                   <Typography variant="h4">Tổng chi phí:</Typography>
                 </Stack>
-                <Typography variant="h4" color="success.dark" fontWeight="bold">
-                  {calculateTotalCost()}đ
+                <Typography variant="h4" color={balanceError ? 'error.dark' : 'success.dark'} fontWeight="bold">
+                  {calculateTotalCostDisplay()}đ
                 </Typography>
               </Stack>
             </Grid>
@@ -500,17 +625,38 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit }:
         >
           Đóng
         </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={handleSubmit}
-          endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 />}
-          sx={{ borderRadius: '100px' }}
-          disabled={isSubmitting || formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
-        >
-          {isSubmitting ? 'Đang xử lý...' : 'Bắt Đầu Điền Form'}
-        </Button>
+        {balanceError ? (
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleOpenDepositDialog}
+            endIcon={<Money />}
+            sx={{ borderRadius: '100px' }}
+            disabled={formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
+          >
+            Nạp tiền
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleSubmit}
+            endIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send2 />}
+            sx={{ borderRadius: '100px' }}
+            disabled={isSubmitting || formValues.submissionCount <= 0 || !!errors.endDate || !!errors.startDate}
+          >
+            {isSubmitting ? 'Đang xử lý...' : 'Bắt Đầu Điền Form'}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
+
+    {/* Deposit Dialog - Reuse existing component */}
+    <DepositDialog 
+      open={showDepositDialog} 
+      onClose={handleCloseDepositDialog} 
+      initialAmount={getRequiredAmount()} 
+    />
+  </>
   );
 }
