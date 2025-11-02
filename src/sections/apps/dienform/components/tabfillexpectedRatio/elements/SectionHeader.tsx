@@ -58,7 +58,7 @@ export default function SectionHeader({ sectionData }: SectionHeaderProps) {
             }}
           />
           <Typography
-            variant="h5"
+            variant="h6"
             sx={{
               fontWeight: 700,
               color: theme.palette.text.primary,

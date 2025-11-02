@@ -32,7 +32,6 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 // assets
 import { AddIcon } from 'assets/images/svg/icon';
 import { Calendar, CloseCircle, DocumentText, Money, Send2, Timer1 } from 'iconsax-react';
-import Alert from '@mui/material/Alert';
 
 // Interface
 interface AutoFillFormModalProps {

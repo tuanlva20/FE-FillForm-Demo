@@ -60,9 +60,10 @@ import {
 import CasinoIcon from '@mui/icons-material/Casino';
 import { AISuggestionIcon, ErrorIcon, FormIcon } from 'assets/images/svg/icon';
 import useFillRequestRealtime from 'hooks/useFillRequestRealtime';
-import { InfoCircle, Refresh } from 'iconsax-react';
+import { ArrowCircleDown2, ArrowCircleUp2, InfoCircle, Refresh } from 'iconsax-react';
 
 // types
+import { IconButton } from '@mui/material';
 import { AISuggestionRequest } from 'types/ai-suggestion';
 
 // styles & constant
@@ -1544,11 +1545,11 @@ export default function TabFillExpectedRatio() {
         }
       });
 
-      // 🚀 Performance monitoring
+      // Performance monitoring
       const processingTime = performance.now() - startTime;
-      logger.log(`🚀 AI data processing completed in ${processingTime.toFixed(2)}ms`);
+      logger.log(`AI data processing completed in ${processingTime.toFixed(2)}ms`);
 
-      // 🚀 Batch state updates with startTransition for better performance
+      // Batch state updates with startTransition for better performance
       startTransition(() => {
         setQuestionOptions(newQuestionOptions);
         setCustomData(newCustomData);
@@ -1559,7 +1560,7 @@ export default function TabFillExpectedRatio() {
         // Validate percentages
         validatePercentages(newQuestionOptions);
 
-        // 🎯 Ẩn loading dialog sau khi điền xong với minimum display time
+        // Ẩn loading dialog sau khi điền xong với minimum display time
         const minimumLoadingTime = 1500; // 1.5 giây để user thấy được loading
         const elapsedTime = performance.now() - startTime;
         const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
@@ -1577,7 +1578,7 @@ export default function TabFillExpectedRatio() {
       logger.error('Error processing AI suggestion:', error);
       const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi xử lý AI gợi ý';
 
-      // 🎯 Ẩn loading dialog nếu có lỗi
+      // Ẩn loading dialog nếu có lỗi
       setIsAiDataFillingLoading(false);
       setErrorSnackMessage(errorMessage);
       setErrorSnackOpen(true);
@@ -1592,7 +1593,10 @@ export default function TabFillExpectedRatio() {
   const renderQuestion = useCallback(
     (question: any) => {
       return (
-        <Box sx={{ px: 2, py: 3 }}>
+        <Box sx={{ 
+            px: { xs: 0, sm: 2 },  // Remove horizontal padding on mobile
+            py: { xs: 2, sm: 3 }   // Keep vertical padding but slightly reduced on mobile
+          }}>
           {question.type === 'section' ? (
             // Section type is handled by QuestionGroup's SectionHeader, so render nothing here to avoid duplication
             null
@@ -1901,6 +1905,21 @@ export default function TabFillExpectedRatio() {
   const hasBalanceErrors = balanceErrors.size > 0;
 
   // Enable Reset when there is any user/AI populated data to clear
+  // Scroll to top/bottom functionality
+  const handleScrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
+  const handleScrollToBottom = () => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: 'smooth'
+    });
+  };
+
   const hasAnyChanges = useMemo(() => {
     // Any non-zero percentage in choice questions
     const anyChoiceChange = Array.from(questionOptions.values()).some((optMap) =>
@@ -2109,7 +2128,9 @@ export default function TabFillExpectedRatio() {
             />
 
             <Divider />
-            <Box sx={{ p: 2 }}>
+            <Box sx={{ 
+              p: { xs: 0, sm: 2 }  // Remove horizontal padding on mobile, keep small vertical padding
+            }}>
               <ReactTablePagination
                 setPageSize={setPageSize as any}
                 setPageIndex={setPageIndex as any}
@@ -2189,6 +2210,50 @@ export default function TabFillExpectedRatio() {
           subtitle="Vui lòng chờ trong giây lát..."
         />
       </Grid>
+
+      {/* Scroll Actions */}
+      <Stack
+        spacing={1}
+        sx={{
+          position: 'fixed',
+          bottom: { xs: 80, sm: 14 }, // Increased bottom spacing for mobile
+          right: { xs: 16, sm: 14 },
+          zIndex: 1050 // Increased z-index to ensure visibility
+        }}
+      >
+        <Tooltip title="Lên đầu trang" placement="left">
+          <IconButton
+            onClick={handleScrollToTop}
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              width: 40,
+              height: 40,
+              '&:hover': {
+                bgcolor: 'primary.dark'
+              }
+            }}
+          >
+            <ArrowCircleUp2/>
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Xuống cuối trang" placement="left">
+          <IconButton
+            onClick={handleScrollToBottom}
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              width: 40,
+              height: 40,
+              '&:hover': {
+                bgcolor: 'primary.dark'
+              }
+            }}
+          >
+            <ArrowCircleDown2 />
+          </IconButton>
+        </Tooltip>
+      </Stack>
     </>
   );
 }
