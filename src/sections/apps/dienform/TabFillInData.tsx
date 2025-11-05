@@ -36,17 +36,17 @@ import GridQuestionMapping from './components/tabfillindata/GridQuestionMapping'
 
 // API
 import {
-    cancelFillRequest,
-    checkDataMapping,
-    createDataFillRequest,
-    DataFillRequestDTO,
-    DataMappingRequest,
-    DataMappingResponse,
-    FormData,
-    FormDetailResponse,
-    getAllUserForms,
-    getFormDetail,
-    validateFillInData
+  cancelFillRequest,
+  checkDataMapping,
+  createDataFillRequest,
+  DataFillRequestDTO,
+  DataMappingRequest,
+  DataMappingResponse,
+  FormData,
+  FormDetailResponse,
+  getAllUserForms,
+  getFormDetail,
+  validateFillInData
 } from 'api/form';
 
 // assets
@@ -89,6 +89,7 @@ export default function TabFillInData() {
   const [dataChecked, setDataChecked] = useState<boolean>(false);
   const [mappingData, setMappingData] = useState<DataMappingResponse | null>(null);
   const [columnMappings, setColumnMappings] = useState<Map<string, string>>(new Map());
+  const [totalRows, setTotalRows] = useState<number | null>(null);
 
   // States for form list - Updated default limit to 10
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -304,6 +305,11 @@ export default function TabFillInData() {
       const response = await checkDataMapping(request);
 
       setMappingData(response);
+      
+      // Capture totalRows from response
+      if ((response as any).totalRows) {
+        setTotalRows((response as any).totalRows);
+      }
 
       // Initialize column mappings
       const initialMappings = new Map<string, string>();
@@ -504,6 +510,7 @@ export default function TabFillInData() {
       setDataChecked(false);
       setMappingData(null);
       setColumnMappings(new Map());
+      setTotalRows(null);
       setIsAutoFillModalOpen(false);
       setError(null);
       setErrorAlert(null);
@@ -655,6 +662,7 @@ export default function TabFillInData() {
     setDataChecked(false);
     setMappingData(null);
     setColumnMappings(new Map());
+    setTotalRows(null);
     setError(null);
     setErrorAlert(null);
   };
@@ -1063,6 +1071,7 @@ export default function TabFillInData() {
           setDepositAmount(requiredAmount);
           setIsDepositOpen(true);
         }}
+        totalRows={totalRows}
       />
 
       <ScheduleFormModal open={isScheduleModalOpen} onClose={() => setIsScheduleModalOpen(false)} formId={selectedDetailFormId} />

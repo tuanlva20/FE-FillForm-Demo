@@ -26,8 +26,8 @@ export default function CodeVerification() {
   const maskEmail = (email: string) => {
     const [localPart, domain] = email.split('@');
     if (localPart.length <= 2) return email;
-    
-    const maskedLocal = localPart[0] + '*'.repeat(localPart.length - 2) + localPart[localPart.length - 1];
+
+    const maskedLocal = localPart[0] + '*'.repeat(localPart.length - 3);
     return `${maskedLocal}@${domain}`;
   };
 
@@ -50,7 +50,7 @@ export default function CodeVerification() {
               Mã xác thực đã được gửi đến: <strong>{maskEmail(email)}</strong>
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Vui lòng kiểm tra hộp thư đến và nhập mã 6 ký tự vào ô bên dưới.
+              Vui lòng kiểm tra hộp thư đến và nhập mã <b>6 ký tự vào ô bên dưới.</b>
             </Typography>
           </Box>
         </Grid>

@@ -91,6 +91,10 @@ export const authAPI = {
 
   sendSignupCode: async (data: SignupCodeRequest): Promise<{ success: boolean; message: string }> => {
     const response = await axios.post('/api/signup/code', data);
+    // Throw error if API returns success: false
+    if (!response.data?.success) {
+      throw response.data;
+    }
     return response.data;
   },
 

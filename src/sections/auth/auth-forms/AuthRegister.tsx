@@ -33,6 +33,7 @@ import { StringColorProps } from 'types/password';
 import { SnackbarProps } from 'types/snackbar';
 
 // assets
+import CircularProgress from '@mui/material/CircularProgress';
 import { Eye, EyeSlash } from 'iconsax-react';
 
 // ============================|| JWT - REGISTER ||============================== //
@@ -288,8 +289,17 @@ export default function AuthRegister() {
               )}
               <Grid size={12}>
                 <AnimateButton>
-                  <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
-                    Tạo tài khoản
+                  <Button
+                    disableElevation
+                    disabled={isSubmitting}
+                    fullWidth
+                    size="large"
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : undefined}
+                  >
+                    {isSubmitting ? 'Đang gửi yêu cầu tạo tài khoản' : 'Tạo tài khoản'}
                   </Button>
                 </AnimateButton>
               </Grid>

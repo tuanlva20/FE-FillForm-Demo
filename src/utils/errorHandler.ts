@@ -41,7 +41,21 @@ export function parseApiError(error: any): ParsedApiError {
 
   // AuthResponse failure shape
   if (error && typeof error === 'object' && 'success' in error && (error as any).success === false) {
-    const message = (error as any).message || DEFAULT_ERROR_MESSAGE;
+    // Try to get message from errors field first (e.g., errors.code), then fallback to message field
+    let message = (error as any).message || DEFAULT_ERROR_MESSAGE;
+    
+    // If errors object exists and has a property with string value, use that
+    const errorsObj = (error as any).errors;
+    if (errorsObj && typeof errorsObj === 'object') {
+      // Get first error message from errors object
+      for (const key in errorsObj) {
+        if (Object.prototype.hasOwnProperty.call(errorsObj, key) && typeof errorsObj[key] === 'string') {
+          message = errorsObj[key];
+          break;
+        }
+      }
+    }
+    
     return { type: 'AuthFailure', message, raw: error };
   }
 

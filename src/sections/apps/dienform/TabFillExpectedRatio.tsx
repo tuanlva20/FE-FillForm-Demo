@@ -1,5 +1,5 @@
 import useBalance from 'hooks/useBalance';
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DepositDialog from 'sections/nap-tien/DepositDialog';
 
 // material-ui
@@ -40,8 +40,6 @@ import FormDetailModal from './components/FormDetailModal';
 import ScheduleFormModal from './components/ScheduleFormModal';
 import SurveyDetailsModal from './components/SurveyDetailsModal';
 import ExpectedRatioFormList from './components/tabfillexpectedRatio/FormList';
-import CheckboxGridPercentInput from './components/tabfillexpectedRatio/elements/CheckboxGridPercentInput';
-import MultipleChoiceGridPercentInput from './components/tabfillexpectedRatio/elements/MultipleChoiceGridPercentInput';
 import QuestionGroup from './components/tabfillexpectedRatio/elements/QuestionGroup';
 
 // API
@@ -55,6 +53,14 @@ import {
   getAllUserForms,
   getFormDetail
 } from 'api/form';
+
+// Dynamic imports for Grid components - load only when needed
+const MultipleChoiceGridPercentInput = lazy(() => 
+  import('./components/tabfillexpectedRatio/elements/MultipleChoiceGridPercentInput')
+);
+const CheckboxGridPercentInput = lazy(() => 
+  import('./components/tabfillexpectedRatio/elements/CheckboxGridPercentInput')
+);
 
 // iconsax-react
 import CasinoIcon from '@mui/icons-material/Casino';
@@ -79,6 +85,190 @@ const MenuProps = {
 
 // ==============================|| DIENFORM - FILL BY EXPECTED RATIO ||============================== //
 
+// Lazy Loading Wrapper for Grid Components - only render when in viewport
+const LazyGridComponent = memo(({ 
+  question, 
+  gridValues, 
+  onGridChange,
+  isFirstGrid = false // Flag to preload first grid immediately
+}: { 
+  question: any;
+  gridValues: Map<string, Map<string, Map<string, number>>>;
+  onGridChange: (questionId: string, value: Record<string, Record<string, number>>) => void;
+  isFirstGrid?: boolean;
+}) => {
+  const [isVisible, setIsVisible] = useState(isFirstGrid); // First grid visible immediately
+  const [shouldRender, setShouldRender] = useState(isFirstGrid); // First grid renders immediately
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Skip observer for first grid - already rendering
+    if (isFirstGrid) {
+      logger.log(`First Grid ${question.id} loaded immediately`);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const startTime = performance.now();
+            setIsVisible(true);
+            // Use requestIdleCallback to render during browser idle time
+            if (typeof requestIdleCallback !== 'undefined') {
+              requestIdleCallback(() => {
+                setShouldRender(true);
+                const renderTime = performance.now() - startTime;
+                logger.log(`Grid ${question.id} lazy loaded in ${renderTime.toFixed(2)}ms`);
+              }, { timeout: 300 }); // Reduced timeout for faster render
+            } else {
+              // Fallback for browsers that don't support requestIdleCallback
+              setTimeout(() => {
+                setShouldRender(true);
+                const renderTime = performance.now() - startTime;
+                logger.log(`Grid ${question.id} lazy loaded (fallback) in ${renderTime.toFixed(2)}ms`);
+              }, 30); // Reduced timeout
+            }
+            // Once visible, stop observing
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        root: null,
+        rootMargin: '500px', // Increased to 500px for earlier preload
+        threshold: 0
+      }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [question.id, isFirstGrid]);
+
+  const value = useMemo(() => {
+    if (!shouldRender) return {};
+    
+    const grid = gridValues.get(question.id);
+    if (!grid || grid.size === 0) return {};
+    
+    const result: Record<string, Record<string, number>> = {};
+    grid.forEach((colMap, rowKey) => {
+      const innerObj: Record<string, number> = {};
+      colMap.forEach((percent, colKey) => {
+        innerObj[colKey] = percent;
+      });
+      result[rowKey] = innerObj;
+    });
+    return result;
+  }, [gridValues, question.id, shouldRender]);
+
+  const handleChange = useCallback((newValue: Record<string, Record<string, number>>) => {
+    onGridChange(question.id, newValue);
+  }, [question.id, onGridChange]);
+
+  return (
+    <div ref={containerRef} style={{ minHeight: shouldRender ? 'auto' : '450px' }}>
+      {shouldRender ? (
+        <Suspense 
+          fallback={
+            <Box 
+              sx={{ 
+                height: '400px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                bgcolor: 'grey.50',
+                borderRadius: 1
+              }}
+            >
+              <CircularProgress size={24} />
+            </Box>
+          }
+        >
+          {question.type === 'multiple_choice_grid' ? (
+            <MultipleChoiceGridPercentInput
+              question={{
+                ...question,
+                options: question.options.map((opt: any) => ({
+                  ...opt,
+                  title: opt.text ?? ''
+                }))
+              }}
+              value={value}
+              onChange={handleChange}
+            />
+          ) : question.type === 'checkbox_grid' ? (
+            <CheckboxGridPercentInput
+              question={{
+                ...question,
+                options: question.options.map((opt: any) => ({
+                  ...opt,
+                  title: opt.text ?? ''
+                }))
+              }}
+              value={value}
+              onChange={handleChange}
+            />
+          ) : null}
+        </Suspense>
+      ) : (
+        <Box 
+          sx={{ 
+            height: '450px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            bgcolor: 'grey.50',
+            borderRadius: 1,
+            border: '1px dashed',
+            borderColor: 'grey.300'
+          }}
+        >
+          <Stack spacing={1} alignItems="center">
+            <CircularProgress size={32} />
+            <Typography variant="body2" color="text.secondary">
+              Đang tải câu hỏi Grid...
+            </Typography>
+          </Stack>
+        </Box>
+      )}
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison function for better memoization
+  if (prevProps.question.id !== nextProps.question.id) return false;
+  if (prevProps.isFirstGrid !== nextProps.isFirstGrid) return false;
+  
+  const prevGrid = prevProps.gridValues.get(prevProps.question.id);
+  const nextGrid = nextProps.gridValues.get(nextProps.question.id);
+  
+  // Deep comparison for grid values
+  if (prevGrid === nextGrid) return true;
+  if (!prevGrid || !nextGrid) return false;
+  if (prevGrid.size !== nextGrid.size) return false;
+  
+  for (const [rowKey, prevColMap] of prevGrid) {
+    const nextColMap = nextGrid.get(rowKey);
+    if (!nextColMap) return false;
+    if (prevColMap.size !== nextColMap.size) return false;
+    
+    for (const [colKey, prevPercent] of prevColMap) {
+      if (nextColMap.get(colKey) !== prevPercent) return false;
+    }
+  }
+  
+  return true;
+});
+
+LazyGridComponent.displayName = 'LazyGridComponent';
+
+LazyGridComponent.displayName = 'LazyGridComponent';
+
 export default function TabFillExpectedRatio() {
   // State for forms list
   const [forms, setForms] = useState<FormData[]>([]);
@@ -100,6 +290,9 @@ export default function TabFillExpectedRatio() {
 
   // State for balance errors
   const [balanceErrors, setBalanceErrors] = useState<Map<string, string>>(new Map());
+
+  // Ref to track first Grid question for immediate loading
+  const firstGridIdRef = useRef<string | null>(null);
 
   // State for modals
   const [isAutoFillModalOpen, setIsAutoFillModalOpen] = useState(false);
@@ -291,11 +484,19 @@ export default function TabFillExpectedRatio() {
         });
         // Reset grid values for grid questions
         const newGridValues = new Map<string, Map<string, Map<string, number>>>();
+        let firstGridFound = false;
         formDetails.questions.forEach((question) => {
           if (question.type === 'multiple_choice_grid' || question.type === 'checkbox_grid') {
             newGridValues.set(question.id, new Map());
+            // Track first Grid question for immediate loading
+            if (!firstGridFound) {
+              firstGridIdRef.current = question.id;
+              firstGridFound = true;
+              logger.log(`First Grid question identified: ${question.id}`);
+            }
           }
         });
+        
         setQuestionOptions(newQuestionOptions);
         setCustomData(newCustomData);
         setDateInputs(newDateInputs);
@@ -317,38 +518,56 @@ export default function TabFillExpectedRatio() {
   // Realtime updates for fill requests of selected form
   useFillRequestRealtime(selectedFormId, setSelectedForm);
 
-  // Validate that percentages for each question add up to exactly 100%
-  const validatePercentages = (options: Map<string, Map<string, number>>) => {
-    const newErrors = new Map<string, string>();
+  // Optimized validation - only validate specific question if provided
+  const validatePercentages = useCallback((options: Map<string, Map<string, number>>, questionIdToValidate?: string) => {
+    const newErrors = new Map(balanceErrors);
 
-    options.forEach((optionMap, questionId) => {
+    const validateQuestion = (questionId: string, optionMap: Map<string, number>) => {
       const qType = selectedForm?.questions.find((q) => q.id === questionId)?.type;
-      // Bỏ validate cho các loại không phải grid, không phải text/date/time
+      // Skip validation for non-percentage questions
       if (qType === 'text' || qType === 'date' || qType === 'time' || qType === 'multiple_choice_grid' || qType === 'checkbox_grid') {
+        newErrors.delete(questionId);
         return;
       }
+      
       let totalPercentage = 0;
       optionMap.forEach((percentage) => {
-        totalPercentage += percentage || 0; // Add 0 if percentage is undefined or null
+        totalPercentage += percentage || 0;
       });
-      // Round to handle floating point precision issues
+      
       const roundedTotal = Math.round(totalPercentage * 10) / 10;
       if (roundedTotal > 100) {
         newErrors.set(questionId, `Tổng tỉ lệ vượt quá 100%. Hiện tại: ${roundedTotal}%`);
       } else if (roundedTotal < 100) {
         newErrors.set(questionId, `Tổng tỉ lệ nên = 100%. Hiện tại: ${roundedTotal}%`);
+      } else {
+        newErrors.delete(questionId);
       }
-    });
+    };
+
+    if (questionIdToValidate) {
+      // Only validate specific question for better performance
+      const optionMap = options.get(questionIdToValidate);
+      if (optionMap) {
+        validateQuestion(questionIdToValidate, optionMap);
+      }
+    } else {
+      // Validate all questions
+      options.forEach((optionMap, questionId) => {
+        validateQuestion(questionId, optionMap);
+      });
+    }
+
     setBalanceErrors(newErrors);
     return newErrors.size === 0;
-  };
+  }, [selectedForm, balanceErrors]);
 
   // NOTE: We validate immediately for realtime feedback in alert
   const validatePercentagesDebounced = useMemo(() => {
-    return (opts: Map<string, Map<string, number>>) => {
-      validatePercentages(opts);
+    return (opts: Map<string, Map<string, number>>, questionId?: string) => {
+      validatePercentages(opts, questionId);
     };
-  }, [selectedForm]);
+  }, [validatePercentages]);
 
   // Handle form selection change
   const handleFormChange = (event: SelectChangeEvent) => {
@@ -381,8 +600,8 @@ export default function TabFillExpectedRatio() {
       newQuestionOptions.set(questionId, optionMap);
       setQuestionOptions(newQuestionOptions);
 
-      // Validate percentages immediately for realtime alert updates
-      validatePercentagesDebounced(newQuestionOptions);
+      // Only validate the specific question that changed for better performance
+      validatePercentagesDebounced(newQuestionOptions, questionId);
     }
   };
 
@@ -1549,31 +1768,30 @@ export default function TabFillExpectedRatio() {
       const processingTime = performance.now() - startTime;
       logger.log(`AI data processing completed in ${processingTime.toFixed(2)}ms`);
 
-      // Batch state updates with startTransition for better performance
-      startTransition(() => {
-        setQuestionOptions(newQuestionOptions);
-        setCustomData(newCustomData);
-        setOtherOptionInputs(newOtherOptionInputs);
-        setGridValues(newGridValues);
-        setIsEditing(true);
+      // Batch state updates for better performance - removed startTransition to improve grid rendering
+      // Update all states at once to minimize re-renders
+      setQuestionOptions(newQuestionOptions);
+      setCustomData(newCustomData);
+      setOtherOptionInputs(newOtherOptionInputs);
+      setGridValues(newGridValues);
+      setIsEditing(true);
 
-        // Validate percentages
-        validatePercentages(newQuestionOptions);
+      // Validate percentages after state updates
+      validatePercentages(newQuestionOptions);
 
-        // Ẩn loading dialog sau khi điền xong với minimum display time
-        const minimumLoadingTime = 1500; // 1.5 giây để user thấy được loading
-        const elapsedTime = performance.now() - startTime;
-        const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
+      // Ẩn loading dialog sau khi điền xong với minimum display time
+      const minimumLoadingTime = 1500; // 1.5 giây để user thấy được loading
+      const elapsedTime = performance.now() - startTime;
+      const remainingTime = Math.max(0, minimumLoadingTime - elapsedTime);
 
-        setTimeout(() => {
-          setIsAiDataFillingLoading(false);
-          setErrorSnackMessage(`AI tạo dữ liệu mẫu và điền câu trả lời lên form thành công!`);
-          setErrorSnackOpen(true);
-          setErrorSnackSeverity('success');
-          // Clear any existing error messages when AI completes successfully
-          setCreateErrorMessage(null);
-        }, remainingTime);
-      });
+      setTimeout(() => {
+        setIsAiDataFillingLoading(false);
+        setErrorSnackMessage(`AI tạo dữ liệu mẫu và điền câu trả lời lên form thành công!`);
+        setErrorSnackOpen(true);
+        setErrorSnackSeverity('success');
+        // Clear any existing error messages when AI completes successfully
+        setCreateErrorMessage(null);
+      }, remainingTime);
     } catch (error) {
       logger.error('Error processing AI suggestion:', error);
       const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi xử lý AI gợi ý';
@@ -1588,6 +1806,26 @@ export default function TabFillExpectedRatio() {
       setIsAISuggestionModalOpen(false);
     }
   };
+
+  // Optimized handler for grid changes
+  const handleGridChange = useCallback((questionId: string, value: Record<string, Record<string, number>>) => {
+    setIsEditing(true);
+    setGridValues((prev) => {
+      const newGridValues = new Map(prev);
+      const gridMap = new Map<string, Map<string, number>>();
+      
+      Object.entries(value).forEach(([rowKey, cols]) => {
+        const colMap = new Map<string, number>();
+        Object.entries(cols).forEach(([colKey, percent]) => {
+          colMap.set(colKey, percent);
+        });
+        gridMap.set(rowKey, colMap);
+      });
+      
+      newGridValues.set(questionId, gridMap);
+      return newGridValues;
+    });
+  }, []);
 
   // Function to render individual question
   const renderQuestion = useCallback(
@@ -1684,88 +1922,18 @@ export default function TabFillExpectedRatio() {
               )}
             </>
           ) : question.type === 'multiple_choice_grid' ? (
-            <MultipleChoiceGridPercentInput
-              question={{
-                ...question,
-                options: question.options.map((opt: any) => ({
-                  ...opt,
-                  title: opt.text ?? ''
-                }))
-              }}
-              value={(() => {
-                const grid = gridValues.get(question.id);
-                if (!grid) {
-                  logger.log(`No grid data found for multiple_choice_grid question ${question.id}`);
-                  return {};
-                }
-                const obj: Record<string, Record<string, number>> = {};
-                grid.forEach((colMap, rowId) => {
-                  obj[rowId] = {};
-                  colMap.forEach((percent, colId) => {
-                    obj[rowId][colId] = percent;
-                  });
-                });
-                logger.log(`MultipleChoiceGrid value for question ${question.id}:`, obj);
-                return obj;
-              })()}
-              onChange={(value) => {
-                setIsEditing(true);
-                setGridValues((prev) => {
-                  const newMap = new Map(prev);
-                  const rowMap = new Map<string, Map<string, number>>();
-                  Object.entries(value).forEach(([rowId, colObj]) => {
-                    const colMap = new Map<string, number>();
-                    Object.entries(colObj).forEach(([optionId, percent]) => {
-                      colMap.set(optionId, percent);
-                    });
-                    rowMap.set(rowId, colMap);
-                  });
-                  newMap.set(question.id, rowMap);
-                  return newMap;
-                });
-              }}
+            <LazyGridComponent
+              question={question}
+              gridValues={gridValues}
+              onGridChange={handleGridChange}
+              isFirstGrid={firstGridIdRef.current === question.id}
             />
           ) : question.type === 'checkbox_grid' ? (
-            <CheckboxGridPercentInput
-              question={{
-                ...question,
-                options: question.options.map((opt: any) => ({
-                  ...opt,
-                  title: opt.text ?? ''
-                }))
-              }}
-              value={(() => {
-                const grid = gridValues.get(question.id);
-                if (!grid) {
-                  logger.log(`No grid data found for checkbox_grid question ${question.id}`);
-                  return {};
-                }
-                const obj: Record<string, Record<string, number>> = {};
-                grid.forEach((colMap, rowId) => {
-                  obj[rowId] = {};
-                  colMap.forEach((percent, colId) => {
-                    obj[rowId][colId] = percent;
-                  });
-                });
-                logger.log(`CheckboxGrid value for question ${question.id}:`, obj);
-                return obj;
-              })()}
-              onChange={(value) => {
-                setIsEditing(true);
-                setGridValues((prev) => {
-                  const newMap = new Map(prev);
-                  const rowMap = new Map<string, Map<string, number>>();
-                  Object.entries(value).forEach(([rowId, colObj]) => {
-                    const colMap = new Map<string, number>();
-                    Object.entries(colObj).forEach(([optionId, percent]) => {
-                      colMap.set(optionId, percent);
-                    });
-                    rowMap.set(rowId, colMap);
-                  });
-                  newMap.set(question.id, rowMap);
-                  return newMap;
-                });
-              }}
+            <LazyGridComponent
+              question={question}
+              gridValues={gridValues}
+              onGridChange={handleGridChange}
+              isFirstGrid={firstGridIdRef.current === question.id}
             />
           ) : (
             <Grid container spacing={2}>
@@ -1897,7 +2065,8 @@ export default function TabFillExpectedRatio() {
       handleDateInputToggle,
       handleDateInputChange,
       handlePercentageChange,
-      handleOtherInputChange
+      handleOtherInputChange,
+      handleGridChange
     ]
   );
 

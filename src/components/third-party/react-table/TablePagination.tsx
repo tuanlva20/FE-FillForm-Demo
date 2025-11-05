@@ -24,7 +24,7 @@ interface TablePaginationProps {
 
 export default function TablePagination({ getPageCount, setPageIndex, setPageSize, getState, initialPageSize }: TablePaginationProps) {
   const [open, setOpen] = useState(false);
-  let options: number[] = [10, 25, 50, 100];
+  let options: number[] = [50, 100, 1000, 10000];
 
   if (initialPageSize) {
     options = [...options, initialPageSize]
@@ -38,7 +38,7 @@ export default function TablePagination({ getPageCount, setPageIndex, setPageSiz
   useEffect(() => {
     // Only set pageSize if no initialPageSize is provided
     if (!initialPageSize) {
-      setPageSize(10);
+      setPageSize(1000);
     }
   }, []);
 

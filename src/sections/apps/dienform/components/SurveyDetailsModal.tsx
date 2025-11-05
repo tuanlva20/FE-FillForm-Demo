@@ -29,6 +29,7 @@ import {
   TableHead,
   TableRow,
   TableSortLabel,
+  Tooltip,
   Typography
 } from '@mui/material';
 
@@ -69,10 +70,26 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
   const [orderBy, setOrderBy] = useState<ColumnKey>('executionTime');
   const [order, setOrder] = useState<Order>('asc');
 
+  // Error detail popup states
+  const [errorDetailOpen, setErrorDetailOpen] = useState<boolean>(false);
+  const [selectedErrorMessage, setSelectedErrorMessage] = useState<string>('');
+
   // Handle status filter change
   const handleStatusFilterChange = (event: any) => {
     setStatusFilter(event.target.value);
     setPageIndex(0); // Reset to first page when changing filter
+  };
+
+  // Handle open error detail popup
+  const handleOpenErrorDetail = (errorMessage: string) => {
+    setSelectedErrorMessage(errorMessage);
+    setErrorDetailOpen(true);
+  };
+
+  // Handle close error detail popup
+  const handleCloseErrorDetail = () => {
+    setErrorDetailOpen(false);
+    setSelectedErrorMessage('');
   };
 
   // Handle sort request
@@ -235,7 +252,7 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
     >
       <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Typography variant="h5">
-          Chi tiết Survey - {formName}
+          Chi tiết Đơn điền - {formName}
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton 
@@ -267,7 +284,7 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
                       {statistics.totalSurveys}
                     </Typography>
                     <Typography variant="body2" color="textSecondary">
-                      Tổng số survey
+                      Tổng số form
                     </Typography>
                   </CardContent>
                 </Card>
@@ -339,7 +356,7 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
         ) : surveys.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 4 }}>
             <Typography variant="h6" color="textSecondary">
-              Không có dữ liệu survey
+              Không có dữ liệu
             </Typography>
           </Box>
         ) : (
@@ -422,9 +439,50 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
                         </TableCell>
                         <TableCell>
                           {survey.errorMessage ? (
-                            <Typography variant="body2" color="error" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                              {survey.errorMessage}
-                            </Typography>
+                            <Tooltip 
+                              title={survey.errorMessage}
+                              arrow
+                              placement="top"
+                              sx={{
+                                '& .MuiTooltip-tooltip': {
+                                  maxWidth: 400,
+                                  backgroundColor: '#d32f2f',
+                                  color: 'white',
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                  padding: '8px 12px',
+                                  fontSize: '0.875rem'
+                                }
+                              }}
+                            >
+                              <Box
+                                onClick={() => handleOpenErrorDetail(survey.errorMessage || '')}
+                                sx={{
+                                  cursor: 'pointer',
+                                  maxWidth: '120px',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  display: 'block',
+                                  '&:hover': {
+                                    textDecoration: 'underline',
+                                    color: 'error.dark'
+                                  }
+                                }}
+                              >
+                                <Typography 
+                                  variant="body2" 
+                                  color="error"
+                                  sx={{
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                >
+                                  {survey.errorMessage}
+                                </Typography>
+                              </Box>
+                            </Tooltip>
                           ) : (
                             '-'
                           )}
@@ -482,6 +540,45 @@ export default function SurveyDetailsModal({ open, onClose, fillRequestId, formN
           Đóng
         </Button>
       </DialogActions>
+
+      {/* Error Detail Popup Dialog */}
+      <Dialog
+        open={errorDetailOpen}
+        onClose={handleCloseErrorDetail}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5">Chi tiết lỗi</Typography>
+            <IconButton onClick={handleCloseErrorDetail} size="small">
+              <Close />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, p: 2, bgcolor: 'error.lighter', borderRadius: 1, border: '1px solid', borderColor: 'error.light' }}>
+            {selectedErrorMessage.split(';').map((error, index) => (
+              <Typography 
+                key={index}
+                variant="body2" 
+                color="error" 
+                sx={{ 
+                  wordBreak: 'break-word',
+                  mb: index < selectedErrorMessage.split(';').length - 1 ? 1 : 0
+                }}
+              >
+                - {error.trim()}
+              </Typography>
+            ))}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseErrorDetail} variant="outlined">
+            Đóng
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

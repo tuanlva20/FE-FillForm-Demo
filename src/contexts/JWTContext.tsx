@@ -197,7 +197,8 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
         localStorage.removeItem('pendingVerificationEmail');
         return response;
       } else {
-        throw new Error('Code validation failed');
+        // Throw the actual error response from server instead of generic message
+        throw response;
       }
     } catch (error: any) {
       throw error;

@@ -402,7 +402,7 @@ export default function TabHistory() {
                         <TableCell>{formatDate(item.estimatedCompletionDate)}</TableCell>
                         <TableCell align="center">
                           <Stack direction="row" alignItems="center" justifyContent="center" spacing={1}>
-                            <Tooltip title="Xem chi tiết survey">
+                            <Tooltip title="Xem chi tiết đơn điền">
                               <IconButton 
                                 color="primary" 
                                 size="small" 

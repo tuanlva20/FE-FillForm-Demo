@@ -191,27 +191,28 @@ export default function FillRequestList({
                   <TableCell align="center">{getProgressText(request)}</TableCell>
                   <TableCell align="center">{getStatusChip(request)}</TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Xem lịch điền">
-                      <IconButton 
-                        color="primary" 
-                        size="small"
-                        onClick={() => handleViewDetails(request.id || '')}
-                        sx={{ mr: 1 }}
-                      >
-                        <Calendar size={18} />
-                      </IconButton>
-                    </Tooltip>
-                    {(request.status === 'IN_PROCESS' || request.status === 'QUEUED') && (
-                      <Tooltip title="Hủy yêu cầu điền form">
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                      <Tooltip title="Xem lịch điền">
                         <IconButton 
-                          color="error" 
+                          color="primary" 
                           size="small"
-                          onClick={() => handleCancel(request.id || '')}
+                          onClick={() => handleViewDetails(request.id || '')}
                         >
-                          <CloseCircle size={18} />
+                          <Calendar size={18} />
                         </IconButton>
                       </Tooltip>
-                    )}
+                      {(request.status === 'IN_PROCESS' || request.status === 'QUEUED') && (
+                        <Tooltip title="Hủy yêu cầu điền form">
+                          <IconButton 
+                            color="error" 
+                            size="small"
+                            onClick={() => handleCancel(request.id || '')}
+                          >
+                            <CloseCircle size={18} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))

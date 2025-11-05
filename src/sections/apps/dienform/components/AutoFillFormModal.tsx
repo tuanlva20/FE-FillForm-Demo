@@ -46,9 +46,10 @@ interface AutoFillFormModalProps {
     endDate?: Date;
   }) => void;
   onInsufficientBalance?: (requiredAmount: number, currentBalance: number) => void;
+  totalRows?: number | null;
 }
 
-export default function AutoFillFormModal({ open, onClose, formName, onSubmit, onInsufficientBalance }: AutoFillFormModalProps) {
+export default function AutoFillFormModal({ open, onClose, formName, onSubmit, onInsufficientBalance, totalRows }: AutoFillFormModalProps) {
   // Normalize date by removing time parts for reliable same-day comparisons
   const normalizeToStartOfDay = (date: Date | null | undefined): Date | null => {
     if (!date) return null;
@@ -58,7 +59,7 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit, o
   };
 
   const [formValues, setFormValues] = useState({
-    submissionCount: 1,
+    submissionCount: totalRows || 1,
     pricePerSurvey: 450,
     isHumanLike: true,
     startDate: new Date() as Date | null,
@@ -85,8 +86,13 @@ export default function AutoFillFormModal({ open, onClose, formName, onSubmit, o
     if (open) {
       forceRefresh();
       setIsSubmitting(false);
+      // Reset submission count to totalRows when modal opens
+      setFormValues(prev => ({
+        ...prev,
+        submissionCount: totalRows || 1
+      }));
     }
-  }, [open, forceRefresh]);
+  }, [open, forceRefresh, totalRows]);
 
   // Check balance whenever balance, submissionCount, or pricePerSurvey changes
   useEffect(() => {
