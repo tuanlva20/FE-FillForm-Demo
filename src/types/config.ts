@@ -1,6 +1,6 @@
 import { MenuOrientation, ThemeDirection, ThemeMode } from 'config';
 
-export type FontFamily = `'Inter', sans-serif`;
+export type FontFamily = `Inter var`;
 export type PresetColor = 'theme2';
 export type I18n = 'en' | 'fr' | 'ro' | 'zh'; // 'en' - English, 'fr' - French, 'ro' - Romanian, 'zh' - Chinese
 

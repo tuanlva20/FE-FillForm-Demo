@@ -33,21 +33,21 @@ export default function ThemeFont() {
       value: `Inter var`,
       label: 'Inter'
     },
-    {
-      id: 'roboto',
-      value: `'Roboto', sans-serif`,
-      label: 'Roboto'
-    },
-    {
-      id: 'poppins',
-      value: `'Poppins', sans-serif`,
-      label: 'Poppins'
-    },
-    {
-      id: 'public-sans',
-      value: `'Public Sans', sans-serif`,
-      label: 'Public Sans'
-    }
+    // {
+    //   id: 'roboto',
+    //   value: `'Roboto', sans-serif`,
+    //   label: 'Roboto'
+    // },
+    // {
+    //   id: 'poppins',
+    //   value: `'Poppins', sans-serif`,
+    //   label: 'Poppins'
+    // },
+    // {
+    //   id: 'public-sans',
+    //   value: `'Public Sans', sans-serif`,
+    //   label: 'Public Sans'
+    // }
   ];
 
   return (
