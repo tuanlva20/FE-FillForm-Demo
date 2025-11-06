@@ -193,7 +193,23 @@ axiosServices.interceptors.response.use(
         return Promise.reject(error);
       }
     }
-    return Promise.reject((error.response && error.response.data) || 'Wrong Services');
+    
+    // Normalize error response for consistent handling
+    const errorData = error.response?.data;
+    if (errorData) {
+      // If error data has a message, preserve it
+      if (typeof errorData === 'object' && !errorData.message) {
+        // Ensure error object has a message property
+        return Promise.reject({
+          ...errorData,
+          message: errorData.message || errorData.error || 'Có lỗi xảy ra'
+        });
+      }
+      return Promise.reject(errorData);
+    }
+    
+    // Fallback error
+    return Promise.reject({ message: 'Lỗi kết nối tới server' });
   }
 );
 

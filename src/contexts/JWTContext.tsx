@@ -109,7 +109,16 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      await authAPI.login({ email, password });
+      const loginResponse = await authAPI.login({ email, password });
+      
+      // Check if login was successful before calling /me
+      if (!loginResponse?.success) {
+        const errorMessage = loginResponse?.message || 'Đăng nhập thất bại';
+        logger.warn('🔐 Login failed:', errorMessage);
+        throw new Error(errorMessage);
+      }
+      
+      // Only call /me if login was successful
       const me = await authAPI.getCurrentUser();
       if (me?.success) {
         if (typeof me.exp === 'number') setAccessExpiry(me.exp);
@@ -121,16 +130,39 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
           }
         });
       } else {
-        throw new Error('Login failed');
+        throw new Error('Không thể lấy thông tin người dùng');
       }
     } catch (error: any) {
-      throw new Error(error?.message || 'Authentication failed');
+      // Extract error message from various formats
+      let errorMessage = 'Đăng nhập thất bại';
+      
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (typeof error === 'object' && error.message) {
+        errorMessage = error.message;
+      }
+      
+      logger.error('🔐 Login error:', error);
+      logger.error('🔐 Error message extracted:', errorMessage);
+      throw new Error(errorMessage);
     }
   };
 
   const googleLogin = async (idToken: string) => {
     try {
-      await authAPI.googleLogin({ idToken });
+      const loginResponse = await authAPI.googleLogin({ idToken });
+      
+      // Check if login was successful before calling /me
+      if (!loginResponse?.success) {
+        const errorMessage = loginResponse?.message || 'Đăng nhập Google thất bại';
+        throw new Error(errorMessage);
+      }
+      
+      // Only call /me if login was successful
       const me = await authAPI.getCurrentUser();
       if (me?.success) {
         if (typeof me.exp === 'number') setAccessExpiry(me.exp);
@@ -142,10 +174,23 @@ export const JWTProvider = ({ children }: { children: React.ReactElement }) => {
           }
         });
       } else {
-        throw new Error('Google login failed');
+        throw new Error('Không thể lấy thông tin người dùng');
       }
     } catch (error: any) {
-      throw new Error(error?.message || 'Google login failed');
+      // Extract error message from various formats
+      let errorMessage = 'Đăng nhập Google thất bại';
+      
+      if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.data?.message) {
+        errorMessage = error.data.message;
+      } else if (typeof error === 'object' && error.message) {
+        errorMessage = error.message;
+      }
+      
+      throw new Error(errorMessage);
     }
   };
 

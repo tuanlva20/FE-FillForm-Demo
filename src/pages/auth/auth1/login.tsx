@@ -32,12 +32,12 @@ export default function Login() {
         </Grid>
         <Grid size={12}>
           <Grid container spacing={1}>
-            <Grid size={12}>
+            {/* <Grid size={12}>
               <AuthSocButton>
                 <CardMedia component="img" src={imgFacebook} alt="Facebook" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng nhập với
                 Facebook
               </AuthSocButton>
-            </Grid>
+            </Grid> */}
             {/* <Grid size={12}>
               <AuthSocButton>
                 <CardMedia component="img" src={imgTwitter} alt="Twitter" sx={{ my: 0, mx: 1.25, width: 'auto' }} /> Đăng nhập với Twitter

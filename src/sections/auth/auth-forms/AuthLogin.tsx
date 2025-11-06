@@ -73,13 +73,15 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
               handleRedirectAfterLogin();
             }
           } catch (err: any) {
-            console.error(err);
-            if (scriptedRef.current) {
-              setStatus({ success: false });
-              setErrors({ submit: err.message });
-              setSubmitting(false);
-              enqueueSnackbar(err.message || 'Đăng nhập thất bại', { variant: 'error' });
-            }
+            // Always reset submitting state even if component unmounted
+            setSubmitting(false);
+            
+            // Extract error message properly
+            const errorMessage = err?.message || err?.data?.message || 'Đăng nhập thất bại';
+            
+            // Always show error message in snackbar
+            setStatus({ success: false });
+            enqueueSnackbar(errorMessage, { variant: 'error' });
           }
         }}
       >
@@ -162,11 +164,6 @@ export default function AuthLogin({ forgot }: { forgot?: string }) {
                   </Link> */}
                 </Stack>
               </Grid>
-              {errors.submit && (
-                <Grid size={12}>
-                  <FormHelperText error>{errors.submit}</FormHelperText>
-                </Grid>
-              )}
               <Grid size={12}>
                 <AnimateButton>
                   <Button disableElevation disabled={isSubmitting} fullWidth size="large" type="submit" variant="contained" color="primary">
