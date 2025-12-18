@@ -3,9 +3,9 @@
 Frontend service for the FillForm application.
 
 ## Overview
-This is a React application that handles the frontend interface for the survey/form filling system.
+This is a React application that handles the frontend interface for the form filling system.
 
-## Tech Stack
+## Tech
 - **JavaScript**: React 18.3.1 + TypeScript
 - **Framework**: Vite 5.4.11
 - **UI Library**: Material-UI (MUI) 6.4.0
